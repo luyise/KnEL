@@ -1,2 +1,3 @@
 (executable
+	(promote (until-clean))
 	(name main))
