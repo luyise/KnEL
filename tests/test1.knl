@@ -1,6 +1,12 @@
 
+Variables: A, B
+
 Theorem my_first_theorem:
-    ∀ A B.
-        A ⇒ (A ⇒ B) ⇒ B
+    A ⇒ (A ⇒ B) ⇒ B
+Proof
+Admitted
+
+Theorem rewritten:
+    A × (A ⇒ B) ⇒ B
 Proof
 Admitted

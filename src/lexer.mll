@@ -1,4 +1,5 @@
 {
+    open Ast
     open Parser
 
     let kwd = [
@@ -13,6 +14,8 @@
         ("Inductive", INDUCTIVE);
         ("End", END);
         ("neg", NEG);
+        ("Unit", UNIT);
+        ("Void", VOID);
     ]
 
     let id_or_kwd =
@@ -35,10 +38,11 @@ let ident = letter (letter | digit)*
 
 let comment_smp = "//" [^'\n']*
 
-let space = ' ' | '\t' | '\n' | comment_smp
+let space = ' ' | '\t' | comment_smp
 
 rule next_tokens = parse
     | space         { next_tokens lexbuf }
+    | '\n'          { Lexing.new_line lexbuf; next_tokens lexbuf }
     | ident as id   { id_or_kwd id }
     | "&&"          { AMPERAMPER }
     | '+'           { PLUS }
@@ -58,15 +62,17 @@ rule next_tokens = parse
     | "||"          { VERTVERT }
     | "->" | "→"    { ARROW }
     | '*'           { STAR }
-    | '×'           { PROD }
+    | "\u{00D7}"    { PROD } (* × *)
     | ','           { COMMA }
- (*   | '∀' | '!'     { ALL } *)
-(*    | '∃' | '?'     { EXISTS } 
-    | '↦'           { MAPSTO }
-    | '¬'           { NEG }*)
+    | "\u{2200}"|'!'{ ALL } (* ∀ *)
+    | "\u{2203}"|'?'{ EXISTS } (* ∃ *)
+    | "\u{21A6}"    { MAPSTO } (* ↦ *)
+    | "\u{00AC}"    { NEG } (* ¬ *)
+    | "\u{22A4}"    { UNIT } (* ⊤ *)
+    | "\u{22A5}"    { VOID } (* ⊥ *)
     | eof           { EOF }
 
 {
     let next_token =
-        next_token
+        next_tokens
 }

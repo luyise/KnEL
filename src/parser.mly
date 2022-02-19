@@ -1,10 +1,10 @@
 %{
-    (* open Ast *)
+    open Ast
 %}
 
 %token ADMITTED     (* Admitted *)
-%token ALL          (* ∀ *)
-%token AMPSERAMPSER (* && *)
+%token ALL          (* ∀ ! *)
+%token AMPERAMPER   (* && *)
 %token ARROW        (* -> → *)
 %token DEFINITION   (* Definition *)
 %token COLON        (* : *)
@@ -14,9 +14,10 @@
 %token EOF
 %token EQ           (* = *)
 %token EQUIV        (* <=> ⇔ *)
+%token EXISTS       (* ∃ ? *)
 %token GREATER      (* > *)
 %token GREATEREQ    (* >= ⩾ *)
-%token <string> IDENT
+%token <Ast.ident> IDENT
 %token IMPLIES      (* => ⇒ *)
 %token INDUCTIVE    (* Inductive *)
 %token LEMMA        (* Lemma *)
@@ -28,27 +29,30 @@
 %token MINUS        (* - *)
 %token NEG          (* neg ¬ *)
 %token PLUS         (* + *)
+%token PROD
 %token PROOF        (* Proof *)
 %token QED          (* Qed *)
 %token RPAREN       (* ) *)
 %token STAR         (* * *)
 %token THEOREM      (* Theorem *)
+%token UNIT         (* Unit ⊤ *)
 %token VERT         (* | *)
 %token VERTVERT     (* || *)
+%token VOID         (* Void ⊥ *)
 
 %start file
 
 %nonassoc NEG
-%left AMPSERAMPSER
+%left AMPERAMPER
 %left VERTVERT
 %left ARROW IMPLIES EQUIV
 
 %left COMMA
 %left EQ GREATER GREATEREQ LOWER LOWEREQ
 %left PLUS MINUS
-%left DIV STAR
+%left DIV STAR PROD
 
-%type <string list> file
+%type <(ident * place * string) list> file
 
 %%
 
@@ -57,8 +61,8 @@ file:
 ;
 
 decl:
-    | definition    { $1 }
-    | inductive     { $1 }
+    | definition    { assert false }
+    | inductive     { assert false }
     | theorem       { $1 }
 ;
 
@@ -79,7 +83,7 @@ induc_bloc:
 ;
 
 theorem:
-    | thm_keyword IDENT COLON statement PROOF proof { $2 }
+    | thm_keyword IDENT COLON statement PROOF proof { ($2, $4, $6) }
 ;
 
 thm_keyword:
@@ -88,7 +92,13 @@ thm_keyword:
 ;
 
 statement:
-    | expr cmp_op expr { () }
+    | IDENT                     { NamedPlace $1 }
+    | VOID                      { VoidPlace }
+    | UNIT                      { UnitPlace }
+    | statement PROD statement  { ProductPlace ($1, $3) }
+    | statement PLUS statement  { SumPlace ($1, $3) }
+    | statement IMPLIES statement { PathPlace ($1, $3) }
+    | LPAREN statement RPAREN   { $2 }
 ;
 
 proof:
@@ -132,7 +142,7 @@ expr_bot:
 %inline binop_prop:
     | IMPLIES   { () }
     | EQUIV     { () }
-    | AMPSERAMPSER { () }
+    | AMPERAMPER{ () }
     | VERTVERT  { () }
 ;
 
