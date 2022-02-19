@@ -1,0 +1,6 @@
+
+Theorem my_first_theorem:
+    ∀ A B.
+        A ⇒ (A ⇒ B) ⇒ B
+Proof
+Admitted

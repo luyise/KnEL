@@ -1,3 +1,9 @@
+(ocamllex
+	(modules lexer))
+
+(menhir
+	(modules parser))
+
 (executable
 	(promote (until-clean))
 	(name main))

@@ -1,0 +1,9 @@
+(rule
+ (target test1.out)
+ (deps (file test1.knl))
+ (action (with-stdout-to test1.out (run ../src/main.exe test1.knl))))
+
+(rule
+ (alias runtest)
+ (deps test1.out (file test1.expected))
+ (action (diff test1.expected test1.out)))
