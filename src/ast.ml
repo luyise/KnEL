@@ -16,12 +16,12 @@ type place =
 
 type wayIn =
   (* | UnitWayIn *)
-  | ProdWayIn of place list
+  | ProdWayIn of place * (place list)
   | PathWayIn of place * place
 
 type wayOut =
   (* | VoidWayOut *)
-  | SumWayOut of place list
+  | SumWayOut of (place list) * place
   | PathWayOut of place * place
 
 type path =
@@ -56,8 +56,8 @@ and check_product : path list -> place -> place list -> bool
   match p_list , t_list with
     | [] , [] -> true
     | p :: p_tail , t :: t_tail ->
-        target p = t && 
         source p = s &&
+        target p = t &&
         check_product p_tail s t_tail
     | _ -> false
 
@@ -65,44 +65,44 @@ and check_product : path list -> place -> place list -> bool
   de chemins possède des sources cohérentes avec une liste
   de lieux donnés *)
 
-let check_sum : path_list -> place list -> bool
-= fun p_list x_list ->
-  match p_list , x_list with
+and check_sum : path list -> place list -> place -> bool
+= fun p_list s_list t ->
+  match p_list , s_list with
     | [] , [] -> true
-    | 
+    | p :: p_tail , s :: s_tail -> 
+        source p = s &&
+        target p = t &&
+        check_sum p_tail s_tail t
+    | _ -> false
 
-(* Les fonctions source et target
+(* Les fonctions ends, source et target
   calculent les lieux extrémaux d'une flèche,
   tout en vérifiant si la flèche est bien formée *)
 
-let rec source : path -> place =
+and ends : path -> place * place =
 fun p ->
   match p with
-  | NamedPath (s , _ , _) -> s
+  | NamedPath (s , t , _) -> (s , t)
   | ComposedPath (p1 , p2) ->
-      let t1 = target p1 in
-      let s2 = source p2 in
-      if t1 = s2 then source p1
+      if check_composition p1 p2 then (source p1 , target p2)
       else raise Composition_dismatch
-  | InPath ([] , ProdWayIn []) -> SumPlace [] (* void place *)
-  | InPath (p_list , ProdWayIn )
+  | InPath (p_list , ProdWayIn (s , t_list)) ->
+      if check_product p_list s t_list then (s , ProdPlace t_list)
+      else raise Product_dismatch
+  | OutPath (p_list , SumWayOut (s_list , t)) ->
+      if check_sum p_list s_list t then (SumPlace s_list , t)
+      else raise Sum_dismatch
+  | _ -> failwith "TO_DO"
+
+and source : path -> place =
+fun p ->
+  fst ((ends p) : place * place)
 
 and target : path -> place =
 fun p ->
-  match p with
-  | NamedPath (_ , t , _) -> t
-  | VoidPath t -> t
-  | UnitPath _ -> UnitPlace
-  | ComposedPath (_ , p2) -> target p2
-  | ProductPath (p1 , p2) -> ProductPlace (target p1 , target p2)
-  | SumPath (p1 , p2) ->
-      let t1 , t2 = target p1 , target p2 in
-      if t1 = t2 then t1
-      else raise (Sum_dismatch (p1 , t1 , p2 , t2))
+  snd (ends p)
 
-let ends : path -> place * place =
-fun p ->
-  (source p , target p)
+(* *)
 
 (*
 
