@@ -25,22 +25,24 @@ let rec search_for_term : ident -> (ident * sort) list -> sort option
     | (id' , t) :: ctx_tail when id = id' -> Some t
     | _ :: ctx_tail -> search_for_term id ctx_tail
 
-let rec get_sort : term -> (ident * sort) list 
+let rec get_sort : term -> (ident * sort) list -> sort
 = fun t ctx ->
   match t with
-    | TVar id ->
+    | TVar id -> begin
         match search_for_term id ctx with
           | Some s -> s
           | None -> raise Unknown_variable
-    | TLam (id , s , t') ->
-        Fun (s, get_sort t' ((id , s) :: ctx))
-    | TApp (t' , t'') ->
+        end
+    | TLam ((id , s) , t') ->
+        SFun (s, get_sort t' ((id , s) :: ctx))
+    | TApp (t' , t'') -> begin
         match get_sort t' ctx , get_sort t'' ctx with
-          | Fun (a , s) , b when b = a -> s
-          | _ -> Sort_error
-    | TProdConstr t_list =
+          | SFun (a , s) , b when b = a -> s
+          | _ -> raise Sort_error
+        end
+    | TProdConstr t_list ->
         SProd (List.map (fun t' -> get_sort t' ctx) t_list)
     | TSumConstr (n , t' , s_list) ->
-        if get_sort t' ctx = List.nth s_list then
+        if get_sort t' ctx = List.nth s_list n then
           SSum s_list
         else raise Sort_error
