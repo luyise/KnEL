@@ -20,6 +20,7 @@
 %token <Ast.ident> IDENT
 %token IMPLIES      (* => ⇒ *)
 %token INDUCTIVE    (* Inductive *)
+%token LBRACKET     (* { *)
 %token LEMMA        (* Lemma *)
 %token LET          (* let *)
 %token LOWER        (* < *)
@@ -32,6 +33,7 @@
 %token PROD
 %token PROOF        (* Proof *)
 %token QED          (* Qed *)
+%token RBRACKET     (* } *)
 %token RPAREN       (* ) *)
 %token STAR         (* * *)
 %token THEOREM      (* Theorem *)
@@ -46,7 +48,7 @@
 %nonassoc NEG
 %left AMPERAMPER
 %left VERTVERT
-%left ARROW IMPLIES EQUIV
+%right ARROW IMPLIES EQUIV
 
 %left COMMA
 %left EQ GREATER GREATEREQ LOWER LOWEREQ
@@ -62,8 +64,7 @@ file:
 ;
 
 var_def_bloc:
-    | (* EMPTY *) { [] }
-    | VARIABLES EQ separated_nonempty_list(COMMA, var_def) { $3 }
+    | VARIABLES EQ LBRACKET separated_list(COMMA, var_def) RBRACKET { $4 }
 ;
 
 var_def:
@@ -129,8 +130,8 @@ proof:
 ;
 
 proof_end:
-    | ADMITTED  { "admitted" }
-    | QED       { "qed" }
+    | ADMITTED  { "Admitted" }
+    | QED       { "Qed" }
 ;
 
 type_decl:
