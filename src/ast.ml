@@ -2,10 +2,10 @@ type ident = string
 
 type place =
   | NamedPlace of ident
-  | VoidPlace
-  | UnitPlace
-  | ProductPlace of place * place
-  | SumPlace of place * place
+  (* | VoidPlace *)
+  (* | UnitPlace *)
+  | ProdPlace of place list
+  | SumPlace of place list
   | PathPlace of place * place
 
 (* Conventions de nommage :
@@ -14,34 +14,80 @@ type place =
   s'ils sont vus comme source ou but d'un chemin
   et a , b , c , x , y , z ou l dans le cas général *)
 
-(* type way =  *)
+type wayIn =
+  (* | UnitWayIn *)
+  | ProdWayIn of place list
+  | PathWayIn of place * place
+
+type wayOut =
+  (* | VoidWayOut *)
+  | SumWayOut of place list
+  | PathWayOut of place * place
 
 type path =
   | NamedPath of place * place * ident
   | ComposedPath of path * path
-  | InPath of path list * way
-  | OutPath of path list * way
+  | ProjectionPath of place list * place
+  | InclusionPath of place list * place
+  | InPath of path list * wayIn
+  | OutPath of path list * wayOut
+
 (* Conventions de nommage :
   les chemins sont représentés par des symboles
   p , q , r *)
 
-exception Product_dismatch of path * place * path * place
-exception Sum_dismatch of path * place * path * place
+exception Composition_dismatch
+exception Product_dismatch
+exception Sum_dismatch
+
+(* La fonction check_composition vérifie si deux
+  chemins sont composables *)
+
+let rec check_composition : path -> path -> bool
+= fun p q ->
+  target p = source q
+
+(* La fonction check_product vérifie si une liste
+  de chemins possède une même source correspondant à un lieu donné
+  et des buts cohérents avec une liste de lieux donnés *)
+
+and check_product : path list -> place -> place list -> bool
+= fun p_list s t_list ->
+  match p_list , t_list with
+    | [] , [] -> true
+    | p :: p_tail , t :: t_tail ->
+        target p = t && 
+        source p = s &&
+        check_product p_tail s t_tail
+    | _ -> false
+
+(* La fonction check_sum vérifie si une liste
+  de chemins possède des sources cohérentes avec une liste
+  de lieux donnés *)
+
+let check_sum : path_list -> place list -> bool
+= fun p_list x_list ->
+  match p_list , x_list with
+    | [] , [] -> true
+    | 
+
+(* Les fonctions source et target
+  calculent les lieux extrémaux d'une flèche,
+  tout en vérifiant si la flèche est bien formée *)
 
 let rec source : path -> place =
 fun p ->
   match p with
   | NamedPath (s , _ , _) -> s
-  | VoidPath _ -> VoidPlace
-  | UnitPath s -> s
-  | ComposedPath (p1 , _) -> source p1
-  | ProductPath (p1 , p2) ->
-      let s1 , s2 = source p1 , source p2 in
-      if s1 = s2 then s1
-      else raise (Product_dismatch (p1 , s1 , p2 , s2))
-  | SumPath (p1 , p2) -> SumPlace (source p1 , source p2)
+  | ComposedPath (p1 , p2) ->
+      let t1 = target p1 in
+      let s2 = source p2 in
+      if t1 = s2 then source p1
+      else raise Composition_dismatch
+  | InPath ([] , ProdWayIn []) -> SumPlace [] (* void place *)
+  | InPath (p_list , ProdWayIn )
 
-let rec target : path -> place =
+and target : path -> place =
 fun p ->
   match p with
   | NamedPath (_ , t , _) -> t
@@ -58,29 +104,6 @@ let ends : path -> place * place =
 fun p ->
   (source p , target p)
 
-(*
-
-type sort =
-  | SEmpty : sort
-  | SUnit : sort
-  | SFun : sort * sort -> sort
-  | SProd : sort * sort -> sort
-  | SSum : sort * sort -> sort
-
-type term =
-  | TIt
-  | TVar : ident * sort -> term
-  | TLam : ident * sort * term * sort -> term
-  | TApp : term * sort * term * sort -> term
-  | TPair : term * sort * term * sort -> term
-  | Tinl : term * sort * sort -> term
-  | Tinr : term * sort * sort -> term
-
-type env =
-  | EEmpty
-  | EAdd : ident * sort * env -> env
-
-*)
 (*
 
 let rec in_env : ident -> env -> sort option
