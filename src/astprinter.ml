@@ -13,7 +13,7 @@ let pp_thm fmt (name, stmt, proof) =
   Format.fprintf fmt
   "Theorem %s:\n%a\n%s\n\n"
     name
-    pp_place stmt
+    pp_sort stmt
     proof
 
 let pp_file fmt (var, thm_list) =

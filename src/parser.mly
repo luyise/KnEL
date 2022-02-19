@@ -55,7 +55,7 @@
 %left PLUS MINUS
 %left DIV STAR PROD
 
-%type <(string * unit option) list * (ident * place * string) list> file
+%type <(string * unit option) list * (ident * sort * string) list> file
 
 %%
 
@@ -108,20 +108,20 @@ thm_keyword:
 ;
 
 statement:
-    | IDENT                     { NamedPlace $1 }
-    | VOID                      { SumPlace [] }
-    | UNIT                      { ProdPlace [] }
+    | IDENT                     { SVar $1 }
+    | VOID                      { SSum [] }
+    | UNIT                      { SProd [] }
     | statement PROD statement 
         { match $3 with
-            | ProdPlace l   -> ProdPlace ($1::l)
-            | stmt          -> ProdPlace [$1; stmt]
+            | SProd l   -> SProd ($1::l)
+            | stmt          -> SProd [$1; stmt]
         }
     | statement PLUS statement
         { match $3 with
-            | SumPlace l    -> SumPlace ($1::l)
-            | stmt          -> SumPlace [$1; stmt]
+            | SSum l    -> SSum ($1::l)
+            | stmt          -> SSum [$1; stmt]
         }
-    | statement IMPLIES statement { PathPlace ($1, $3) }
+    | statement IMPLIES statement { SFun ($1, $3) }
     | LPAREN statement RPAREN     { $2 }
 ;
 
