@@ -19,7 +19,6 @@ let report filename (b, e) =
   let ce = e.pos_cnum - b.pos_bol + 1 in
   Format.eprintf "File \"%s\", line %d, characters %d-%d:\n" filename l cb ce
 
-
 let main filename =
   if !shutdown then exit 0;
   if not (Filename.check_suffix filename ".knl")
@@ -28,7 +27,7 @@ let main filename =
   let lexbuf = Lexing.from_channel file_desc in
   try
     let ast = Parser.file Lexer.next_token lexbuf in
-    print_endline filename;
+    Format.printf "%a" Astprinter.pp_file ast;
 
   with
   Parser.Error ->

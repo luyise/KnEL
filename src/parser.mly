@@ -20,6 +20,7 @@
 %token <Ast.ident> IDENT
 %token IMPLIES      (* => ⇒ *)
 %token INDUCTIVE    (* Inductive *)
+%token LBRACKET     (* { *)
 %token LEMMA        (* Lemma *)
 %token LET          (* let *)
 %token LOWER        (* < *)
@@ -32,6 +33,7 @@
 %token PROD
 %token PROOF        (* Proof *)
 %token QED          (* Qed *)
+%token RBRACKET     (* } *)
 %token RPAREN       (* ) *)
 %token STAR         (* * *)
 %token THEOREM      (* Theorem *)
@@ -46,14 +48,14 @@
 %nonassoc NEG
 %left AMPERAMPER
 %left VERTVERT
-%left ARROW IMPLIES EQUIV
+%right ARROW IMPLIES EQUIV
 
 %left COMMA
 %left EQ GREATER GREATEREQ LOWER LOWEREQ
 %left PLUS MINUS
 %left DIV STAR PROD
 
-%type <(string * unit option) list * (ident * place * string) list> file
+%type <(string * unit option) list * (ident * sort * string) list> file
 
 %%
 
@@ -62,8 +64,7 @@ file:
 ;
 
 var_def_bloc:
-    | (* EMPTY *) { [] }
-    | VARIABLES EQ separated_nonempty_list(COMMA, var_def) { $3 }
+    | VARIABLES EQ LBRACKET separated_list(COMMA, var_def) RBRACKET { $4 }
 ;
 
 var_def:
@@ -107,20 +108,20 @@ thm_keyword:
 ;
 
 statement:
-    | IDENT                     { NamedPlace $1 }
-    | VOID                      { SumPlace [] }
-    | UNIT                      { ProdPlace [] }
+    | IDENT                     { SVar $1 }
+    | VOID                      { SSum [] }
+    | UNIT                      { SProd [] }
     | statement PROD statement 
         { match $3 with
-            | ProdPlace l   -> ProdPlace ($1::l)
-            | stmt          -> ProdPlace [$1; stmt]
+            | SProd l   -> SProd ($1::l)
+            | stmt          -> SProd [$1; stmt]
         }
     | statement PLUS statement
         { match $3 with
-            | SumPlace l    -> SumPlace ($1::l)
-            | stmt          -> SumPlace [$1; stmt]
+            | SSum l    -> SSum ($1::l)
+            | stmt          -> SSum [$1; stmt]
         }
-    | statement IMPLIES statement { PathPlace ($1, $3) }
+    | statement IMPLIES statement { SFun ($1, $3) }
     | LPAREN statement RPAREN     { $2 }
 ;
 
@@ -129,8 +130,8 @@ proof:
 ;
 
 proof_end:
-    | ADMITTED  { "admitted" }
-    | QED       { "qed" }
+    | ADMITTED  { "Admitted" }
+    | QED       { "Qed" }
 ;
 
 type_decl:

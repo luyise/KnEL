@@ -1,11 +1,12 @@
-type ident = string        (* noms envisageables pour désigner une variable 
-                                en général *)
+type ident = string
+[@@deriving show]
 
 type sort =
   | SVar of ident          (* Variable représentant une sorte *)
   | SFun of sort * sort    (* Sorte A → B où A et B sont des sortes *)
   | SProd of sort list     (* Sorte ×[ A₀ , ... , Aₙ ] où les Aᵢ sont des sortes *)
   | SSum of sort list      (* Sorte +[ A₀ , ... , Aₙ ] où les Aᵢ sont des sortes *)
+[@@deriving show]
 
 type term =
   | TVar of ident                           (* Variable représentant un term *)

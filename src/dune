@@ -6,4 +6,5 @@
 
 (executable
 	(promote (until-clean))
+	(preprocess (pps ppx_deriving.show))
 	(name main))

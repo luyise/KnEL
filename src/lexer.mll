@@ -71,6 +71,8 @@ rule next_tokens = parse
     | "\u{00AC}"    { NEG } (* ¬ *)
     | "\u{22A4}"    { UNIT } (* ⊤ *)
     | "\u{22A5}"    { VOID } (* ⊥ *)
+    | "{"           { LBRACKET }
+    | "}"           { RBRACKET }
     | eof           { EOF }
 
 {
