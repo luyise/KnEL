@@ -16,6 +16,7 @@
         ("neg", NEG);
         ("Unit", UNIT);
         ("Void", VOID);
+        ("Variables", VARIABLES);
     ]
 
     let id_or_kwd =

@@ -1,5 +1,5 @@
 
-Variables: A, B
+Variables = A, B
 
 Theorem my_first_theorem:
     A ⇒ (A ⇒ B) ⇒ B

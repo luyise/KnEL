@@ -36,6 +36,7 @@
 %token STAR         (* * *)
 %token THEOREM      (* Theorem *)
 %token UNIT         (* Unit ⊤ *)
+%token VARIABLES    (* Variables *)
 %token VERT         (* | *)
 %token VERTVERT     (* || *)
 %token VOID         (* Void ⊥ *)
@@ -52,12 +53,26 @@
 %left PLUS MINUS
 %left DIV STAR PROD
 
-%type <(ident * place * string) list> file
+%type <(string * unit option) list * (ident * place * string) list> file
 
 %%
 
 file:
-    | list(decl) EOF { $1 }
+    | var_def_bloc list(decl) EOF { ($1, $2) }
+;
+
+var_def_bloc:
+    | (* EMPTY *) { [] }
+    | VARIABLES EQ separated_nonempty_list(COMMA, var_def) { $3 }
+;
+
+var_def:
+    | IDENT { ($1, None) }
+    | IDENT COLON type_binding  { ($1, Some $3) }
+;
+
+type_binding:
+    | (* TODO *)   { assert false }
 ;
 
 decl:
@@ -93,12 +108,20 @@ thm_keyword:
 
 statement:
     | IDENT                     { NamedPlace $1 }
-    | VOID                      { VoidPlace }
-    | UNIT                      { UnitPlace }
-    | statement PROD statement  { ProductPlace ($1, $3) }
-    | statement PLUS statement  { SumPlace ($1, $3) }
+    | VOID                      { SumPlace [] }
+    | UNIT                      { ProdPlace [] }
+    | statement PROD statement 
+        { match $3 with
+            | ProdPlace l   -> ProdPlace ($1::l)
+            | stmt          -> ProdPlace [$1; stmt]
+        }
+    | statement PLUS statement
+        { match $3 with
+            | SumPlace l    -> SumPlace ($1::l)
+            | stmt          -> SumPlace [$1; stmt]
+        }
     | statement IMPLIES statement { PathPlace ($1, $3) }
-    | LPAREN statement RPAREN   { $2 }
+    | LPAREN statement RPAREN     { $2 }
 ;
 
 proof:
