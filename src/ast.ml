@@ -1,6 +1,19 @@
 type ident = string
 
-type place =
+type sort =
+  | SVar of ident             (* Variable représentant une sorte *)
+  | SFun of sort * sort    (* Sorte A → B où A et B sont des sortes *)
+  | SProd of sort list     (* Sorte ×[ A₀ , ... , Aₙ ] où les Aᵢ sont des sortes *)
+  | SSum of sort list      (* Sorte +[ A₀ , ... , Aₙ ] où les Aᵢ sont des sortes *)
+
+type term =
+  | TVar of ident * sort
+  | TLam of (ident * sort) * (term * sort)
+  | TApp of (term * sort) * (term * sort)
+  | TProdConstr of (term * sort) list
+  | TSumConstr of int * term * sort list
+
+(* type place =
   | NamedPlace of ident
   (* | VoidPlace *)
   (* | UnitPlace *)
@@ -102,7 +115,7 @@ and target : path -> place =
 fun p ->
   snd (ends p)
 
-(* *)
+  *)
 
 (*
 

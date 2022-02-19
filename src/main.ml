@@ -1,4 +1,5 @@
 open Ast
+open Environment
 open Lexing
 
 (* open NomDuFichier : ouvre un nom du fichier, de façon publique *)
