@@ -18,13 +18,6 @@ type tactic =
   | ExactTac of term              (* Démontre un objectif en invoquant 
                                     une variable du contexte *)
 
-let rec search_for_term : ident -> (ident * sort) list -> sort option
-= fun id ctx ->
-  match ctx with
-    | [] -> None
-    | (id' , t) :: ctx_tail when id = id' -> Some t
-    | _ :: ctx_tail -> search_for_term id ctx_tail
-
 exception Invalid_tactic
 
 let apply_tactic : env -> tactic -> env list
