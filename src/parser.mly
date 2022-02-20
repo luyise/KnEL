@@ -44,12 +44,14 @@
 %token QED          (* Qed *)
 %token RBRACKET     (* } *)
 %token RPAREN       (* ) *)
+%token RPT          (* rpt *)
 %token RSBRACKET    (* ] *)
 %token SEMICOLON    (* ; *)
 %token SPLIT        (* Split *)
 %token STAR         (* * *)
 %token SUMREC       (* SumRec *)
 %token THEOREM      (* Theorem *)
+%token TRY          (* try *)
 %token UNIT         (* Unit ⊤ *)
 %token VARIABLES    (* Variables *)
 %token VERT         (* | *)
@@ -67,8 +69,9 @@
 %left EQ GREATER GREATEREQ LOWER LOWEREQ
 %left PLUS MINUS
 %left DIV STAR PROD
+%nonassoc RPT TRY
 
-%type <(string * sort) list * (ident * sort * (tactic list * string)) list> file
+%type <(string * sort) list * (ident * sort * (base_tactic list * string)) list> file
 
 %%
 
@@ -143,12 +146,17 @@ proof:
     | proof_end             { [], $1 }
 ;
 
-proof_end:
-    | ADMITTED  { "Admitted" }
-    | QED       { "Qed" }
+tactic:
+    | base_tactic           { $1 }
+    | LPAREN tactic RPAREN  { $2 }
+    | tactic GREATER tactic { assert false }
+    | tactic VERTVERT tactic{ assert false }
+    | TRY tactic            { assert false }
+    | RPT tactic            { assert false }
+    | IDENT term            { assert false }
 ;
 
-tactic:
+base_tactic:
     | INTRO IDENT           { IntroTac $2 }
     | APPLY term            { ApplyTac $2 }
     | SPLIT                 { SplitTac }
@@ -157,6 +165,11 @@ tactic:
     | CHOOSE INT            { ChooseTac $2 }
     | SUMREC                { SumRecTac }
     | EXACT term            { ExactTac $2 }
+;
+
+proof_end:
+    | ADMITTED  { "Admitted" }
+    | QED       { "Qed" }
 ;
 
 type_decl:
