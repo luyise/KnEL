@@ -1,3 +1,17 @@
+(* module type ID =
+sig
+  type ident
+  val pp_ident : ident -> unit
+end
+  
+module StdIdent : ID =
+struct
+  type ident = string
+  let pp_ident : ident -> unit = print_endline
+end *)
+
+(* open StdIdent *)
+
 type ident = string
 [@@deriving show]
 (* pp_ident *)
@@ -26,7 +40,7 @@ let rec search_for_term : ident -> (ident * sort) list -> sort option
 = fun id ctx ->
   match ctx with
     | [] -> None
-    | (id' , t) :: ctx_tail when id = id' -> Some t
+    | (id' , t) :: _ when id = id' -> Some t
     | _ :: ctx_tail -> search_for_term id ctx_tail
 
 let rec get_sort : term -> (ident * sort) list -> sort

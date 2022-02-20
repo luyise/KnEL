@@ -1,6 +1,5 @@
-open Ast
-open Environment
 open Lexing
+open FileProceeding
 
 (* open NomDuFichier : ouvre un nom du fichier, de façon publique *)
 (* NomDuFichier.definition_interne : utilise localement la donnée d'un autre fichier *)

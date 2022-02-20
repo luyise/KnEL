@@ -69,9 +69,3 @@ let apply_tactic : env -> tactic -> env list
         if get_sort expr e.context = t then []
         else raise Invalid_tactic
     | _ -> assert false
-
-type status =
-  | InProof
-  | AllDone
-  
-type knel_state = env list * status
