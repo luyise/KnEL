@@ -8,7 +8,7 @@ type status =
   
 type knel_state = env list * status
 
-let rec execute_tac_list : knel_state -> base_tactic list -> knel_state
+let rec execute_tac_list : knel_state -> tactic list -> knel_state
 = fun state tac_list ->
   if snd state = Error then state
   else begin

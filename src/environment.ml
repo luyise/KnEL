@@ -77,24 +77,24 @@ type tactic =
   | SeqTac of tactic * tactic
   | OrTac of tactic * tactic
 
-let apply_tactic : env -> tactic -> env list
+let rec apply_tactic : env -> tactic -> env list
 = fun e tac ->
   match tac with
     | BaseTac tac' -> apply_base_tactic e tac'
     | TryTac tac' -> begin
-        try apply_tactic tac' with
+        try apply_tactic e tac' with
           | Invalid_tactic
           | Sort_error -> [ e ]
         end
     | DoTac (n , _) when n = 0 -> [ e ]
     | DoTac (n , tac') when n > 0 -> begin
-        match apply_tac e tac' with
+        match apply_tactic e tac' with
           | [] -> raise Invalid_tactic
-          | e0 :: e_tail -> (apply_tactic e0 (DoTac (n-1) tac')) @ e_tail
+          | e0 :: e_tail -> (apply_tactic e0 (DoTac ((n-1) , tac'))) @ e_tail
         end
     | DoTac _ -> failwith "KnEL internal error, expected a positive argument for DoTac"
     | SeqTac (tac1 , tac2) -> begin
-        match e_list = apply_tactic e tac1 with
+        match apply_tactic e tac1 with
           | [] -> raise Invalid_tactic
           | e0 :: e_tail -> (apply_tactic e0 tac2) @ e_tail
         end

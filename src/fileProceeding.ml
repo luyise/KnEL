@@ -27,7 +27,7 @@ let make_knel_state : (ident * sort) list -> sort option -> knel_state
   et tente de prouver goal, à partir d'un nouveau knel_state *)
 
 let execute_file : (ident * sort) list 
-  -> sort option -> base_tactic list -> unit
+  -> sort option -> tactic list -> unit
 = fun ctx goal tacl ->
   let fresh_state = make_knel_state ctx goal in
   let final_state = execute_tac_list fresh_state tacl in
