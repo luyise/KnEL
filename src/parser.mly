@@ -198,8 +198,8 @@ term_no_app:
             | _ -> TProdConstr l }
     | IDENT
         { TVar $1 }
-    | IN INT term_no_app LPAREN separated_nonempty_list(COMMA, statement) RPAREN
-        { TSumConstr ($2, $3, $5) }
+    | IN LBRACKET nonempty_list(statement) RBRACKET INT term_no_app
+        { TSumConstr ($5, $6, $3) }
 ;
 
 expr:

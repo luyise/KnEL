@@ -1,8 +1,10 @@
 open Ast
 
+let pp_ident fmt ident = Format.fprintf fmt "%s" ident
+
 let rec pp_sort fmt (s : sort) =
   match s with
-    | SVar id -> Format.fprintf fmt "%a" 
+    | SVar id -> Format.fprintf fmt "%a"
         pp_ident id
     | SFun (a , b) -> Format.fprintf fmt "(%a → %a)"
         pp_sort a
