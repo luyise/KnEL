@@ -25,7 +25,7 @@ let rec execute_tac_list : knel_state -> base_tactic list -> knel_state
           let new_env_list = (generated_envs @ e_tail) in
           begin match new_env_list with
             | [] -> ([] , AllDone)
-            | _ -> execute_tac_list (new_env_list , InProof) tac_tail
+            | _ -> execute_tac_list (new_env_list , st) tac_tail
           end
       | [] , _ -> ([] , Error)
   end

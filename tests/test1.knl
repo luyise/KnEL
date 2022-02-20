@@ -2,11 +2,14 @@
 Variables = {}
 
 Theorem my_first_theorem:
-    A ⇒ (A ⇒ B) ⇒ B
+    (((A ⇒ ⊥) ⇒ ⊥) ⇒ ⊥) ⇒ (A ⇒ ⊥)
 Proof
+    Intro NNN_a;
     Intro a;
-    Intro f;
-    Exact f a;
+    Apply NNN_a;
+    Intro N_a;
+    Apply N_a;
+    Exact a;
 Admitted
 
 Theorem rewritten:

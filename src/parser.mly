@@ -192,9 +192,9 @@ term:
     | term term_no_app  { TApp ($1, $2) }
     | term_no_app       { $1 }
     | LAMBDA IDENT COLON statement ARROW term
-        { TLam ($2, $4, $6) }
+        { TLam (($2, $4), $6) }
     | IDENT COLON statement MAPSTO term
-        { TLam ($1, $3, $5) }
+        { TLam (($1, $3), $5) }
 ;
 
 term_no_app:

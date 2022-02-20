@@ -55,6 +55,6 @@ let rec get_sort : term -> (ident * sort) list -> sort
     | TProdConstr t_list ->
         SProd (List.map (fun t' -> get_sort t' ctx) t_list)
     | TSumConstr (n , t' , s_list) ->
-        if get_sort t' ctx = List.nth s_list n then
+        if get_sort t' ctx = List.nth s_list (n-1) then
           SSum s_list
         else raise Sort_error
