@@ -71,7 +71,7 @@
 %left DIV STAR PROD
 %nonassoc RPT TRY
 
-%type <(string * sort) list * (ident * sort * (base_tactic list * string)) list> file
+%type <(string * sort) list * (ident * sort * (tactic list * string)) list> file
 
 %%
 

@@ -53,7 +53,7 @@ let apply_tactic : env -> tactic -> env list
           ; target = s' }
         ]
     | ChooseTac n , SSum s_list ->
-        let s = try List.nth s_list n with
+        let s = try List.nth s_list (n - 1) with
           | _ -> raise Invalid_tactic
         in
         [ { context = e.context
@@ -68,4 +68,4 @@ let apply_tactic : env -> tactic -> env list
     | ExactTac expr , t ->
         if get_sort expr e.context = t then []
         else raise Invalid_tactic
-    | _ -> assert false
+    | _ -> raise Invalid_tactic
