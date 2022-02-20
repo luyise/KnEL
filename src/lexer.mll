@@ -26,7 +26,7 @@
         ("Choose", CHOOSE);
         ("SumRec", SUMREC);
         ("Exact", EXACT);
-        ("In", IN);
+        ("in", IN);
         ("rpt", RPT);
         ("try", TRY);
     ]

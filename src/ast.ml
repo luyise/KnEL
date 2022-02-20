@@ -13,8 +13,6 @@ end *)
 (* open StdIdent *)
 
 type ident = string
-[@@deriving show]
-(* pp_ident *)
 
 type sort =
   | SVar of ident          (* Variable représentant une sorte *)
