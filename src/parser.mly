@@ -61,7 +61,6 @@
 
 %start file
 
-%nonassoc NEG
 %left AMPERAMPER
 %left VERTVERT
 %right ARROW IMPLIES EQUIV
@@ -70,7 +69,7 @@
 %left EQ GREATER GREATEREQ LOWER LOWEREQ
 %left PLUS MINUS
 %left DIV STAR PROD
-%nonassoc RPT TRY
+%nonassoc RPT TRY NEG
 
 %type <(string * sort) list * (ident * sort * (base_tactic list * string)) list> file
 
@@ -189,12 +188,17 @@ prop:
 ;
 
 term:
-    | term term_no_app  { TApp ($1, $2) }
+    | term_no_lam term_no_app { TApp ($1, $2) }
     | term_no_app       { $1 }
     | LAMBDA IDENT COLON statement ARROW term
         { TLam (($2, $4), $6) }
     | IDENT COLON statement MAPSTO term
         { TLam (($1, $3), $5) }
+;
+
+term_no_lam:
+    | term_no_lam term_no_app { TApp ($1, $2) }
+    | term_no_app       { $1 }
 ;
 
 term_no_app:
