@@ -25,7 +25,8 @@
 %token IMPLIES      (* => ⇒ *)
 %token IN           (* In *)
 %token <int> INT
-%token INTRO
+%token INTRO        (* Intro *)
+%token INTROS       (* Intros *)
 %token INDUCTIVE    (* Inductive *)
 %token LAMBDA       (* lam λ *)
 %token LBRACKET     (* { *)
@@ -51,6 +52,7 @@
 %token SPLIT        (* Split *)
 %token STAR         (* * *)
 %token SUMREC       (* SumRec *)
+%token TACTIC       (* Tactic *)
 %token THEOREM      (* Theorem *)
 %token TRY          (* try *)
 %token UNIT         (* Unit ⊤ *)
@@ -71,12 +73,12 @@
 %left DIV STAR PROD
 %nonassoc RPT TRY NEG
 
-%type <(string * sort) list * (ident * sort * (base_tactic list * string)) list> file
+%type <(string * sort) list * (ident * sort * (tactic list * string)) list> file
 
 %%
 
 file:
-    | var_def_bloc list(decl) EOF { ($1, $2) }
+    | var_def_bloc decl_list EOF { ($1, $2) }
 ;
 
 var_def_bloc:
@@ -91,10 +93,16 @@ type_binding:
     | (* TODO *)   { assert false }
 ;
 
-decl:
-    | definition    { assert false }
-    | inductive     { assert false }
-    | theorem       { $1 }
+decl_list:
+    | (* EMPTY *)           { [] }
+    | definition            { assert false }
+    | inductive             { assert false }
+    | theorem decl_list     { $1::$2 }
+    | tactic_decl decl_list { $2 }
+;
+
+tactic_decl:
+    | TACTIC IDENT EQ tactic { $2 }
 ;
 
 definition:
@@ -142,13 +150,13 @@ statement:
 ;
 
 proof:
-    | tactic SEMICOLON proof { ($1::fst $3, snd $3) }
+    | tactic SEMICOLON proof { $1::fst $3, snd $3 }
     | tactic proof_end      { [$1], $2 }
     | proof_end             { [], $1 }
 ;
 
 tactic:
-    | base_tactic           { $1 }
+    | base_tactic           { BaseTac $1 }
     | LPAREN tactic RPAREN  { $2 }
     | tactic GREATER tactic { assert false }
     | tactic VERTVERT tactic{ assert false }
@@ -194,6 +202,8 @@ term:
         { TLam (($2, $4), $6) }
     | IDENT COLON statement MAPSTO term
         { TLam (($1, $3), $5) }
+    | LET IDENT COLON statement EQ term IN term
+        { TApp (TLam (($2, $4), $8), $6) }
 ;
 
 term_no_lam:

@@ -20,6 +20,7 @@
         ("Void", VOID);
         ("Variables", VARIABLES);
         ("Intro", INTRO);
+        ("Intros", INTROS);
         ("Apply", APPLY);
         ("Split", SPLIT);
         ("ProdRec", PRODREC);
