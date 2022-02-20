@@ -27,6 +27,8 @@
         ("SumRec", SUMREC);
         ("Exact", EXACT);
         ("In", IN);
+        ("rpt", RPT);
+        ("try", TRY);
     ]
 
     let id_or_kwd =
@@ -86,6 +88,8 @@ rule next_tokens = parse
     | "\u{22A5}"    { VOID } (* ⊥ *)
     | "{"           { LBRACKET }
     | "}"           { RBRACKET }
+    | "["           { LSBRACKET }
+    | "]"           { RSBRACKET }
     | ";"           { SEMICOLON }
     | eof           { EOF }
     | _             { raise UnknownChar }
