@@ -1,16 +1,3 @@
-(* module type ID =
-sig
-  type ident
-  val pp_ident : ident -> unit
-end
-  
-module StdIdent : ID =
-struct
-  type ident = string
-  let pp_ident : fmt -> ident -> unit = print_endline
-end *)
-
-(* open StdIdent *)
 
 type ident = string
 
@@ -27,17 +14,19 @@ type term =
   | TProdConstr of term list                (* Uplet de termes *)
   | TSumConstr of int * term * sort list    (* i-ème injection *)
 
+type context = (ident * sort) list
+
 exception Unknown_variable
 exception Sort_error
 
-let rec search_for_term : ident -> (ident * sort) list -> sort option
+let rec search_for_term : ident -> context -> sort option
 = fun id ctx ->
   match ctx with
     | [] -> None
     | (id' , t) :: _ when id = id' -> Some t
     | _ :: ctx_tail -> search_for_term id ctx_tail
 
-let rec get_sort : term -> (ident * sort) list -> sort
+let rec get_sort : term -> context -> sort
 = fun t ctx ->
   match t with
     | TVar id -> begin
@@ -58,4 +47,44 @@ let rec get_sort : term -> (ident * sort) list -> sort
         if get_sort t' ctx = List.nth s_list (n-1) then
           SSum s_list
         else raise Sort_error
-        
+
+
+type base_tactic =
+  | IntroTac of ident             (* Former un terme de type s → t *)
+  | ApplyTac of term              (* Passe d'un objectif t à un objectif s sachant
+                                    l'existence de f : s → t dans le context *)
+  | SplitTac                      (* Former un terme de type ×[ - ] *)
+  | ProdRecTac of ident list      (* Appliquer le récurseur de ×, 
+                                      pour introduire un terme du type ×[ - ] → t *)
+  | ChooseTac of int              (* Former un terme de type +[ - ] *)
+  | SumRecTac                     (* Appliquer le récurseur de +, 
+                                    pour introduire un terme du type +[ - ] → t *)
+  | ExactTac of term              (* Démontre un objectif en invoquant 
+                                    une variable du contexte *)
+
+type tactic =
+  | BaseTac of base_tactic
+  | TryTac of tactic
+  | DoTac of int * tactic
+  | SeqTac of tactic * tactic
+  | OrTac of tactic * tactic
+
+type beggining_tag =
+  | Lemma
+  | Theorem
+
+type ending_tag =
+  | QED
+  | Admitted
+  | Ongoing
+
+type knel_section =
+  | HypothesisSection of context
+  | ReasoningSection of 
+      (beggining_tag * 
+        ident option * 
+        sort *
+        tactic list *
+      ending_tag)
+
+type knel_file = knel_section list

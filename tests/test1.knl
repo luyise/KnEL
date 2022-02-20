@@ -2,13 +2,13 @@
 Variables = {}
 
 Theorem my_first_theorem:
-    (((A ⇒ ⊥) ⇒ ⊥) ⇒ ⊥) ⇒ (A ⇒ ⊥)
+    ¬¬¬A ⇒ ¬A
 Proof
     Intro NNN_a;
     Intro a;
     Apply NNN_a;
-    Intro N_a;
-    Apply N_a;
+//    Intro N_a;
+//    Apply N_a;
 Admitted
 
 Theorem rewritten:
@@ -16,6 +16,8 @@ Theorem rewritten:
 Proof
 Admitted
 
+// Basic Tactics :
+//
 // Intro (name : ident)
 // Apply (f_term : term)
 // Split
@@ -23,3 +25,7 @@ Admitted
 // Choose (n : int)
 // SumRec
 // Exact (t : term)
+//
+// Combined Tactics :
+//
+// 

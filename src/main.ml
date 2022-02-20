@@ -27,7 +27,7 @@ let main filename =
   try
     let (ctxt, thml) = Parser.file Lexer.next_token lexbuf in
     match thml with
-      |[] -> execute_file ctxt None []
+      |[] -> execute_file ctxt None [] (* remplacer par knl_file *)
       |(name, statement, (proof, endkwd))::tl -> execute_file ctxt (Some statement) proof
 
   with

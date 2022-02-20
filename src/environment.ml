@@ -1,22 +1,9 @@
 open Ast
 
 type env =
-  { context : (ident * sort) list
+  { context : context
   ; target : sort
   }
-
-type base_tactic =
-  | IntroTac of ident             (* Former un terme de type s → t *)
-  | ApplyTac of term              (* Passe d'un objectif t à un objectif s sachant
-                                    l'existence de f : s → t dans le context *)
-  | SplitTac                      (* Former un terme de type ×[ - ] *)
-  | ProdRecTac of ident list      (* Appliquer le récurseur de ×, 
-                                      pour introduire un terme du type ×[ - ] → t *)
-  | ChooseTac of int              (* Former un terme de type +[ - ] *)
-  | SumRecTac                     (* Appliquer le récurseur de +, 
-                                    pour introduire un terme du type +[ - ] → t *)
-  | ExactTac of term              (* Démontre un objectif en invoquant 
-                                    une variable du contexte *)
 
 exception Invalid_tactic
 
@@ -24,9 +11,13 @@ let apply_base_tactic : env -> base_tactic -> env list
 = fun e tac ->
   match tac , e.target with
     | IntroTac name , SFun (s , t) ->
-        [ { context = (name , s) :: e.context
-          ; target = t }
-        ]
+        begin match search_for_term name e.context with
+          | Some _ -> raise Invalid_tactic
+          | None ->
+              [ { context = (name , s) :: e.context
+                ; target = t }
+              ]
+        end
     | ApplyTac f_term , t -> begin
         match get_sort f_term e.context with
           | SFun (s , t') when t' = t -> 
@@ -42,14 +33,17 @@ let apply_base_tactic : env -> base_tactic -> env list
             ; target = s }
           ) s_list
     | ProdRecTac names , SFun (SProd s_list , s') ->
-        let rec ctx_extension s_list' names' acc =
-          match s_list' , names' with
+        let rec ctx_extension names' s_list' acc =
+          match names' , s_list' with
             | [] , [] -> acc
-            | s :: s_tail , name :: names_tail ->
-                ctx_extension s_tail names_tail ((name , s) :: acc)
+            | name :: names_tail , s :: s_tail ->
+                begin match search_for_term name acc with
+                  | Some _ -> raise Invalid_tactic
+                  | None -> ctx_extension names_tail s_tail ((name , s) :: acc)
+                end 
             | _ -> raise Invalid_tactic
         in
-        [ { context = (ctx_extension s_list names []) @ e.context
+        [ { context = (ctx_extension names s_list e.context)
           ; target = s' }
         ]
     | ChooseTac n , SSum s_list ->
@@ -69,13 +63,6 @@ let apply_base_tactic : env -> base_tactic -> env list
         if get_sort expr e.context = t then []
         else raise Invalid_tactic
     | _ -> raise Invalid_tactic
-
-type tactic =
-  | BaseTac of base_tactic
-  | TryTac of tactic
-  | DoTac of int * tactic
-  | SeqTac of tactic * tactic
-  | OrTac of tactic * tactic
 
 let rec apply_tactic : env -> tactic -> env list
 = fun e tac ->
