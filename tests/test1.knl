@@ -9,7 +9,6 @@ Proof
     Apply NNN_a;
     Intro N_a;
     Apply N_a;
-    Exact a;
 Admitted
 
 Theorem rewritten:

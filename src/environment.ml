@@ -18,16 +18,9 @@ type base_tactic =
   | ExactTac of term              (* Démontre un objectif en invoquant 
                                     une variable du contexte *)
 
-type tactic =
-  | SeqTac of tactic * tactic
-  | OrTac of tactic * tactic
-  | TryTac of tactic
-  | RptTac of tactic
-  | BaseTac of base_tactic
-
 exception Invalid_tactic
 
-let apply_tactic : env -> base_tactic -> env list
+let apply_base_tactic : env -> base_tactic -> env list
 = fun e tac ->
   match tac , e.target with
     | IntroTac name , SFun (s , t) ->
@@ -76,3 +69,37 @@ let apply_tactic : env -> base_tactic -> env list
         if get_sort expr e.context = t then []
         else raise Invalid_tactic
     | _ -> raise Invalid_tactic
+
+type tactic =
+  | BaseTac of base_tactic
+  | TryTac of tactic
+  | DoTac of int * tactic
+  | SeqTac of tactic * tactic
+  | OrTac of tactic * tactic
+
+let apply_tactic : env -> tactic -> env list
+= fun e tac ->
+  match tac with
+    | BaseTac tac' -> apply_base_tactic e tac'
+    | TryTac tac' -> begin
+        try apply_tactic tac' with
+          | Invalid_tactic
+          | Sort_error -> [ e ]
+        end
+    | DoTac (n , _) when n = 0 -> [ e ]
+    | DoTac (n , tac') when n > 0 -> begin
+        match apply_tac e tac' with
+          | [] -> raise Invalid_tactic
+          | e0 :: e_tail -> (apply_tactic e0 (DoTac (n-1) tac')) @ e_tail
+        end
+    | DoTac _ -> failwith "KnEL internal error, expected a positive argument for DoTac"
+    | SeqTac (tac1 , tac2) -> begin
+        match e_list = apply_tactic e tac1 with
+          | [] -> raise Invalid_tactic
+          | e0 :: e_tail -> (apply_tactic e0 tac2) @ e_tail
+        end
+    | OrTac (tac1 , tac2) -> begin
+        try apply_tactic e tac1 with
+          | Invalid_tactic
+          | Sort_error -> apply_tactic e tac2
+        end  

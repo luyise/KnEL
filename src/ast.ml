@@ -58,3 +58,4 @@ let rec get_sort : term -> (ident * sort) list -> sort
         if get_sort t' ctx = List.nth s_list (n-1) then
           SSum s_list
         else raise Sort_error
+        
