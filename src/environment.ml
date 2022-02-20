@@ -5,7 +5,7 @@ type env =
   ; target : sort
   }
 
-type tactic =
+type base_tactic =
   | IntroTac of ident             (* Former un terme de type s → t *)
   | ApplyTac of term              (* Passe d'un objectif t à un objectif s sachant
                                     l'existence de f : s → t dans le context *)
@@ -18,9 +18,16 @@ type tactic =
   | ExactTac of term              (* Démontre un objectif en invoquant 
                                     une variable du contexte *)
 
+type tactic =
+  | SeqTac of tactic * tactic
+  | OrTac of tactic * tactic
+  | TryTac of tactic
+  | RptTac of tactic
+  | BaseTac of base_tactic
+
 exception Invalid_tactic
 
-let apply_tactic : env -> tactic -> env list
+let apply_tactic : env -> base_tactic -> env list
 = fun e tac ->
   match tac , e.target with
     | IntroTac name , SFun (s , t) ->
