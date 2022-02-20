@@ -7,7 +7,7 @@ end
 module StdIdent : ID =
 struct
   type ident = string
-  let pp_ident : ident -> unit = print_endline
+  let pp_ident : fmt -> ident -> unit = print_endline
 end *)
 
 (* open StdIdent *)
@@ -21,8 +21,6 @@ type sort =
   | SFun of sort * sort    (* Sorte A → B où A et B sont des sortes *)
   | SProd of sort list     (* Sorte ×[ A₀ , ... , Aₙ ] où les Aᵢ sont des sortes *)
   | SSum of sort list      (* Sorte +[ A₀ , ... , Aₙ ] où les Aᵢ sont des sortes *)
-[@@deriving show]
-(* pp_sort *)
 
 type term =
   | TVar of ident                           (* Variable représentant un term *)
@@ -30,8 +28,6 @@ type term =
   | TApp of term * term                     (* Application de fonction *)
   | TProdConstr of term list                (* Uplet de termes *)
   | TSumConstr of int * term * sort list    (* i-ème injection *)
-[@@deriving show]
-(* pp_term *)
 
 exception Unknown_variable
 exception Sort_error

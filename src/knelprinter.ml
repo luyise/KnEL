@@ -17,5 +17,5 @@ let pp_knel_state fmt (state : knel_state) =
     | [] -> ()
     | e :: e_tail ->
         pp_env fmt e;
-        Format.fprintf fmt "%d Other goals remaining"  
+        Format.fprintf fmt "%d Other goals remaining\n"  
           (List.length e_tail)

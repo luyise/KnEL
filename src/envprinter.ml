@@ -1,4 +1,5 @@
 open Ast
+open Astprinter
 open Environment
 
 let pp_env fmt (e : env) =
