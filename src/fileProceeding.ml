@@ -30,7 +30,7 @@ let append_context : knel_state -> context -> knel_state
       -> la sorte du machin à obtenir
       -> la liste de tactique pour y parvenir
       -> un mot clef de fin de raisonement, parmi
-            QED, Ongoing, Admitted
+            Qed, Ongoing, Admitted
 
   Lorsque cette fonction est appelée, le knel_state devrait
   être dans l'état AllDone, ceci n'est pas vérifié lors de l'éxécution de cette fonction
@@ -70,7 +70,7 @@ let proceed_reasonment :
         on regarde donc s'il souhaite l'admettre, 
         ou s'il considère que la preuve est en cours *)
     | InProof -> begin match end_tag , id_op with
-        | QED , _ -> 
+        | Qed , _ -> 
             Format.printf "while working on %s, the reasonment was not finished, but you wrote QED, last state before the keyword: \n%a"
               goal_id
               pp_knel_state final_state;
@@ -95,7 +95,7 @@ let proceed_reasonment :
             ; status = AllDone }
       end
     | AllDone -> begin match end_tag with
-        | QED ->
+        | Qed ->
             Format.printf "%s succesfully achieved"
               goal_id;
             begin match id_op with
@@ -122,7 +122,7 @@ let proceed_reasonment :
                 ; status = AllDone }
             end
         | Ongoing ->
-            Format.printf "while working on %s, the reasonment wasn't closed, but it seems like you could have type QED instead. The last context before Ongoing keyword was: \n%a"
+            Format.printf "while working on %s, the reasonment wasn't closed, but it seems like you could have type Qed instead. The last context before Ongoing keyword was: \n%a"
               goal_id
               pp_knel_state final_state;
             { global_context = state.global_context

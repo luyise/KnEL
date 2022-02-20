@@ -74,7 +74,7 @@ type beggining_tag =
   | Theorem
 
 type ending_tag =
-  | QED
+  | Qed
   | Admitted
   | Ongoing
 
