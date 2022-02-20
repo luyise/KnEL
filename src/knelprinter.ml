@@ -10,9 +10,9 @@ let pp_status fmt (st : status) =
 
 let pp_knel_state fmt (state : knel_state) =
   Format.fprintf fmt "\n";
-  Format.fprintf fmt "\x1B[36mStatus: %a\n\n\x1B[39m"
+  Format.fprintf fmt "\x1B[36mStatus:\x1B[39m %a\n\n"
     pp_status state.status;
-  Format.fprintf fmt "\x1B[36mGlobal context:\n%a\x1B[39m"
+  Format.fprintf fmt "\x1B[36mGlobal context:\x1B[39m \n%a"
     pp_context state.global_context;
   match state.environments with
     | [] -> ()
