@@ -25,8 +25,10 @@ let main filename =
   let file_desc = open_in filename in
   let lexbuf = Lexing.from_channel file_desc in
   try
-    let ast = Parser.file Lexer.next_token lexbuf in
-    Format.printf "%a" Astprinter.pp_file ast;
+    let (ctxt, thml) = Parser.file Lexer.next_token lexbuf in
+    match thml with
+      |[] -> execute_file ctxt None []
+      |(name, statement, (proof, endkwd))::tl -> execute_file ctxt (Some statement) proof
 
   with
   Parser.Error ->
@@ -36,5 +38,3 @@ let main filename =
 
 
 let _ = Arg.parse options main usage
-
-let _ = print_endline "TODO"

@@ -1,12 +1,15 @@
 %{
     open Ast
+    open Environment
 %}
 
 %token ADMITTED     (* Admitted *)
 %token ALL          (* ∀ ! *)
 %token AMPERAMPER   (* && *)
+%token APPLY        (* Apply *)
 %token ARROW        (* -> → *)
 %token DEFINITION   (* Definition *)
+%token CHOOSE       (* Choose *)
 %token COLON        (* : *)
 %token COMMA        (* , *)
 %token DIV          (* / *)
@@ -14,11 +17,15 @@
 %token EOF
 %token EQ           (* = *)
 %token EQUIV        (* <=> ⇔ *)
+%token EXACT        (* Exact *)
 %token EXISTS       (* ∃ ? *)
 %token GREATER      (* > *)
 %token GREATEREQ    (* >= ⩾ *)
 %token <Ast.ident> IDENT
 %token IMPLIES      (* => ⇒ *)
+%token IN           (* In *)
+%token <int> INT
+%token INTRO
 %token INDUCTIVE    (* Inductive *)
 %token LBRACKET     (* { *)
 %token LEMMA        (* Lemma *)
@@ -26,16 +33,22 @@
 %token LOWER        (* < *)
 %token LOWEREQ      (* <= ⩽ *)
 %token LPAREN       (* ( *)
+%token LSBRACKET    (* [ *)
 %token MAPSTO       (* mapsto ↦ *)
 %token MINUS        (* - *)
 %token NEG          (* neg ¬ *)
 %token PLUS         (* + *)
 %token PROD
+%token PRODREC      (* ProdRec *)
 %token PROOF        (* Proof *)
 %token QED          (* Qed *)
 %token RBRACKET     (* } *)
 %token RPAREN       (* ) *)
+%token RSBRACKET    (* ] *)
+%token SEMICOLON    (* ; *)
+%token SPLIT        (* Split *)
 %token STAR         (* * *)
+%token SUMREC       (* SumRec *)
 %token THEOREM      (* Theorem *)
 %token UNIT         (* Unit ⊤ *)
 %token VARIABLES    (* Variables *)
@@ -55,7 +68,7 @@
 %left PLUS MINUS
 %left DIV STAR PROD
 
-%type <(string * unit option) list * (ident * sort * string) list> file
+%type <(string * sort) list * (ident * sort * (tactic list * string)) list> file
 
 %%
 
@@ -68,8 +81,7 @@ var_def_bloc:
 ;
 
 var_def:
-    | IDENT { ($1, None) }
-    | IDENT COLON type_binding  { ($1, Some $3) }
+    | IDENT COLON statement  { ($1, $3) }
 ;
 
 type_binding:
@@ -114,24 +126,37 @@ statement:
     | statement PROD statement 
         { match $3 with
             | SProd l   -> SProd ($1::l)
-            | stmt          -> SProd [$1; stmt]
+            | stmt      -> SProd [$1; stmt]
         }
     | statement PLUS statement
         { match $3 with
             | SSum l    -> SSum ($1::l)
-            | stmt          -> SSum [$1; stmt]
+            | stmt      -> SSum [$1; stmt]
         }
     | statement IMPLIES statement { SFun ($1, $3) }
     | LPAREN statement RPAREN     { $2 }
 ;
 
 proof:
-    | proof_end { $1 }
+    | tactic SEMICOLON proof { ($1::fst $3, snd $3) }
+    | tactic proof_end      { [$1], $2 }
+    | proof_end             { [], $1 }
 ;
 
 proof_end:
     | ADMITTED  { "Admitted" }
     | QED       { "Qed" }
+;
+
+tactic:
+    | INTRO IDENT           { IntroTac $2 }
+    | APPLY term            { ApplyTac $2 }
+    | SPLIT                 { SplitTac }
+    | PRODREC LSBRACKET separated_list(COMMA, IDENT)  RSBRACKET
+        { ProdRecTac $3 }
+    | CHOOSE INT            { ChooseTac $2 }
+    | SUMREC                { SumRecTac }
+    | EXACT term            { ExactTac $2 }
 ;
 
 type_decl:
@@ -146,6 +171,22 @@ prop:
     | NEG prop              { () }
     | IDENT                 { () }
     | LPAREN prop RPAREN    { () }
+;
+
+term:
+    | term term_no_app  { TApp ($1, $2) }
+    | term_no_app       { $1 }
+;
+
+term_no_app:
+    | LPAREN l = separated_list(COMMA, term) RPAREN
+        { match l with
+            | [x] -> x
+            | _ -> TProdConstr l }
+    | IDENT
+        { TVar $1 }
+    | IN INT term_no_app LPAREN separated_nonempty_list(COMMA, statement) RPAREN
+        { TSumConstr ($2, $3, $5) }
 ;
 
 expr:

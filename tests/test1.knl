@@ -1,9 +1,12 @@
 
-Variables = { A, B }
+Variables = {}
 
 Theorem my_first_theorem:
     A ⇒ (A ⇒ B) ⇒ B
 Proof
+    Intro a;
+    Intro f;
+    Exact f a;
 Admitted
 
 Theorem rewritten:

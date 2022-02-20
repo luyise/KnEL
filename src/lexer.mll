@@ -2,6 +2,8 @@
     open Ast
     open Parser
 
+    exception UnknownChar
+
     let kwd = [
         ("Proof", PROOF);
         ("Theorem", THEOREM);
@@ -17,6 +19,14 @@
         ("Unit", UNIT);
         ("Void", VOID);
         ("Variables", VARIABLES);
+        ("Intro", INTRO);
+        ("Apply", APPLY);
+        ("Split", SPLIT);
+        ("ProdRec", PRODREC);
+        ("Choose", CHOOSE);
+        ("SumRec", SUMREC);
+        ("Exact", EXACT);
+        ("In", IN);
     ]
 
     let id_or_kwd =
@@ -41,10 +51,13 @@ let comment_smp = "//" [^'\n']*
 
 let space = ' ' | '\t' | comment_smp
 
+let integer = digit+
+
 rule next_tokens = parse
     | space         { next_tokens lexbuf }
     | '\n'          { Lexing.new_line lexbuf; next_tokens lexbuf }
     | ident as id   { id_or_kwd id }
+    | integer as i  { INT (int_of_string i) }
     | "&&"          { AMPERAMPER }
     | '+'           { PLUS }
     | '-'           { MINUS }
@@ -73,7 +86,9 @@ rule next_tokens = parse
     | "\u{22A5}"    { VOID } (* ⊥ *)
     | "{"           { LBRACKET }
     | "}"           { RBRACKET }
+    | ";"           { SEMICOLON }
     | eof           { EOF }
+    | _             { raise UnknownChar }
 
 {
     let next_token =
