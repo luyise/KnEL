@@ -29,6 +29,7 @@
         ("in", IN);
         ("rpt", RPT);
         ("try", TRY);
+        ("lam", LAMBDA);
     ]
 
     let id_or_kwd =
@@ -91,6 +92,7 @@ rule next_tokens = parse
     | "["           { LSBRACKET }
     | "]"           { RSBRACKET }
     | ";"           { SEMICOLON }
+    | 'λ'           { LAMBDA }
     | eof           { EOF }
     | _             { raise UnknownChar }
 

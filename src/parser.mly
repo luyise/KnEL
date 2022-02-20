@@ -27,6 +27,7 @@
 %token <int> INT
 %token INTRO
 %token INDUCTIVE    (* Inductive *)
+%token LAMBDA       (* lam λ *)
 %token LBRACKET     (* { *)
 %token LEMMA        (* Lemma *)
 %token LET          (* let *)
@@ -136,8 +137,9 @@ statement:
             | SSum l    -> SSum ($1::l)
             | stmt      -> SSum [$1; stmt]
         }
-    | statement IMPLIES statement { SFun ($1, $3) }
-    | LPAREN statement RPAREN     { $2 }
+    | statement IMPLIES statement   { SFun ($1, $3) }
+    | LPAREN statement RPAREN       { $2 }
+    | NEG statement                 { SFun ($2, SSum [])}
 ;
 
 proof:
@@ -189,6 +191,10 @@ prop:
 term:
     | term term_no_app  { TApp ($1, $2) }
     | term_no_app       { $1 }
+    | LAMBDA IDENT COLON statement ARROW term
+        { TLam ($2, $4, $6) }
+    | IDENT COLON statement MAPSTO term
+        { TLam ($1, $3, $5) }
 ;
 
 term_no_app:
