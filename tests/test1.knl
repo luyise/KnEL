@@ -1,15 +1,16 @@
-
-Variables = {}
-
+ 
+Tactic fast_tac (id : ident) =
+    Intro id > Apply id
+End
+ 
 Theorem my_first_theorem:
     ¬¬¬A ⇒ ¬A
 Proof
     Intro NNN_a;
     Intro a;
     Apply NNN_a;
-//    Intro N_a;
-//    Apply N_a;
-Admitted
+    fast_tac N_a;
+Ongoing
 
 Theorem rewritten:
     A × (A ⇒ B) ⇒ B

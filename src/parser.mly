@@ -1,15 +1,15 @@
 %{
     open Ast
-    open Environment
+    open Tactic
+
+    let tact_ctxt = ref Tactic.base_tactic_ctxt
 %}
 
 %token ADMITTED     (* Admitted *)
 %token ALL          (* ∀ ! *)
 %token AMPERAMPER   (* && *)
-%token APPLY        (* Apply *)
 %token ARROW        (* -> → *)
 %token DEFINITION   (* Definition *)
-%token CHOOSE       (* Choose *)
 %token COLON        (* : *)
 %token COMMA        (* , *)
 %token DIV          (* / *)
@@ -17,16 +17,13 @@
 %token EOF
 %token EQ           (* = *)
 %token EQUIV        (* <=> ⇔ *)
-%token EXACT        (* Exact *)
 %token EXISTS       (* ∃ ? *)
 %token GREATER      (* > *)
 %token GREATEREQ    (* >= ⩾ *)
 %token <Ast.ident> IDENT
 %token IMPLIES      (* => ⇒ *)
-%token IN           (* In *)
+%token IN           (* in *)
 %token <int> INT
-%token INTRO        (* Intro *)
-%token INTROS       (* Intros *)
 %token INDUCTIVE    (* Inductive *)
 %token LAMBDA       (* lam λ *)
 %token LBRACKET     (* { *)
@@ -39,22 +36,19 @@
 %token MAPSTO       (* mapsto ↦ *)
 %token MINUS        (* - *)
 %token NEG          (* neg ¬ *)
+%token ONGOING      (* Ongoing *)
 %token PLUS         (* + *)
 %token PROD
-%token PRODREC      (* ProdRec *)
 %token PROOF        (* Proof *)
-%token QED          (* Qed *)
+%token QED          (* QED *)
 %token RBRACKET     (* } *)
 %token RPAREN       (* ) *)
-%token RPT          (* rpt *)
 %token RSBRACKET    (* ] *)
 %token SEMICOLON    (* ; *)
-%token SPLIT        (* Split *)
 %token STAR         (* * *)
-%token SUMREC       (* SumRec *)
+%token SUMIN        (* sum_in *)
 %token TACTIC       (* Tactic *)
 %token THEOREM      (* Theorem *)
-%token TRY          (* try *)
 %token UNIT         (* Unit ⊤ *)
 %token VARIABLES    (* Variables *)
 %token VERT         (* | *)
@@ -73,16 +67,12 @@
 %left DIV STAR PROD
 %nonassoc RPT TRY NEG
 
-%type <(string * sort) list * (ident * sort * (tactic list * string)) list> file
+%type <Ast.knel_file> file
 
 %%
 
 file:
-    | var_def_bloc decl_list EOF { ($1, $2) }
-;
-
-var_def_bloc:
-    | VARIABLES EQ LBRACKET separated_list(COMMA, var_def) RBRACKET { $4 }
+    | decl_list { $1 }
 ;
 
 var_def:
@@ -94,15 +84,31 @@ type_binding:
 ;
 
 decl_list:
-    | (* EMPTY *)           { [] }
-    | definition            { assert false }
-    | inductive             { assert false }
+    | EOF                   { [] }
+    | definition decl_list  { $2 }
+    | inductive decl_list   { $2 }
     | theorem decl_list     { $1::$2 }
     | tactic_decl decl_list { $2 }
 ;
 
+var_def_bloc:
+    | VARIABLES EQ LBRACKET separated_list(COMMA, var_def) RBRACKET { HypothesisSection $4 }
+;
+
+
 tactic_decl:
-    | TACTIC IDENT EQ tactic { $2 }
+    | TACTIC IDENT list(tactic_arg_def) EQ tactic END { 
+        tact_ctxt := SMap.add $2 (Tactic.tactic_creator !tact_ctxt $3 $5) !tact_ctxt }
+;
+
+tactic_arg_def:
+    | LPAREN IDENT COLON tactic_arg_type RPAREN { ($2, $4) }
+;
+
+tactic_arg_type:
+    | INT       { TInt }
+    | TACTIC    { TTac }
+    | IDENT     { assert ($1 = "ident"); TIdent }
 ;
 
 definition:
@@ -122,12 +128,12 @@ induc_bloc:
 ;
 
 theorem:
-    | thm_keyword IDENT COLON statement PROOF proof { ($2, $4, $6) }
+    | thm_keyword IDENT? COLON statement PROOF proof { ReasoningSection ($1, $2, $4, fst $6, snd $6) }
 ;
 
 thm_keyword:
-    | LEMMA     { "lemma" }
-    | THEOREM   { "theorem" }
+    | LEMMA     { Lemma }
+    | THEOREM   { Theorem }
 ;
 
 statement:
@@ -150,35 +156,49 @@ statement:
 ;
 
 proof:
-    | tactic SEMICOLON proof { $1::fst $3, snd $3 }
-    | tactic proof_end      { [$1], $2 }
+    | tactic SEMICOLON proof { Tactic.compute_tactic !tact_ctxt $1::fst $3, snd $3 }
+    | tactic proof_end      { [Tactic.compute_tactic !tact_ctxt $1], $2 }
     | proof_end             { [], $1 }
 ;
 
 tactic:
-    | base_tactic           { BaseTac $1 }
-    | LPAREN tactic RPAREN  { $2 }
-    | tactic GREATER tactic { assert false }
-    | tactic VERTVERT tactic{ assert false }
-    | TRY tactic            { assert false }
-    | RPT tactic            { assert false }
-    | IDENT term            { assert false }
+    | IDENT list(tactic_arg)    { BasePTac ($1, $2) }
+    | tactic VERTVERT tactic    { OrPTac ($1, $3) }
+    | tactic GREATER tactic     { SeqPTac ($1, $3) }
 ;
 
-base_tactic:
-    | INTRO IDENT           { IntroTac $2 }
-    | APPLY term            { ApplyTac $2 }
-    | SPLIT                 { SplitTac }
-    | PRODREC LSBRACKET separated_list(COMMA, IDENT)  RSBRACKET
-        { ProdRecTac $3 }
-    | CHOOSE INT            { ChooseTac $2 }
-    | SUMREC                { SumRecTac }
-    | EXACT term            { ExactTac $2 }
+tactic_arg:
+    | INT           { TAInt $1 }
+    | LSBRACKET separated_list(SEMICOLON, IDENT) RSBRACKET
+                    { TAIL $2 }
+    | term_as_arg   { TATerm $1 }
 ;
+
+// tactic:
+//     | base_tactic           { BaseTac $1 }
+//     | LPAREN tactic RPAREN  { $2 }
+//     | tactic GREATER tactic { assert false }
+//     | tactic VERTVERT tactic{ assert false }
+//     | TRY tactic            { assert false }
+//     | RPT tactic            { assert false }
+//     | IDENT term            { assert false }
+// ;
+
+// base_tactic:
+//     | INTRO IDENT           { IntroTac $2 }
+//     | APPLY term            { ApplyTac $2 }
+//     | SPLIT                 { SplitTac }
+//     | PRODREC LSBRACKET separated_list(COMMA, IDENT)  RSBRACKET
+//         { ProdRecTac $3 }
+//     | CHOOSE INT            { ChooseTac $2 }
+//     | SUMREC                { SumRecTac }
+//     | EXACT term            { ExactTac $2 }
+// ;
 
 proof_end:
-    | ADMITTED  { "Admitted" }
-    | QED       { "Qed" }
+    | ADMITTED  { Admitted }
+    | QED       { Qed }
+    | ONGOING   { Ongoing }
 ;
 
 type_decl:
@@ -194,6 +214,16 @@ prop:
     | IDENT                 { () }
     | LPAREN prop RPAREN    { () }
 ;
+
+term_as_arg:
+    | LPAREN l = separated_list(COMMA, term) RPAREN
+        { match l with
+            | [x] -> x
+            | _ -> TProdConstr l }
+    | IDENT
+        { TVar $1 }
+;
+
 
 term:
     | term_no_lam term_no_app { TApp ($1, $2) }
@@ -218,7 +248,7 @@ term_no_app:
             | _ -> TProdConstr l }
     | IDENT
         { TVar $1 }
-    | IN LBRACKET nonempty_list(statement) RBRACKET INT term_no_app
+    | SUMIN LBRACKET nonempty_list(statement) RBRACKET INT term_no_app
         { TSumConstr ($5, $6, $3) }
 ;
 

@@ -5,32 +5,25 @@
     exception UnknownChar
 
     let kwd = [
-        ("Proof", PROOF);
-        ("Theorem", THEOREM);
-        ("Lemma", LEMMA);
-        ("Definition", DEFINITION);
-        ("mapsto", MAPSTO);
-        ("let", LET);
-        ("Qed", QED);
         ("Admitted", ADMITTED);
-        ("Inductive", INDUCTIVE);
+        ("Definition", DEFINITION);
         ("End", END);
-        ("neg", NEG);
-        ("Unit", UNIT);
-        ("Void", VOID);
-        ("Variables", VARIABLES);
-        ("Intro", INTRO);
-        ("Intros", INTROS);
-        ("Apply", APPLY);
-        ("Split", SPLIT);
-        ("ProdRec", PRODREC);
-        ("Choose", CHOOSE);
-        ("SumRec", SUMREC);
-        ("Exact", EXACT);
         ("in", IN);
-        ("rpt", RPT);
-        ("try", TRY);
+        ("Inductive", INDUCTIVE);
         ("lam", LAMBDA);
+        ("Lemma", LEMMA);
+        ("let", LET);
+        ("mapsto", MAPSTO);
+        ("neg", NEG);
+        ("Ongoing", ONGOING);
+        ("Proof", PROOF);
+        ("QED", QED);
+        ("sum_in", SUMIN);
+        ("Tactic", TACTIC);
+        ("Theorem", THEOREM);
+        ("Unit", UNIT);
+        ("Variables", VARIABLES);
+        ("Void", VOID);
     ]
 
     let id_or_kwd =
