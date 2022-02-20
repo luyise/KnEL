@@ -7,10 +7,10 @@ type env =
 
 type tactic =
   | IntroTac of ident             (* Former un terme de type s → t *)
-  | ApplyTac of ident             (* Passe d'un objectif t à un objectif s sachant
+  | ApplyTac of term              (* Passe d'un objectif t à un objectif s sachant
                                     l'existence de f : s → t dans le context *)
   | SplitTac                      (* Former un terme de type ×[ - ] *)
-  | ProdRecTac of ident list   (* Appliquer le récurseur de ×, 
+  | ProdRecTac of ident list      (* Appliquer le récurseur de ×, 
                                       pour introduire un terme du type ×[ - ] → t *)
   | ChooseTac of int              (* Former un terme de type +[ - ] *)
   | SumRecTac                     (* Appliquer le récurseur de +, 
@@ -27,9 +27,9 @@ let apply_tactic : env -> tactic -> env list
         [ { context = (name , s) :: e.context
           ; target = t }
         ]
-    | ApplyTac name , t -> begin
-        match search_for_term name e.context with
-          | Some (SFun (s , t')) when t' = t -> 
+    | ApplyTac f_term , t -> begin
+        match get_sort f_term e.context with
+          | SFun (s , t') when t' = t -> 
               [ { context = e.context
                 ; target = s }
               ]
@@ -69,3 +69,9 @@ let apply_tactic : env -> tactic -> env list
         if get_sort expr e.context = t then []
         else raise Invalid_tactic
     | _ -> assert false
+
+type status =
+  | InProof
+  | AllDone
+  
+type knel_state = env list * status

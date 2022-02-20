@@ -1,5 +1,6 @@
 type ident = string
 [@@deriving show]
+(* pp_ident *)
 
 type sort =
   | SVar of ident          (* Variable représentant une sorte *)
@@ -7,6 +8,7 @@ type sort =
   | SProd of sort list     (* Sorte ×[ A₀ , ... , Aₙ ] où les Aᵢ sont des sortes *)
   | SSum of sort list      (* Sorte +[ A₀ , ... , Aₙ ] où les Aᵢ sont des sortes *)
 [@@deriving show]
+(* pp_sort *)
 
 type term =
   | TVar of ident                           (* Variable représentant un term *)
@@ -14,6 +16,8 @@ type term =
   | TApp of term * term                     (* Application de fonction *)
   | TProdConstr of term list                (* Uplet de termes *)
   | TSumConstr of int * term * sort list    (* i-ème injection *)
+[@@deriving show]
+(* pp_term *)
 
 exception Unknown_variable
 exception Sort_error

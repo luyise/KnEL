@@ -10,3 +10,11 @@ Theorem rewritten:
     A × (A ⇒ B) ⇒ B
 Proof
 Admitted
+
+// Intro (name : ident)
+// Apply (f_term : term)
+// Split
+// ProdRec [name1 : ident, name2 : ident, ..., namen : ident]
+// Choose (n : int)
+// SumRec
+// Exact (t : term)
