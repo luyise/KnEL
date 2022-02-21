@@ -79,7 +79,7 @@ let rec apply_tactic : env -> tactic -> env list
           | [] -> raise Invalid_tactic
           | e0 :: e_tail -> (apply_tactic e0 (DoTac ((n-1) , tac'))) @ e_tail
         end
-    | DoTac _ -> failwith "KnEL internal error, expected a positive argument for DoTac"
+    | DoTac _ -> failwith "\x1B[38;5;196mKnEL internal error, expected a positive argument for DoTac\x1B[39m"
     | SeqTac (tac1 , tac2) -> begin
         match apply_tactic e tac1 with
           | [] -> raise Invalid_tactic

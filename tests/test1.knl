@@ -10,9 +10,10 @@ Proof
     Intro a;
     Apply NNN_a;
     fast_tac N_a;
+    Exact a;
 Ongoing
 
-Theorem rewritten:
+Theorem:
     A × (A ⇒ B) ⇒ B
 Proof
 Admitted

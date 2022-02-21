@@ -59,7 +59,7 @@ let proceed_reasonment :
   let ready_to_reason_state =
     { global_context = state.global_context
     ; environments = [{ context = state.global_context ; target = goal_sort }]
-    ; status = AllDone }
+    ; status = InProof }
   in
   let final_state = execute_tac_list ready_to_reason_state tacl in
   match final_state.status with
@@ -71,32 +71,32 @@ let proceed_reasonment :
         ou s'il considère que la preuve est en cours *)
     | InProof -> begin match end_tag , id_op with
         | Qed , _ -> 
-            Format.printf "while working on %s, the reasonment was not finished, but you wrote QED, last state before the keyword: \n%a"
+            Format.printf "\x1B[38;5;124mwhile working on %s, the reasonment was not finished, but you wrote QED, last state before the keyword: \x1B[39m\n%a\n"
               goal_id
               pp_knel_state final_state;
             raise (Wrong_declaration "The goal is not achieved !")
         | Ongoing , _ ->
-            Format.printf "while working on %s, the reasonment was not finished, last state before giving up: \n%a"
+            Format.printf "while working on %s, the reasonment was not finished, last state before giving up: \n%a\n"
               goal_id
               pp_knel_state final_state;
             { global_context = state.global_context
             ; environments = []
             ; status = AllDone }
         | Admitted , Some _ ->
-            Format.printf "/!\ %s was admitted"
+            Format.printf "\x1B[38;5;124m/!\\ %s was admitted\x1B[39m\n"
               goal_id;
             { global_context = (goal_id , goal_sort) :: state.global_context
             ; environments = []
             ; status = AllDone }
         | Admitted , None ->
-            Format.printf "/!\ An unamed goal has been admitted, this is bad but will have no effect because you didn't named it";
+            Format.printf "\x1B[38;5;124m/!\\ An unamed goal has been admitted, this is bad but will have no effect because you didn't named it\x1B[39m\n";
             { global_context = state.global_context
             ; environments = []
             ; status = AllDone }
       end
     | AllDone -> begin match end_tag with
         | Qed ->
-            Format.printf "%s succesfully achieved"
+            Format.printf "%s succesfully achieved\n"
               goal_id;
             begin match id_op with
               | Some _ ->
@@ -109,7 +109,7 @@ let proceed_reasonment :
                 ; status = AllDone }
             end
         | Admitted ->
-            Format.printf "/!\ %s was admitted, but it seems like you didn't need to..."
+            Format.printf "\x1B[38;5;124m/!\\ %s was admitted, but it seems like you didn't need to...\x1B[39m\n"
               goal_id;
             begin match id_op with
               | Some _ ->
@@ -122,7 +122,7 @@ let proceed_reasonment :
                 ; status = AllDone }
             end
         | Ongoing ->
-            Format.printf "while working on %s, the reasonment wasn't closed, but it seems like you could have type Qed instead. The last context before Ongoing keyword was: \n%a"
+            Format.printf "while working on %s, the reasonment wasn't closed, but it seems like you could have type Qed instead. The last context before Ongoing keyword was: \n%a\n"
               goal_id
               pp_knel_state final_state;
             { global_context = state.global_context
@@ -137,7 +137,7 @@ let execute_section : knel_state -> knel_section -> knel_state
 = fun state sec ->
   match state.status with
     | Error -> state
-    | InProof -> failwith "KnEL internal error, asked to execute a section while being InProof"
+    | InProof -> failwith "\x1B[38;5;196mKnEL internal error, asked to execute a section while being InProof\x1B[39m"
     | AllDone -> begin match sec with
         | HypothesisSection ctx ->
             append_context state ctx
@@ -159,12 +159,12 @@ let execute_file : knel_file -> unit
         fresh_state 
         file
     in
-    Format.printf "File succesfully read, state of KnEL when reached end of file: \n";
-    Format.printf "Status: %a\n\n"
+    Format.printf "File succesfully read, state of KnEL when reached end of file: \n\n";
+    Format.printf "\x1B[38;5;130mStatus:\x1B[39m %a\n\n"
       pp_status final_state.status;
-    Format.printf "Final context: \n%a\n"
+    Format.printf "\x1B[38;5;130mFinal context:\x1B[39m \n%a\n"
       pp_context final_state.global_context
   with
     | Wrong_declaration message ->
-        Format.printf "Something went wrong when reading your .knl file: \n%s"
+        Format.printf "\x1B[38;5;124mSomething went wrong when reading your .knl file: \n%s\n\x1B[39m"
           message
