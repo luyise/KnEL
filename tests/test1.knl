@@ -9,8 +9,6 @@ Proof
     Intro NNN_a;
     Intro a;
     Apply NNN_a;
-    fast_tac N_a;
-    Exact a;
 Ongoing
 
 Theorem:

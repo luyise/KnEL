@@ -2,11 +2,46 @@ open Ast
 
 let pp_ident fmt ident = Format.fprintf fmt "%s" ident
 
-let rec pp_sort fmt (s : sort) =
-  match s with
-    | SVar id -> Format.fprintf fmt "%a"
+let rec pp_expr fmt (exp : sort) =
+  match exp with
+    | EConst id -> Format.fprintf fmt "%a"
         pp_ident id
-    | SFun (a , b) -> Format.fprintf fmt "(%a → %a)"
+    | EVar id -> Format.fprintf fmt "%a"
+        pp_ident id
+    | ELam ((id , exp1) , exp2) -> Format.fprintf "(λ (%a : %a) → %a)"
+        pp_ident id
+        pp_expr exp1
+        pp_expr exp2
+    | EApp (exp1 , exp2) -> Format.fprintf "%a %a"
+        pp_expr exp1
+        pp_expr exp2
+    | EPi ((id , exp1) , exp2) -> Format.fprintf "(Π (%a : %a) %a)"
+        pp_ident id
+        pp_expr exp1
+        pp_expr exp2
+    | EPair (exp1 , exp2) -> Format.fprintf "(%a , %a)"
+        pp_expr exp1
+        pp_expr exp2
+    | EFst exp1 -> Format.fprintf "(fst %a)"
+        pp_expr exp1
+    | ESnd exp1 -> Format.fprintf "(snd %a)"
+        pp_expr exp2
+    | ESigma ((id , exp1) , exp2) -> Format.fprintf "(Σ (%a : %a) %a)"
+        pp_ident id
+        pp_expr exp1
+        pp_expr exp2
+    | ETaggedExpr (exp1 , _) -> Format.fprintf "%a"
+        pp_expr exp1
+
+let pp_context fmt (ctx : context) =
+  List.iter
+    (fun (id , exp) -> 
+      Format.fprintf fmt "\t%s : %a\n" 
+        id
+        pp_expr exp
+    ) ctx
+
+    (* | SFun (a , b) -> Format.fprintf fmt "(%a → %a)"
         pp_sort a
         pp_sort b
     | SProd a_list -> 
@@ -46,8 +81,8 @@ let rec pp_sort fmt (s : sort) =
                         pp_sort a;
                       print_sort_list s_tail
               in print_sort_list a_list
-        end
-
+        end *)
+(* 
 let rec pp_term fmt (t : term) =
   match t with
     | TVar id -> Format.fprintf fmt "%a" 
@@ -100,4 +135,4 @@ let pp_thm fmt (name, stmt, proof) =
 
 let pp_file fmt (var, thm_list) =
   pp_var fmt var;
-  List.iter (pp_thm fmt) thm_list
+  List.iter (pp_thm fmt) thm_list *)
