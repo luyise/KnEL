@@ -4,14 +4,6 @@ open FileProceeding
 (* open NomDuFichier : ouvre un nom du fichier, de façon publique *)
 (* NomDuFichier.definition_interne : utilise localement la donnée d'un autre fichier *)
 
-let shutdown = ref false
-
-let options = [
-  "--stop", Arg.Set shutdown, "stop the program";
-]
-
-let usage = "usage : main.exe file.knl"
-
 let report filename (b, e) =
   let l = b.pos_lnum in
   let cb = b.pos_cnum - b.pos_bol + 1 in
@@ -19,7 +11,7 @@ let report filename (b, e) =
   Format.eprintf "File \"%s\", line %d, characters %d-%d:\n" filename l cb ce
 
 let main filename =
-  if !shutdown then exit 0;
+  if !Config.shutdown then exit 0;
   if not (Filename.check_suffix filename ".knl")
     then raise (Arg.Bad "expected .knl extension");
   let file_desc = open_in filename in
@@ -34,5 +26,4 @@ let main filename =
     print_endline "syntax error.";
     exit 1
 
-
-let _ = Arg.parse options main usage
+let () = Config.parse_arguments main;
