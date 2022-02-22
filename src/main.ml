@@ -11,6 +11,7 @@ let report filename (b, e) =
   Format.eprintf "File \"%s\", line %d, characters %d-%d:\n" filename l cb ce
 
 let main filename =
+  Format.printf "\n";
   if !Config.shutdown then exit 0;
   if not (Filename.check_suffix filename ".knl")
     then raise (Arg.Bad "expected .knl extension");
