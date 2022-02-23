@@ -86,7 +86,7 @@ let rec rename : ident list -> ident -> ident -> expr -> expr
         let idl' = z :: idl in
         let term' = rename idl' x y typ in
         ESigma ((z , typ') , term')
-      (* Correspond à une expression dont le type a été forcé par l'utilisateur *)
+        
     | ETaggedExpr (term , typ) ->
         ETaggedExpr (rename idl x y term , rename idl x y typ)
   end

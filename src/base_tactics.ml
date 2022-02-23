@@ -7,30 +7,51 @@ exception Invalid_tactic
 let apply_base_tactic : env -> base_tactic -> env list
 = fun e tac ->
   match tac , e.target with
-    | IntroTac id , EPi (exp1 , exp2) ->
-        begin match search_for_term name e.context with
+    | IntroTac id , EPi ((x , typ) , typ_over_typ) ->
+        begin match search_for_term id e.context with
           | Some _ -> raise Invalid_tactic
           | None ->
-              [ { context = (id , exp1) :: e.context
-                ; target = exp2 }
+              let typ_over_typ' = rename e.used_ident x id typ_over_typ in
+              [ { context = (id , typ) :: e.context
+                ; used_ident = id :: e.used_ident
+                ; target = typ_over_typ' }
               ]
         end
-    | ApplyTac f_term , t -> begin
-        match get_sort f_term e.context with
-          | SFun (s , t') when t' = t -> 
+    | ApplyTac f_term , typ -> begin
+        match beta_reduce e.used_ident 
+          (compute_type_of_term e.context e.used_ident f_term) 
+          with
+          | EPi ((x , s) , typ')
+            when alpha_compare env.used_ident
+              (beta_reduce e.used_ident typ) 
+              (beta_reduce e.used_ident typ')
+              && not (List.mem x (get_varlib [] typ')) -> 
               [ { context = e.context
+                ; used_ident = e.used_ident
                 ; target = s }
               ]
           | _ -> raise Invalid_tactic
         end
-    | SplitTac , SProd s_list ->
-        List.map
-          (fun s ->
-            { context = e.context
-            ; target = s }
-          ) s_list
-    | ExactTac expr , t ->
-        if get_sort expr e.context = t then []
+    | SplitTac term , ESigma ((x , typ) , typ_over_typ) ->
+        let term_typ = beta_reduce e.used_ident 
+          (compute_type_of_term e.context e.used_ident term) in
+        let typ' = beta_reduce e.used_ident 
+          (compute_type_of_term e.context e.used_ident typ) in
+        if alpha_compare term_typ typ' then
+          [ { context = e.context
+            ; used_ident = e.used_ident
+            ; target = (substitute e.used_ident x term typ_over_typ) }
+          ]
+    | SigmaRecTac , EPi (p , ESigma ((x , typ) , typ_over_typ) , expr_of_p) ->
+        let y = get_unused_ident (x :: e.used_ident) in
+        [ { context = e.context
+          ; used_ident = e.used_ident
+          ; target = EPi ((x , typ) , EPi ((y : typ_over_typ), App expr_of_p (EPair (Var x , Var y)))) }
+        ]
+    | ExactTac exp , t ->
+        let typ = beta_reduce e.used_ident (compute_type_of_term e.context e.used_ident exp) in
+        let t' = beta_reduce e.used_ident t in
+        if alpha_compare e.used_ident t' then []
         else raise Invalid_tactic
     | _ -> raise Invalid_tactic
 
@@ -60,31 +81,3 @@ let rec apply_tactic : env -> tactic -> env list
           | Invalid_tactic
           | Sort_error -> apply_tactic e tac2
         end  
-
-    (* | ProdRecTac names , SFun (SProd s_list , s') ->
-        let rec ctx_extension names' s_list' acc =
-          match names' , s_list' with
-            | [] , [] -> acc
-            | name :: names_tail , s :: s_tail ->
-                begin match search_for_term name acc with
-                  | Some _ -> raise Invalid_tactic
-                  | None -> ctx_extension names_tail s_tail ((name , s) :: acc)
-                end 
-            | _ -> raise Invalid_tactic
-        in
-        [ { context = (ctx_extension names s_list e.context)
-          ; target = s' }
-        ] *)
-    (* | ChooseTac n , SSum s_list ->
-        let s = try List.nth s_list (n - 1) with
-          | _ -> raise Invalid_tactic
-        in
-        [ { context = e.context
-          ; target = s }
-        ] *)
-    (* | SumRecTac , SFun (SSum s_list , t) ->
-        List.map 
-          (fun s -> 
-            { context = e.context
-            ; target = SFun (s , t) }
-          ) s_list *)

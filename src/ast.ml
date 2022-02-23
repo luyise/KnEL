@@ -39,39 +39,20 @@ type expr =
 
 type context = (ident * expr) list
 
-(* let rec get_sort : term -> context -> sort
-= fun t ctx ->
-  match t with
-    | TVar id -> begin
-        match search_for_term id ctx with
-          | Some s -> s
-          | None -> raise Unknown_variable
-        end
-    | TLam ((id , s) , t') ->
-        SFun (s, get_sort t' ((id , s) :: ctx))
-    | TApp (t' , t'') -> begin
-        match get_sort t' ctx , get_sort t'' ctx with
-          | SFun (a , s) , b when b = a -> s
-          | _ -> raise Sort_error
-        end
-    | TProdConstr t_list ->
-        SProd (List.map (fun t' -> get_sort t' ctx) t_list)
-    | TSumConstr (n , t' , s_list) ->
-        if get_sort t' ctx = List.nth s_list (n-1) then
-          SSum s_list
-        else raise Sort_error *)
-
-
 type base_tactic =
-  | IntroTac of ident             (* Former un terme de type s → t *)
-  | ApplyTac of term              (* Passe d'un objectif t à un objectif s sachant
-                                    l'existence de f : s → t dans le context *)
-  | SplitTac                      (* Former un terme de type ×[ - ] *)
-  | ProdRecTac of ident list      (* Appliquer le récurseur de ×, 
-                                      pour introduire un terme du type ×[ - ] → t *)
-  | ChooseTac of int              (* Former un terme de type +[ - ] *)
-  | SumRecTac                     (* Appliquer le récurseur de +, 
-                                    pour introduire un terme du type +[ - ] → t *)
+  | IntroTac of ident             (* Former un terme de type Π (a : A) (B a) *)
+  | ApplyTac of term              (* Passe d'un objectif B à un objectif A sachant
+                                    l'existence de f : Π (_ : A) B dans le context *)
+  | SplitTac of term              (* Former un terme de type Σ (a : A) (B a), demande le premier argument *)
+  (* | SigmaIndTac                   (* Appliquer le récurseur non dépendant de Σ (a : A) (B a),  *)
+                                      pour introduire un terme du type (Σ (a : A) (B a)) → C,
+                                      i.e. demande de montrer Π (a : A) (B a) → C *)
+  | SigmaRecTac                   (* Appliquer le récurseur dépendant de Σ (a : A) (B a), 
+                                      pour introduire un terme du type Π (p : (Σ (a : A) (B a))) → C p,
+                                      i.e. demande de montrer Π (a : A) (b : (B a)) → C (a , b) *)
+  (* | ChooseTac of int              Former un terme de type +[ - ] *)
+  (* | SumRecTac                     (* Appliquer le récurseur de +, 
+                                    pour introduire un terme du type +[ - ] → t *) *)
   | ExactTac of term              (* Démontre un objectif en invoquant 
                                     une variable du contexte *)
 

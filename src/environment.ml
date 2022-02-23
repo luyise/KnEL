@@ -2,7 +2,7 @@ open Ast
 
 type env =
   { context : context
-  ; bound_ident : ident list
+  ; used_ident : ident list
   ; target : sort
   }
 
