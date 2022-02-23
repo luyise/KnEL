@@ -1,3 +1,5 @@
+open Ast
+open Astprinter
 open Lexing
 open FileProceeding
 
@@ -17,6 +19,26 @@ let report filename (b, e) =
   let cb = b.pos_cnum - b.pos_bol + 1 in
   let ce = e.pos_cnum - b.pos_bol + 1 in
   Format.eprintf "File \"%s\", line %d, characters %d-%d:\n" filename l cb ce
+
+let (myTarget : expr) =
+EPi(("_" ,
+  EPi(
+    ("x" , EVar "X") ,
+    ESigma(
+      ("y" , EVar "Y") ,
+      EApp (EApp (EVar "P" , EVar "x") , EVar "y")
+    )
+  )) ,
+  ESigma(
+    ("f" , EPi (("_" , EVar "X") , EVar "Y")) ,
+    EPi(
+      ("x" , EVar "X") ,
+      EApp (EApp (EVar "P" , EVar "x") , EApp (EVar "f" , EVar "x"))
+    )
+  )
+)
+
+let _ = Format.printf "\n%a\n" pp_expr myTarget
 
 let main filename =
   Format.printf "\n";
