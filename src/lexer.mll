@@ -6,6 +6,7 @@
 
     let kwd = [
         ("Admitted", ADMITTED);
+        ("as", AS);
         ("Definition", DEFINITION);
         ("End", END);
         ("in", IN);
@@ -16,6 +17,7 @@
         ("mapsto", MAPSTO);
         ("neg", NEG);
         ("Ongoing", ONGOING);
+        ("open", OPEN);
         ("Proof", PROOF);
         ("QED", QED);
         ("sum_in", SUMIN);

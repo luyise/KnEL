@@ -1,9 +1,11 @@
- 
+open test0
+open test3
+
 Tactic fast_tac (id : ident) =
     Intro id > Apply id
 End
- 
-Theorem my_first_theorem:
+
+Theorem my_first_Theorem:
     ¬¬¬A ⇒ ¬A
 Proof
     Intro NNN_a;
@@ -11,12 +13,14 @@ Proof
     Apply NNN_a;
     fast_tac N_a;
     Exact a;
-Ongoing
+QED
 
 Theorem:
     A × (A ⇒ B) ⇒ B
 Proof
-Admitted
+    ProdRec [a; f];
+    Exact (f a);
+QED
 
 // Basic Tactics :
 //

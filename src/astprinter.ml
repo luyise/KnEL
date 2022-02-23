@@ -6,12 +6,16 @@ let rec pp_sort fmt (s : sort) =
   match s with
     | SVar id -> Format.fprintf fmt "%a"
         pp_ident id
+    (* | SFun (a, SSum []) -> Format.fprintf fmt "¬%a" pp_sort a *)
     | SFun (a , b) -> Format.fprintf fmt "(%a → %a)"
         pp_sort a
         pp_sort b
     | SProd a_list -> 
         begin match a_list with
-          | [] -> Format.fprintf fmt "⊤"
+          | [] ->
+            if !Config.html_view
+            then Format.fprintf fmt "<b>⊤</b>"              
+            else Format.fprintf fmt "⊤"
           | [ a ] -> Format.fprintf fmt "×[ %a ]"
               pp_sort a
           | _ -> 
@@ -31,7 +35,12 @@ let rec pp_sort fmt (s : sort) =
         end
     | SSum a_list -> 
         begin match a_list with
-          | [] -> Format.fprintf fmt "⊥"
+          | [] ->
+            if !Config.html_view
+            then
+              Format.fprintf fmt "<b>⊥</b>"
+            else
+              Format.fprintf fmt "⊥"
           | [ a ] -> Format.fprintf fmt "+[ %a ]"
               pp_sort a
           | _ ->

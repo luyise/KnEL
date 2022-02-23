@@ -71,33 +71,59 @@ let proceed_reasonment :
         ou s'il considère que la preuve est en cours *)
     | InProof -> begin match end_tag , id_op with
         | Qed , _ -> 
-            Format.printf "\x1B[38;5;124mwhile working on %s, the reasonment was not finished, but you wrote QED, last state before the keyword: \x1B[39m\n%a\n"
+            if !Config.html_view
+            then
+              Format.printf "<p style=\"color:#00FF00\">while working on %s, the reasonment was not finished, but you wrote QED, last state before the keyword: </p>\n%a\n"
+              goal_id
+              pp_knel_state final_state
+            else
+              Format.printf "\x1B[38;5;124mwhile working on %s, the reasonment was not finished, but you wrote QED, last state before the keyword: \x1B[39m\n%a\n"
               goal_id
               pp_knel_state final_state;
             raise (Wrong_declaration "The goal is not achieved !")
         | Ongoing , _ ->
-            Format.printf "while working on %s, the reasonment was not finished, last state before giving up: \n%a\n"
-              goal_id
-              pp_knel_state final_state;
+            if !Config.html_view
+            then
+              Format.printf "<p>while working on %s, the reasonment was not finished, last state before giving up:</p>\n%a\n"
+                goal_id
+                pp_knel_state final_state
+            else
+              Format.printf "while working on %s, the reasonment was not finished, last state before giving up: \n%a\n"
+                goal_id
+                pp_knel_state final_state;
             { global_context = state.global_context
             ; environments = []
             ; status = AllDone }
         | Admitted , Some _ ->
-            Format.printf "\x1B[38;5;124m/!\\ %s was admitted\x1B[39m\n"
-              goal_id;
+            if !Config.html_view
+            then
+              Format.printf "<p style=\"color:#00FF00>\"/!\\ %s was admitted</p>\n"
+                goal_id
+            else
+              Format.printf "\x1B[38;5;124m/!\\ %s was admitted\x1B[39m\n"
+                goal_id;
             { global_context = (goal_id , goal_sort) :: state.global_context
             ; environments = []
             ; status = AllDone }
         | Admitted , None ->
-            Format.printf "\x1B[38;5;124m/!\\ An unamed goal has been admitted, this is bad but will have no effect because you didn't named it\x1B[39m\n";
+            if !Config.html_view
+            then
+              Format.printf "<p style=\"color:#00FF00\">/!\\ An unamed goal has been admitted, this is bad but will have no effect because you didn't named it</p>\n"
+            else
+              Format.printf "\x1B[38;5;124m/!\\ An unamed goal has been admitted, this is bad but will have no effect because you didn't named it\x1B[39m\n";
             { global_context = state.global_context
             ; environments = []
             ; status = AllDone }
       end
     | AllDone -> begin match end_tag with
         | Qed ->
-            Format.printf "%s succesfully achieved\n"
-              goal_id;
+            if !Config.html_view
+            then
+              Format.printf "<p>%s succesfully achieved</p>\n"
+                goal_id
+            else
+              Format.printf "%s succesfully achieved\n"
+                goal_id;
             begin match id_op with
               | Some _ ->
                 { global_context = (goal_id , goal_sort) :: state.global_context
@@ -109,8 +135,13 @@ let proceed_reasonment :
                 ; status = AllDone }
             end
         | Admitted ->
-            Format.printf "\x1B[38;5;124m/!\\ %s was admitted, but it seems like you didn't need to...\x1B[39m\n"
-              goal_id;
+            if !Config.html_view
+            then
+              Format.printf "<p style=\"color:#00FF00>/!\\ %s was admitted, but it seems like you didn't need to...</p>\n"
+                goal_id
+            else
+              Format.printf "\x1B[38;5;124m/!\\ %s was admitted, but it seems like you didn't need to...\x1B[39m\n"
+                goal_id;
             begin match id_op with
               | Some _ ->
                 { global_context = (goal_id , goal_sort) :: state.global_context
@@ -122,9 +153,15 @@ let proceed_reasonment :
                 ; status = AllDone }
             end
         | Ongoing ->
-            Format.printf "while working on %s, the reasonment wasn't closed, but it seems like you could have type Qed instead. The last context before Ongoing keyword was: \n%a\n"
-              goal_id
-              pp_knel_state final_state;
+            if !Config.html_view
+            then
+              Format.printf "<p>while working on %s, the reasonment wasn't closed, but it seems like you could have type Qed instead. The last context before Ongoing keyword was:</p>\n%a\n"
+                goal_id
+                pp_knel_state final_state
+            else
+              Format.printf "while working on %s, the reasonment wasn't closed, but it seems like you could have type Qed instead. The last context before Ongoing keyword was: \n%a\n"
+                goal_id
+                pp_knel_state final_state;
             { global_context = state.global_context
             ; environments = []
             ; status = AllDone }
@@ -149,22 +186,38 @@ let execute_section : knel_state -> knel_section -> knel_state
   une liste de sections se succédant dans le fichier .knl
   et l'execute *)
 
-let execute_file : knel_file -> unit
-= fun file ->
+let execute_file : ?show:bool -> knel_file -> unit
+= fun ?(show=true) file ->
   let fresh_state = new_knel_state () in
   try
     let final_state =
       List.fold_left 
         execute_section 
-        fresh_state 
+        fresh_state
         file
     in
-    Format.printf "File succesfully read, state of KnEL when reached end of file: \n\n";
-    Format.printf "\x1B[38;5;130mStatus:\x1B[39m %a\n\n"
-      pp_status final_state.status;
-    Format.printf "\x1B[38;5;130mFinal context:\x1B[39m \n%a\n"
-      pp_context final_state.global_context
+    if show
+    then
+      if !Config.html_view
+      then begin
+        Format.printf "<p>File succesfully read, state of KnEL when reached end of file: </p>";
+        Format.printf "<p><b style=\"color:#652A0E\">Status:</b> %a</p>\n\n"
+          pp_status final_state.status;
+        Format.printf "<h4 style=\"color:#9B673C\">Final context:</h4> \n%a\n"
+          pp_context final_state.global_context
+      end else begin
+        Format.printf "File succesfully read, state of KnEL when reached end of file: \n\n";
+        Format.printf "\x1B[38;5;130mStatus:\x1B[39m %a\n\n"
+          pp_status final_state.status;
+        Format.printf "\x1B[38;5;130mFinal context:\x1B[39m \n%a\n"
+          pp_context final_state.global_context
+      end;
   with
     | Wrong_declaration message ->
-        Format.printf "\x1B[38;5;124mSomething went wrong when reading your .knl file: \n%s\n\x1B[39m"
-          message
+        if !Config.html_view
+        then
+          Format.fprintf Format.err_formatter "<p style=\"color:#FF0000\">Something went wrong when reading your .knl file: \n%s\n</p>"
+            message
+        else 
+          Format.fprintf Format.err_formatter "\x1B[38;5;124mSomething went wrong when reading your .knl file: \n%s\n\x1B[39m"
+            message

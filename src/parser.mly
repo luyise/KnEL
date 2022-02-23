@@ -3,9 +3,11 @@
     open Tactic
 
     let tact_ctxt = ref Tactic.base_tactic_ctxt
+
 %}
 
 %token ADMITTED     (* Admitted *)
+%token AS           (* as *)
 %token ALL          (* ∀ ! *)
 %token AMPERAMPER   (* && *)
 %token ARROW        (* -> → *)
@@ -37,6 +39,7 @@
 %token MINUS        (* - *)
 %token NEG          (* neg ¬ *)
 %token ONGOING      (* Ongoing *)
+%token OPEN         (* open *)
 %token PLUS         (* + *)
 %token PROD
 %token PROOF        (* Proof *)
@@ -67,13 +70,35 @@
 %left DIV STAR PROD
 %nonassoc RPT TRY NEG
 
-%type <Ast.knel_file> file
+%type <(string * string) list * Ast.knel_file> file
 
 %%
 
 file:
-    | decl_list { $1 }
+    | list(opening) decl_list { $1, $2 }
 ;
+
+opening:
+    | OPEN parent separated_nonempty_list(DIV, IDENT) {
+        (List.fold_left
+            (fun name _ -> "../"^name)
+            (List.fold_right (fun f1 f2 -> f1^"/"^f2) $3 "")
+            $2,
+        List.hd (List.rev $3))
+    }
+    | OPEN parent separated_nonempty_list(DIV, IDENT) AS IDENT {
+        (List.fold_left
+            (fun name _ -> "../"^name)
+            (List.fold_right (fun f1 f2 -> f1^"/"^f2) $3 "")
+            $2,
+        $5)
+    }
+;
+
+parent:
+    | (* EMPTY *) { [] }
+    | LOWER nonempty_list(MINUS) { $2 }
+
 
 var_def:
     | IDENT COLON statement  { ($1, $3) }
