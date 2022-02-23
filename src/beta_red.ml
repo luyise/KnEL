@@ -14,8 +14,8 @@ let rec beta_reduce : ident list -> expr -> expr
     | ELam ((y , typ) , term_of_y) ->
         ELam ((y , beta_reduce idl typ) , beta_reduce (y :: idl) term_of_y)
     | EApp (u , v) ->
-        let u' = beta_reduce u in
-        let v' = beta_reduce v in
+        let u' = beta_reduce idl u in
+        let v' = beta_reduce idl v in
         begin match u' with
           | ELam ((x , typ) , term_of_x) ->
               beta_reduce idl (substitute idl x v' term_of_x)

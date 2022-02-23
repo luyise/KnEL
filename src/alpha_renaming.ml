@@ -4,7 +4,7 @@ open Renaming
 
 (* alpha_compare test si deux expression β-réduites sont α-équivalentes  *)
 
-let rec alpha_compare : ident list -> expr1 -> expr2 -> bool
+let rec alpha_compare : ident list -> expr -> expr -> bool
 = fun idl exp1 exp2 ->
   match exp1 , exp2 with
     | EConst c1 , EConst c2 -> c1 = c2
@@ -45,6 +45,6 @@ let rec alpha_compare : ident list -> expr1 -> expr2 -> bool
           alpha_compare idl typ1 typ1'
           && alpha_compare (y1 :: idl) term_of_y1 term_of_y1'
         end
-    | ETaggedExpr (u1 , _) , exp2 -> alpha_compare u1 exp2
-    | exp1 , ETaggedExpr (u2 , _) -> alpha_compare exp1 u2
+    | ETaggedExpr (u1 , _) , exp2 -> alpha_compare idl u1 exp2
+    | exp1 , ETaggedExpr (u2 , _) -> alpha_compare idl exp1 u2
     | _ -> false

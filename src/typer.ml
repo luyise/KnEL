@@ -4,23 +4,23 @@ open Environment
 open Renaming
 open Substitution
 open Alpha_renaming
+open Beta_red
 
 exception Unknown_ident
-exception Ident_colision
 exception Type_error
 exception Invalid_context
 exception Unable_to_infer_type
 
 (* /!\ la fonction compute_type_if_term doit être appellée avec l'ident list contenant le List.map fst du context *)
 
-let rec compute_type_of_term : context -> ident_list -> expr -> expr
+let rec compute_type_of_term : context -> ident list -> expr -> expr
 = fun ctx idl term ->
   match term with
     | EConst c ->
         begin match
-        (Array.find_opt 
+        (List.find_opt 
           (function
-            | c' , Some _ when c = c' -> true
+            | c' , _ when c = c' -> true
             | _ -> false
           ) constants
         ) with
@@ -28,10 +28,10 @@ let rec compute_type_of_term : context -> ident_list -> expr -> expr
           | None -> raise Unknown_ident
         end
     | EVar x ->
-        begin match in_context_opt id ctx
-        ) with
+        begin match in_context_opt x ctx
+        with
           | Some typ -> typ
-          | _ -> Unknown_ident
+          | _ -> raise Unknown_ident
         end
     | ELam ((x , x_typ) , exp_of_x) ->
         begin match in_context_opt x ctx with
@@ -46,16 +46,17 @@ let rec compute_type_of_term : context -> ident_list -> expr -> expr
               with
                 | EConst "Type" , typ_of_exp_of_x ->
                     EPi ((x , x_typ) , typ_of_exp_of_x)
+                | _ -> raise Type_error
             end
         end
     | EApp (exp1 , exp2) ->
         begin match
           beta_reduce idl (compute_type_of_term ctx idl exp1) ,
-          beta_reduce idl compute_type_of_term ctx idl exp2
+          beta_reduce idl (compute_type_of_term ctx idl exp2)
         with
           | EPi ((id , id_typ) , typ_of_exp_of_id) , exp2_typ
             when 
-              alpha compare idl id_typ exp2_typ 
+              alpha_compare idl id_typ exp2_typ 
               -> exp2_typ
           | _ -> raise Type_error
         end
@@ -85,16 +86,17 @@ let rec compute_type_of_term : context -> ident_list -> expr -> expr
                 beta_reduce idl (compute_type_of_term ctx idl term2)
               with
                 | typ_a' , EConst "Type" , exp'
-                  when alpha compare idl typ_a typ_a'
+                  when alpha_compare idl typ_a typ_a'
                   && alpha_compare idl
                         exp' 
                         (beta_reduce idl 
-                          substitute idl id term1 exp
+                          (substitute idl id term1 exp)
                         ) 
                   -> ESigma ((id , typ_a) , exp)
+        end
     | EPair ((term1 , term2) , Some exp) ->
         begin match beta_reduce idl (compute_type_of_term ctx idl exp) with
-          | EPi ((_ , typ_a) , _)) ->
+          | EPi ((_ , typ_a) , _) ->
               begin match beta_reduce idl (compute_type_of_term ctx idl term1) with
                 | typ when alpha_compare idl typ typ_a -> raise Unable_to_infer_type
                 | _ -> raise Type_error
@@ -122,7 +124,7 @@ let rec compute_type_of_term : context -> ident_list -> expr -> expr
                 match
                   beta_reduce idl (compute_type_of_term ctx idl typ_a) ,
                   beta_reduce (id :: idl) 
-                    compute_type_of_term ((id , typ_a) :: ctx) (id :: idl) exp
+                    (compute_type_of_term ((id , typ_a) :: ctx) (id :: idl) exp)
                 with
                   | EConst "Type" , EConst "Type" -> EConst "Type"
         end

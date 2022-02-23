@@ -1,3 +1,4 @@
+(*
 open Ast
 
 exception TacticTypeError
@@ -208,3 +209,4 @@ and compute_tactic (ctxt : tactic_ctxt) : parsed_tactic -> tactic = function
   | OrPTac (t1, t2) ->
     OrTac (compute_tactic ctxt t1, compute_tactic ctxt t2)
 
+*)

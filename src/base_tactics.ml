@@ -1,5 +1,9 @@
+open Alpha_renaming
 open Ast
+open Beta_red
 open Environment
+open Renaming
+open Substitution
 open Typer
 
 exception Invalid_tactic
@@ -8,7 +12,7 @@ let apply_base_tactic : env -> base_tactic -> env list
 = fun e tac ->
   match tac , e.target with
     | IntroTac id , EPi ((x , typ) , typ_over_typ) ->
-        begin match search_for_term id e.context with
+        begin match in_context_opt id e.context with
           | Some _ -> raise Invalid_tactic
           | None ->
               let typ_over_typ' = rename e.used_ident x id typ_over_typ in
@@ -22,7 +26,7 @@ let apply_base_tactic : env -> base_tactic -> env list
           (compute_type_of_term e.context e.used_ident f_term) 
           with
           | EPi ((x , s) , typ')
-            when alpha_compare env.used_ident
+            when alpha_compare e.used_ident
               (beta_reduce e.used_ident typ) 
               (beta_reduce e.used_ident typ')
               && not (List.mem x (get_varlib [] typ')) -> 
@@ -37,21 +41,22 @@ let apply_base_tactic : env -> base_tactic -> env list
           (compute_type_of_term e.context e.used_ident term) in
         let typ' = beta_reduce e.used_ident 
           (compute_type_of_term e.context e.used_ident typ) in
-        if alpha_compare term_typ typ' then
+        if alpha_compare e.used_ident term_typ typ' then
           [ { context = e.context
             ; used_ident = e.used_ident
             ; target = (substitute e.used_ident x term typ_over_typ) }
           ]
-    | SigmaRecTac , EPi (p , ESigma ((x , typ) , typ_over_typ) , expr_of_p) ->
+        else raise Invalid_tactic
+    | SigmaRecTac , EPi ((p , ESigma ((x , typ) , typ_over_typ)) , expr_of_p) ->
         let y = get_unused_ident (x :: e.used_ident) in
         [ { context = e.context
           ; used_ident = e.used_ident
-          ; target = EPi ((x , typ) , EPi ((y : typ_over_typ), App expr_of_p (EPair (Var x , Var y)))) }
+          ; target = EPi ((x , typ) , EPi ((y , typ_over_typ), EApp (expr_of_p , (EPair ((EVar x , EVar y), Some (ESigma ((x , typ) , typ_over_typ))))))) }
         ]
     | ExactTac exp , t ->
         let typ = beta_reduce e.used_ident (compute_type_of_term e.context e.used_ident exp) in
         let t' = beta_reduce e.used_ident t in
-        if alpha_compare e.used_ident t' then []
+        if alpha_compare e.used_ident t' typ then []
         else raise Invalid_tactic
     | _ -> raise Invalid_tactic
 
@@ -62,7 +67,7 @@ let rec apply_tactic : env -> tactic -> env list
     | TryTac tac' -> begin
         try apply_tactic e tac' with
           | Invalid_tactic
-          | Sort_error -> [ e ]
+          | Type_error -> [ e ]
         end
     | DoTac (n , _) when n = 0 -> [ e ]
     | DoTac (n , tac') when n > 0 -> begin
@@ -79,5 +84,5 @@ let rec apply_tactic : env -> tactic -> env list
     | OrTac (tac1 , tac2) -> begin
         try apply_tactic e tac1 with
           | Invalid_tactic
-          | Sort_error -> apply_tactic e tac2
+          | Type_error -> apply_tactic e tac2
         end  

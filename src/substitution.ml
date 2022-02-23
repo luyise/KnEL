@@ -1,40 +1,42 @@
 open Ast
 open Environment
+open Renaming
 
 (* Le premier context correspond aux variables liées *)
 
-let rec get_varlib : ident list -> term -> ident list
+let rec get_varlib : ident list -> expr -> ident list
 = fun varlie term ->
-  | EConst c -> []
-  | EVar x ->
-      if List.mem x varlie then []
-      else [ x ] 
-  | ELam ((x , typ) , term_of_x) ->
-      (get_varlib varlie typ) @ (get_varlib (x :: varlie) term_of_x)
-  | EApp (exp1 , exp2) ->
-      (get_varlib varlie exp1) @ (get_varlib varlie exp2)
-  | EPi ((x , typ) , typ_over_typ) ->
-      (get_varlib varlie typ) @ (get_varlib (x :: varlie) typ_over_typ)
-  | EPair ((exp1 , exp2) , Some typ) ->
-      (get_varlib varlie exp1) @ (get_varlib varlie exp2) @ (get_varlib varlie typ)
-  | EPair ((exp1 , exp2) , None) ->
-      (get_varlib varlie exp1) @ (get_varlib varlie exp2)
-  | EFst exp ->
-      (get_varlib varlie exp)
-  | ESnd exp ->
-      (get_varlib varlie exp)
-  | ESigma ((x , typ) , typ_over_typ) ->
-      (get_varlib varlie typ) @ (get_varlib (x :: varlie) typ_over_typ)
-  | ETaggedExpr (exp , typ) ->
-      (get_varlib varlie typ) @ (get_varlib varlie exp)
-  
+  match term with
+    | EConst c -> []
+    | EVar x ->
+        if List.mem x varlie then []
+        else [ x ] 
+    | ELam ((x , typ) , term_of_x) ->
+        (get_varlib varlie typ) @ (get_varlib (x :: varlie) term_of_x)
+    | EApp (exp1 , exp2) ->
+        (get_varlib varlie exp1) @ (get_varlib varlie exp2)
+    | EPi ((x , typ) , typ_over_typ) ->
+        (get_varlib varlie typ) @ (get_varlib (x :: varlie) typ_over_typ)
+    | EPair ((exp1 , exp2) , Some typ) ->
+        (get_varlib varlie exp1) @ (get_varlib varlie exp2) @ (get_varlib varlie typ)
+    | EPair ((exp1 , exp2) , None) ->
+        (get_varlib varlie exp1) @ (get_varlib varlie exp2)
+    | EFst exp ->
+        (get_varlib varlie exp)
+    | ESnd exp ->
+        (get_varlib varlie exp)
+    | ESigma ((x , typ) , typ_over_typ) ->
+        (get_varlib varlie typ) @ (get_varlib (x :: varlie) typ_over_typ)
+    | ETaggedExpr (exp , typ) ->
+        (get_varlib varlie typ) @ (get_varlib varlie exp)
+    
 
 (* substitute idl varlib x term expr renvoie l'expression expr' dans laquelle les occurences libres de la variable
   x ont été remplacés par le terme term, idl contient le nom des variables déjà utilisées dans l'environment courant,
   varlib contient les variables libres de term, afin de ne pas engendrer de capture lors de la substition
   /!\ la fonction doit être appellée avec varlib inclus dans idl ! *)
 
-let rec subtitute_inner : ident list -> ident list -> ident -> expr -> expr -> expr
+let rec substitute_inner : ident list -> ident list -> ident -> expr -> expr -> expr
 = fun idl varlib x term exp ->
   match exp with
     | EConst c -> exp
@@ -49,7 +51,7 @@ let rec subtitute_inner : ident list -> ident list -> ident -> expr -> expr -> e
           let typ' = substitute_inner (z :: idl) varlib x term typ in
           ELam ((z , typ') , term_of_z)
         end else begin
-          let typ' = substitute_inner (x :: idl) varlib x term term_of_y typ in
+          let typ' = substitute_inner (x :: idl) varlib x term typ in
           ELam ((x , typ') , term_of_y)
         end
     | ELam ((y , typ) , term_of_y) ->
@@ -75,7 +77,7 @@ let rec subtitute_inner : ident list -> ident list -> ident -> expr -> expr -> e
           let typ' = substitute_inner (z :: idl) varlib x term typ in
           EPi ((z , typ') , term_of_z)
         end else begin
-          let typ' = substitute_inner (x :: idl) varlib x term term_of_y typ in
+          let typ' = substitute_inner (x :: idl) varlib x term typ in
           EPi ((x , typ') , term_of_y)
         end
     | EPi ((y , typ) , term_of_y) ->
@@ -112,7 +114,7 @@ let rec subtitute_inner : ident list -> ident list -> ident -> expr -> expr -> e
           let typ' = substitute_inner (z :: idl) varlib x term typ in
           ESigma ((z , typ') , term_of_z)
         end else begin
-          let typ' = substitute_inner (x :: idl) varlib x term term_of_y typ in
+          let typ' = substitute_inner (x :: idl) varlib x term typ in
           ESigma ((x , typ') , term_of_y)
         end
     | ESigma ((y , typ) , term_of_y) ->

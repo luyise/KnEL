@@ -7,7 +7,7 @@ let get_unused_ident : (ident list) -> ident
     List.filter_map
     (fun id -> 
       if id.[0] = 'x' then 
-        Some (String.sub idp 1 (String.length id))
+        Some (String.sub id 1 (String.length id))
       else None
     ) id_list
   in
@@ -18,6 +18,7 @@ let get_unused_ident : (ident list) -> ident
   ("x" ^ (string_of_int (! i)))
 
 exception Cannot_rename_a_constant
+exception Ident_colision
 
 (* rename prend en paramètre un environement de preuve courant, 
   deux identifiant x et y, un terme exp.
@@ -66,7 +67,7 @@ let rec rename : ident list -> ident -> ident -> expr -> expr
     | EPair ((exp1 , exp2) , typ_op) ->
         let typ_op' =
           match typ_op with
-            | Some typ -> rename idl x y typ
+            | Some typ -> Some (rename idl x y typ)
             | None -> None
         in
         EPair ((rename idl x y exp1 , rename idl x y exp2) , typ_op')

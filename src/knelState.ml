@@ -1,5 +1,7 @@
 open Ast
 open Environment
+open Typer
+open Base_tactics
 
 type status =
   | AllDone
@@ -36,8 +38,8 @@ let rec execute_tac_list : knel_state -> tactic list -> knel_state
           let generated_envs , st =
             try (apply_tactic e tac) , state.status with
               | Invalid_tactic
-              | Unknown_variable
-              | Sort_error ->
+              | Unknown_ident
+              | Type_error ->
                   [ e ] , Error
           in
           let new_env_list = (generated_envs @ e_tail) in

@@ -3,7 +3,7 @@ open Ast
 type env =
   { context : context
   ; used_ident : ident list
-  ; target : sort
+  ; target : expr
   }
 
 let rec in_context_opt : ident -> context -> expr option

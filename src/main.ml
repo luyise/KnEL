@@ -25,15 +25,15 @@ let main filename =
     then raise (Arg.Bad "expected .knl extension");
   let file_desc = open_in filename in
   let lexbuf = Lexing.from_channel file_desc in
-  try
-    let file_ast = Parser.file Lexer.next_token lexbuf in
+  (*try*)
+    let file_ast = (*Parser.file Lexer.next_token lexbuf*) [] in
     execute_file file_ast
 
-  with
+  (*with
   Parser.Error ->
     report filename (Lexing.lexeme_start_p lexbuf, Lexing.lexeme_end_p lexbuf);
     print_endline "syntax error.";
-    exit 1
+    exit 1*)
 
 
 let _ = Arg.parse options main usage
