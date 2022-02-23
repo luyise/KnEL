@@ -28,7 +28,7 @@ type expr =
     (* Type des applications dépendantes *)
   | EPi of (ident * expr) * expr
     (* Paire dépendante : le deuxième argument peut avoir un type dépendant du premier *)
-  | EPair of expr * expr
+  | EPair of (expr * expr) * (expr option)
     (* Les deux éliminateurs pour une paire *)
   | EFst of expr
   | ESnd of expr

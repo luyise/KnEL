@@ -19,7 +19,7 @@ let rec pp_expr fmt (exp : sort) =
         pp_ident id
         pp_expr exp1
         pp_expr exp2
-    | EPair (exp1 , exp2) -> Format.fprintf "(%a , %a)"
+    | EPair ((exp1 , exp2) , _) -> Format.fprintf "(%a , %a)"
         pp_expr exp1
         pp_expr exp2
     | EFst exp1 -> Format.fprintf "(fst %a)"

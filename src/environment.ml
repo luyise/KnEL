@@ -2,13 +2,13 @@ open Ast
 
 type env =
   { context : context
+  ; bound_ident : ident list
   ; target : sort
   }
 
-let rec search_for_term : ident -> context -> expr option
+let rec in_context_opt : ident -> context -> expr option
 = fun id ctx ->
   match ctx with
     | [] -> None
     | (id' , exp) :: _ when id = id' -> Some exp
-    | _ :: ctx_tail -> search_for_term id ctx_tail
-    
+    | _ :: ctx_tail -> in_context_opt id ctx_tail
