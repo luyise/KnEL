@@ -93,7 +93,7 @@ rule next_tokens = parse
     | "["           { LSBRACKET }
     | "]"           { RSBRACKET }
     | ";"           { SEMICOLON }
-    | "\u{033B}"    { LAMBDA } (* λ *)
+    | "\u{03BB}"    { LAMBDA } (* λ *)
     | "."           { DOT }
     | eof           { EOF }
     | _ as c        { raise (UnknownChar c) }
