@@ -214,7 +214,7 @@ expr_no_comma:
         { EApp (EApp(EConst $2, $1), $3) }
     | expr_no_comma PROD expr_no_comma
         { ESigma (("_", $1), $3) }
-    | expr_no_comma IMPLIES expr_no_comma
+    | expr_no_comma ARROW expr_no_comma
         { EPi (("_", $1), $3) }
     | NEG expr_no_comma
         { EPi (("_", $2), EConst "Void") }
