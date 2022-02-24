@@ -12,7 +12,7 @@ let rec pp_expr fmt (exp : expr) =
         pp_ident id
         pp_expr exp1
         pp_expr exp2
-    | EApp (exp1 , exp2) -> Format.fprintf fmt "%a %a"
+    | EApp (exp1 , exp2) -> Format.fprintf fmt "(%a %a)"
         pp_expr exp1
         pp_expr exp2
     | EPi ((id , exp1) , exp2) ->

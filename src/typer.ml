@@ -14,7 +14,7 @@ exception Unable_to_infer_type
 (* /!\ la fonction compute_type_if_term doit être appellée avec l'ident list contenant le List.map fst du context *)
 
 let rec compute_type_of_term : context -> ident list -> expr -> expr
-= fun ctx idl term ->
+= fun ctx idl term -> let res = (** gestion du bug *)
   match term with
     | EConst c ->
         begin match
@@ -55,9 +55,9 @@ let rec compute_type_of_term : context -> ident list -> expr -> expr
           beta_reduce idl (compute_type_of_term ctx idl exp2)
         with
           | EPi ((id , id_typ) , typ_of_exp_of_id) , exp2_typ
-            when 
+            when
               alpha_compare idl id_typ exp2_typ 
-              -> exp2_typ
+              -> substitute idl id exp2 typ_of_exp_of_id
           | _ -> raise Type_error
         end
     | EPi ((id , typ_a) , exp) ->
@@ -134,4 +134,7 @@ let rec compute_type_of_term : context -> ident list -> expr -> expr
           (beta_reduce idl exp)
           then exp
         else raise Type_error
-                
+  in Format.printf "type of %a is %a\n"
+    Astprinter.pp_expr term
+    Astprinter.pp_expr res;
+    res

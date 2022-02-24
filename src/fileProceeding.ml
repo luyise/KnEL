@@ -20,7 +20,7 @@ let append_context : knel_state -> context -> knel_state
         ; environments = [] 
         ; status = AllDone }
     | InProof -> raise (Wrong_declaration "Didn't expect a variable declaration now.")
-    | Error -> state
+    | Error _ -> state
 
 (* La fonction proceed_reasonment prend les données d'une section de raisonement
   i.e.
@@ -60,7 +60,7 @@ let proceed_reasonment :
   let ready_to_reason_state =
     { global_context = state.global_context
     ; environments = 
-      [{ context = state.global_context 
+      [{ context = state.global_context
        ; used_ident = (List.map fst state.global_context) 
           @ (List.map fst constants)
        ; target = goal_typ }]
@@ -70,7 +70,7 @@ let proceed_reasonment :
   match final_state.status with
       (* KnEL a rencontré un problème lors de la preuve, 
       il reste dans l'état courant *)
-    | Error -> final_state
+    | Error _ -> final_state
       (* l'utilisateur n'a pas atteint l'objectif,
         on regarde donc s'il souhaite l'admettre, 
         ou s'il considère que la preuve est en cours *)
@@ -178,7 +178,7 @@ let proceed_reasonment :
 let execute_section : knel_state -> knel_section -> knel_state
 = fun state sec ->
   match state.status with
-    | Error -> state
+    | Error _ -> state
     | InProof -> failwith "\x1B[38;5;196mKnEL internal error, asked to execute a section while being InProof\x1B[39m"
     | AllDone -> begin match sec with
         | HypothesisSection ctx ->

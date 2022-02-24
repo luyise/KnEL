@@ -41,13 +41,14 @@ let rec rename : ident list -> ident -> ident -> expr -> expr
         let z' = get_unused_ident idl in
         let typ' = rename idl x y typ in
         let idl' = z' :: idl in
-        let term' = rename idl' x y typ in
+        let term' = rename idl' x y term in
         ELam ((z' , typ') , term')
     | ELam ((z , typ) , term) ->
         let typ' = rename idl x y typ in
         let idl' = z :: idl in
-        let term' = rename idl' x y typ in
+        let term' = rename idl' x y term in
         ELam ((z , typ') , term')
+
     | EApp (exp1 , exp2) ->
         EApp (rename idl x y exp1 , rename idl x y exp2)
 
@@ -56,12 +57,12 @@ let rec rename : ident list -> ident -> ident -> expr -> expr
         let z' = get_unused_ident idl in
         let typ' = rename idl x y typ in
         let idl' = z' :: idl in
-        let term' = rename idl' x y typ in
+        let term' = rename idl' x y term in
         EPi ((z' , typ') , term')
     | EPi ((z , typ) , term) ->
         let typ' = rename idl x y typ in
         let idl' = z :: idl in
-        let term' = rename idl' x y typ in
+        let term' = rename idl' x y term in
         EPi ((z , typ') , term')
       
     | EPair ((exp1 , exp2) , typ_op) ->
@@ -80,12 +81,12 @@ let rec rename : ident list -> ident -> ident -> expr -> expr
         let z' = get_unused_ident idl in
         let typ' = rename idl x y typ in
         let idl' = z' :: idl in
-        let term' = rename idl' x y typ in
+        let term' = rename idl' x y term in
         ESigma ((z' , typ') , term')
     | ESigma ((z , typ) , term) ->
         let typ' = rename idl x y typ in
         let idl' = z :: idl in
-        let term' = rename idl' x y typ in
+        let term' = rename idl' x y term in
         ESigma ((z , typ') , term')
         
     | ETaggedExpr (term , typ) ->
