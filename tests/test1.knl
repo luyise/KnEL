@@ -1,5 +1,7 @@
 open test0
 open test3
+open num.test_num
+open <-tests2.test4
 
 Tactic fast_tac (id : ident) =
     Intro id > Apply id
@@ -13,7 +15,7 @@ Proof
     Apply NNN_a;
     fast_tac N_a;
     Exact a;
-QED
+Ongoing
 
 Theorem:
     A × (A ⇒ B) ⇒ B

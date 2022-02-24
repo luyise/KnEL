@@ -2,8 +2,6 @@
     open Ast
     open Tactic
 
-    let tact_ctxt = ref Tactic.base_tactic_ctxt
-
 %}
 
 %token ADMITTED     (* Admitted *)
@@ -15,6 +13,7 @@
 %token COLON        (* : *)
 %token COMMA        (* , *)
 %token DIV          (* / *)
+%token DOT          (* . *)
 %token END          (* End *)
 %token EOF
 %token EQ           (* = *)
@@ -70,7 +69,7 @@
 %left DIV STAR PROD
 %nonassoc RPT TRY NEG
 
-%type <(string * string) list * Ast.knel_file> file
+%type <(string * string) list * Tactic.raw_knel_file> file
 
 %%
 
@@ -79,14 +78,14 @@ file:
 ;
 
 opening:
-    | OPEN parent separated_nonempty_list(DIV, IDENT) {
+    | OPEN parent separated_nonempty_list(DOT, IDENT) {
         (List.fold_left
             (fun name _ -> "../"^name)
             (List.fold_right (fun f1 f2 -> f1^"/"^f2) $3 "")
             $2,
         List.hd (List.rev $3))
     }
-    | OPEN parent separated_nonempty_list(DIV, IDENT) AS IDENT {
+    | OPEN parent separated_nonempty_list(DOT, IDENT) AS IDENT {
         (List.fold_left
             (fun name _ -> "../"^name)
             (List.fold_right (fun f1 f2 -> f1^"/"^f2) $3 "")
@@ -113,18 +112,22 @@ decl_list:
     | definition decl_list  { $2 }
     | inductive decl_list   { $2 }
     | theorem decl_list     { $1::$2 }
-    | tactic_decl decl_list { $2 }
+    | tactic_decl decl_list { $1::$2 }
 ;
 
 var_def_bloc:
-    | VARIABLES EQ LBRACKET separated_list(COMMA, var_def) RBRACKET { HypothesisSection $4 }
+    | VARIABLES EQ LBRACKET separated_list(COMMA, var_def) RBRACKET { RawHypothesisSection $4 }
 ;
 
 
 tactic_decl:
-    | TACTIC IDENT list(tactic_arg_def) EQ tactic END { 
-        tact_ctxt := SMap.add $2 (Tactic.tactic_creator !tact_ctxt $3 $5) !tact_ctxt }
+    | TACTIC IDENT tactic_arg_def_list { 
+        RawTacticDeclSection ($2, $3) }
 ;
+
+tactic_arg_def_list:
+    | EQ tactic END { Tactic $2 }
+    | tactic_arg_def tactic_arg_def_list { Arg (fst $1, snd $1, $2) }
 
 tactic_arg_def:
     | LPAREN IDENT COLON tactic_arg_type RPAREN { ($2, $4) }
@@ -134,6 +137,7 @@ tactic_arg_type:
     | INT       { TInt }
     | TACTIC    { TTac }
     | IDENT     { assert ($1 = "ident"); TIdent }
+    | tactic_arg_type ARROW tactic_arg_type { TArrow ($1, $3) }
 ;
 
 definition:
@@ -153,7 +157,7 @@ induc_bloc:
 ;
 
 theorem:
-    | thm_keyword IDENT? COLON statement PROOF proof { ReasoningSection ($1, $2, $4, fst $6, snd $6) }
+    | thm_keyword IDENT? COLON statement PROOF proof { RawReasoningSection ($1, $2, $4, fst $6, snd $6) }
 ;
 
 thm_keyword:
@@ -181,15 +185,30 @@ statement:
 ;
 
 proof:
-    | tactic SEMICOLON proof { Tactic.compute_tactic !tact_ctxt $1::fst $3, snd $3 }
-    | tactic proof_end      { [Tactic.compute_tactic !tact_ctxt $1], $2 }
+    | tactic SEMICOLON proof { $1::fst $3, snd $3 }
+    | tactic proof_end      { [$1], $2 }
     | proof_end             { [], $1 }
 ;
 
 tactic:
-    | IDENT list(tactic_arg)    { BasePTac ($1, $2) }
-    | tactic VERTVERT tactic    { OrPTac ($1, $3) }
-    | tactic GREATER tactic     { SeqPTac ($1, $3) }
+    | no_app_tactic             { $1 }
+    | tactic_no_cmp no_app_tactic
+        { PTacApp ($1, $2) }
+    | tactic VERTVERT tactic    { PTacOr ($1, $3) }
+    | tactic GREATER tactic     { PTacSeq ($1, $3) }
+;
+
+tactic_no_cmp:
+    | no_app_tactic             { $1 }
+    | tactic_no_cmp no_app_tactic { PTacApp ($1, $2)}
+;
+
+no_app_tactic:
+    | IDENT                     { PTacVar $1 }
+    | INT                       { PTacInt $1 }
+    | LPAREN tactic RPAREN      { $2 }
+    | LSBRACKET separated_list(SEMICOLON, IDENT) RSBRACKET
+        { PTacList $2 }
 ;
 
 tactic_arg:

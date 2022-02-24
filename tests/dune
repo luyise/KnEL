@@ -1,4 +1,4 @@
 (rule
  (alias runtest)
- (deps (file test1.knl) (file test0.knl) (file test3.knl))
+ (deps (file test1.knl) (file test0.knl) (file test3.knl) (file ../tests2/test4.knl) (file num/test_num.knl))
  (action (run ../src/main.exe test1.knl)))
