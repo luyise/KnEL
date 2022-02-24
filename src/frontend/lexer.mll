@@ -8,6 +8,7 @@
         ("as", AS);
         ("Definition", DEFINITION);
         ("End", END);
+        ("fst", FST);
         ("in", IN);
         ("Inductive", INDUCTIVE);
         ("lam", LAMBDA);
@@ -19,6 +20,7 @@
         ("open", OPEN);
         ("Proof", PROOF);
         ("QED", QED);
+        ("snd", SND);
         ("sum_in", SUMIN);
         ("Tactic", TACTIC);
         ("Theorem", THEOREM);
