@@ -120,7 +120,7 @@ hypothesis_intro:
 ;
 
 var_def:
-    | IDENT COLON expr_no_comma  { ($1, $3) }
+    | IDENT COLON expr  { ($1, $3) }
 ;
 
 tactic_decl:
@@ -208,45 +208,20 @@ type_decl:
     | IDENT                     { () }
 ;
 
-expr_no_comma:
-    | expr_in   { $1 }
-    | expr_no_comma binop_expr expr_no_comma
-        { EApp (EApp(EConst $2, $1), $3) }
-    | expr_no_comma PROD expr_no_comma
-        { ESigma (("_", $1), $3) }
-    | expr_no_comma ARROW expr_no_comma
-        { EPi (("_", $1), $3) }
-    | NEG expr_no_comma
-        { EPi (("_", $2), EConst "Void") }
-    | ALL IDENT COLON expr DOT expr_no_comma %prec ALL 
-        { EPi (($2, $4), $6) }
-    | EXISTS IDENT COLON expr DOT expr_no_comma %prec EXISTS
-        { ESigma (($2, $4), $6) }
-    | LAMBDA IDENT COLON expr_no_arrow ARROW expr_no_comma %prec LAMBDA
-        { ELam (($2, $4), $6) }
-    | ALL LPAREN IDENT COLON expr RPAREN DOT expr_no_comma %prec ALL
-        { EPi (($3, $5), $8) }
-    | EXISTS LPAREN IDENT COLON expr RPAREN DOT expr_no_comma %prec EXISTS
-        { ESigma (($3, $5), $8) }
-    | LAMBDA LPAREN IDENT COLON expr RPAREN ARROW expr_no_comma %prec LAMBDA
-        { ELam (($3, $5), $8) }
-;
-
 expr:
-    | ALL IDENT COLON expr DOT expr %prec ALL 
+    | ALL IDENT COLON expr COMMA expr %prec ALL 
         { EPi (($2, $4), $6) }
-    | EXISTS IDENT COLON expr DOT expr %prec EXISTS
+    | EXISTS IDENT COLON expr COMMA expr %prec EXISTS
         { ESigma (($2, $4), $6) }
     | LAMBDA IDENT COLON expr_no_arrow ARROW expr %prec LAMBDA
         { ELam (($2, $4), $6) }
-    | ALL LPAREN IDENT COLON expr RPAREN DOT expr %prec ALL 
+    | ALL LPAREN IDENT COLON expr RPAREN COMMA expr %prec ALL 
         { EPi (($3, $5), $8) }
-    | EXISTS LPAREN IDENT COLON expr RPAREN DOT expr %prec EXISTS
+    | EXISTS LPAREN IDENT COLON expr RPAREN COMMA expr %prec EXISTS
         { ESigma (($3, $5), $8) }
     | LAMBDA LPAREN IDENT COLON expr RPAREN ARROW expr %prec LAMBDA
         { ELam (($3, $5), $8) }
     | expr_in               { $1 }
-    | expr COMMA expr       { EPair (($1, $3), None) }
     | expr binop_expr expr  { EApp (EApp(EConst $2, $1), $3) }
     | expr PROD expr        { ESigma (("_", $1), $3) }
     | expr ARROW expr     { EPi (("_", $1), $3) }
@@ -286,6 +261,7 @@ expr_bot:
     | UNIT                  { EConst "Unit" }
     | IDENT                 { EVar $1 }
     | LPAREN expr RPAREN    { $2 }
+    | LPAREN expr COMMA expr RPAREN    { EPair (($2, $4), None) }
     | LPAREN expr COLON expr RPAREN    { ETaggedExpr ($2, $4) }
 ;
 

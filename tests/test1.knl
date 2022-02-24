@@ -24,7 +24,7 @@ Proof
 Ongoing
 
 Theorem:
-    ∀(x: int). ∃ (y: int). y + x = y + x
+    ∀ x: int, ∃ y: int, y + x = y + x
 Proof
 Ongoing
 
