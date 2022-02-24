@@ -8,6 +8,7 @@
 %token AS           (* as *)
 %token ALL          (* ∀ ! *)
 %token AMPERAMPER   (* && *)
+%token AND          (* and ∧ *)
 %token ARROW        (* -> → *)
 %token DEFINITION   (* Definition *)
 %token COLON        (* : *)
@@ -19,6 +20,7 @@
 %token EQ           (* = *)
 %token EQUIV        (* <=> ⇔ *)
 %token EXISTS       (* ∃ ? *)
+%token FST          (* fst *)
 %token GREATER      (* > *)
 %token GREATEREQ    (* >= ⩾ *)
 %token <Ast.ident> IDENT
@@ -39,6 +41,7 @@
 %token NEG          (* neg ¬ *)
 %token ONGOING      (* Ongoing *)
 %token OPEN         (* open *)
+%token OR           (* or ∧ *)
 %token PLUS         (* + *)
 %token PROD
 %token PROOF        (* Proof *)
@@ -48,6 +51,7 @@
 %token RSBRACKET    (* ] *)
 %token SEMICOLON    (* ; *)
 %token STAR         (* * *)
+%token SND          (* snd *)
 %token SUMIN        (* sum_in *)
 %token TACTIC       (* Tactic *)
 %token THEOREM      (* Theorem *)
@@ -59,16 +63,19 @@
 
 %start file
 
+%nonassoc EXISTS LAMBDA ALL
 %left AMPERAMPER
 %left VERTVERT
 %right ARROW IMPLIES EQUIV
 
 %left COMMA
+%left AND
+%left OR
 %left EQ GREATER LOWER LOWEREQ GREATEREQ
 %left STAR PROD
 %left PLUS MINUS
 %left DIV
-%nonassoc NEG
+%nonassoc NEG SND FST
 
 %type <(string * string) list * Tactic.raw_knel_file> file
 
@@ -149,7 +156,7 @@ inductive:
 ;
 
 induc_bloc:
-    | VERT IDENT COLON prop { ($1, $3) }
+    | VERT IDENT COLON expr { ($2, $4) }
 ;
 
 theorem:
@@ -201,32 +208,73 @@ type_decl:
     | IDENT                     { () }
 ;
 
-prop:
-    | prop binop_prop prop  { () }
-    | NEG prop              { () }
-    | IDENT                 { () }
-    | LPAREN prop RPAREN    { () }
-;
-
 expr_no_comma:
     | expr_in   { $1 }
     | expr_no_comma binop_expr expr_no_comma
         { EApp (EApp(EConst $2, $1), $3) }
     | expr_no_comma PROD expr_no_comma
-        { EPair (($1, $3), None) }
+        { ESigma (("_", $1), $3) }
     | expr_no_comma IMPLIES expr_no_comma
         { EPi (("_", $1), $3) }
     | NEG expr_no_comma
         { EPi (("_", $2), EConst "Void") }
+    | ALL IDENT COLON expr DOT expr_no_comma %prec ALL 
+        { EPi (($2, $4), $6) }
+    | EXISTS IDENT COLON expr DOT expr_no_comma %prec EXISTS
+        { ESigma (($2, $4), $6) }
+    | LAMBDA IDENT COLON expr_no_arrow ARROW expr_no_comma %prec LAMBDA
+        { ELam (($2, $4), $6) }
+    | ALL LPAREN IDENT COLON expr RPAREN DOT expr_no_comma %prec ALL
+        { EPi (($3, $5), $8) }
+    | EXISTS LPAREN IDENT COLON expr RPAREN DOT expr_no_comma %prec EXISTS
+        { ESigma (($3, $5), $8) }
+    | LAMBDA LPAREN IDENT COLON expr RPAREN ARROW expr_no_comma %prec LAMBDA
+        { ELam (($3, $5), $8) }
 ;
 
 expr:
+    | ALL IDENT COLON expr DOT expr %prec ALL 
+        { EPi (($2, $4), $6) }
+    | EXISTS IDENT COLON expr DOT expr %prec EXISTS
+        { ESigma (($2, $4), $6) }
+    | LAMBDA IDENT COLON expr_no_arrow ARROW expr %prec LAMBDA
+        { ELam (($2, $4), $6) }
+    | ALL LPAREN IDENT COLON expr RPAREN DOT expr %prec ALL 
+        { EPi (($3, $5), $8) }
+    | EXISTS LPAREN IDENT COLON expr RPAREN DOT expr %prec EXISTS
+        { ESigma (($3, $5), $8) }
+    | LAMBDA LPAREN IDENT COLON expr RPAREN ARROW expr %prec LAMBDA
+        { ELam (($3, $5), $8) }
     | expr_in               { $1 }
     | expr COMMA expr       { EPair (($1, $3), None) }
     | expr binop_expr expr  { EApp (EApp(EConst $2, $1), $3) }
-    | expr PROD expr        { EPair (($1, $3), None) }
-    | expr IMPLIES expr     { EPi (("_", $1), $3) }
+    | expr PROD expr        { ESigma (("_", $1), $3) }
+    | expr ARROW expr     { EPi (("_", $1), $3) }
     | NEG expr              { EPi (("_", $2), EConst "Void") }
+    | FST expr              { EFst $2 }
+    | SND expr              { ESnd $2 }
+;
+
+expr_no_arrow:
+    | ALL IDENT COLON expr DOT expr_no_arrow %prec ALL 
+        { EPi (($2, $4), $6) }
+    | EXISTS IDENT COLON expr DOT expr_no_arrow %prec EXISTS
+        { ESigma (($2, $4), $6) }
+    | LAMBDA IDENT COLON expr_no_arrow ARROW expr_no_arrow %prec LAMBDA
+        { ELam (($2, $4), $6) }
+    | ALL LPAREN IDENT COLON expr RPAREN DOT expr_no_arrow %prec ALL 
+        { EPi (($3, $5), $8) }
+    | EXISTS LPAREN IDENT COLON expr RPAREN DOT expr_no_arrow %prec EXISTS
+        { ESigma (($3, $5), $8) }
+    | LAMBDA LPAREN IDENT COLON expr RPAREN ARROW expr_no_arrow %prec LAMBDA
+        { ELam (($3, $5), $8) }
+    | expr_in               { $1 }
+    | expr_no_arrow COMMA expr_no_arrow       { EPair (($1, $3), None) }
+    | expr_no_arrow binop_expr expr_no_arrow  { EApp (EApp(EConst $2, $1), $3) }
+    | expr_no_arrow PROD expr_no_arrow        { ESigma (("_", $1), $3) }
+    | NEG expr_no_arrow              { EPi (("_", $2), EConst "Void") }
+    | FST expr_no_arrow              { EFst $2 }
+    | SND expr_no_arrow              { ESnd $2 }
 ;
 
 expr_in:
@@ -241,25 +289,16 @@ expr_bot:
     | LPAREN expr COLON expr RPAREN    { ETaggedExpr ($2, $4) }
 ;
 
-%inline binop_prop:
-    | IMPLIES   { () }
-    | EQUIV     { () }
-    | AMPERAMPER{ () }
-    | VERTVERT  { () }
-;
-
 %inline binop_expr:
     | PLUS      { "+" }
     | MINUS     { "-" }
     | STAR      { "*" }
     | DIV       { "/" }
-    | cmp_op    { $1 }
-;
-
-%inline cmp_op:
     | EQ        { "=" }
     | GREATER   { ">" }
     | GREATEREQ { ">=" }
     | LOWER     { "<" }
     | LOWEREQ   { "<=" }
+    | AND       { "and" }
+    | OR        { "or" }
 ;

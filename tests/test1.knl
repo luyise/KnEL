@@ -8,7 +8,7 @@ Tactic fast_tac (id : ident) =
 End
 
 Theorem my_first_Theorem:
-    ¬¬¬A ⇒ ¬A
+    ¬¬¬A → ¬A
 Proof
     Intro NNN_a;
     Intro a;
@@ -18,9 +18,14 @@ Proof
 QED
 
 Theorem:
-    A × (A ⇒ B) ⇒ B
+    A × (A → B) → B
 Proof
     Intro p;
+Ongoing
+
+Theorem:
+    ∀(x: int). ∃ (y: int). y + x = y + x
+Proof
 Ongoing
 
 // Basic Tactics :
