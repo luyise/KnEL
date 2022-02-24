@@ -1,11 +1,5 @@
 (include_subdirs unqualified)
 
-(ocamllex
-	(modules lexer))
-
-(menhir
-	(modules parser))
-
 (executable
 	(promote (until-clean))
 	(preprocess (pps ppx_deriving.show))

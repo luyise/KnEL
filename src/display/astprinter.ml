@@ -21,7 +21,7 @@ let rec pp_expr fmt (exp : expr) =
           pp_expr exp1
           pp_expr exp2
         else
-          Format.fprintf fmt "(Π (%a : %a) %a)"
+          Format.fprintf fmt "(Π (%a : %a), %a)"
           pp_ident id
           pp_expr exp1
           pp_expr exp2
@@ -38,7 +38,7 @@ let rec pp_expr fmt (exp : expr) =
           pp_expr exp1
           pp_expr exp2
         else
-          Format.fprintf fmt "(Σ (%a : %a) %a)"
+          Format.fprintf fmt "(Σ (%a : %a), %a)"
           pp_ident id
           pp_expr exp1
           pp_expr exp2
