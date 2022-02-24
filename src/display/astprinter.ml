@@ -8,7 +8,7 @@ let rec pp_expr fmt (exp : expr) =
         pp_ident id
     | EVar id -> Format.fprintf fmt "%a"
         pp_ident id
-    | ELam ((id , exp1) , exp2) -> Format.fprintf fmt "(λ (%a : %a) → %a)"
+    | ELam ((id , exp1) , exp2) -> Format.fprintf fmt "(\x1B[38;5;130mλ\x1B[39m (%a \x1B[38;5;130m:\x1B[39m %a) \x1B[38;5;130m→\x1B[39m %a)"
         pp_ident id
         pp_expr exp1
         pp_expr exp2
@@ -17,28 +17,28 @@ let rec pp_expr fmt (exp : expr) =
         pp_expr exp2
     | EPi ((id , exp1) , exp2) ->
         if id = "_" then
-          Format.fprintf fmt "(%a → %a)"
+          Format.fprintf fmt "(%a \x1B[38;5;130m→\x1B[39m %a)"
           pp_expr exp1
           pp_expr exp2
         else
-          Format.fprintf fmt "(Π (%a : %a), %a)"
+          Format.fprintf fmt "(\x1B[38;5;130mΠ\x1B[39m (%a \x1B[38;5;130m:\x1B[39m %a)\x1B[38;5;130m,\x1B[39m %a)"
           pp_ident id
           pp_expr exp1
           pp_expr exp2
-    | EPair ((exp1 , exp2) , _) -> Format.fprintf fmt "(%a , %a)"
+    | EPair ((exp1 , exp2) , _) -> Format.fprintf fmt "(%a \x1B[38;5;130m,\x1B[39m %a)"
         pp_expr exp1
         pp_expr exp2
-    | EFst exp1 -> Format.fprintf fmt "(fst %a)"
+    | EFst exp1 -> Format.fprintf fmt "(\x1B[38;5;130mfst\x1B[39m %a)"
         pp_expr exp1
-    | ESnd exp1 -> Format.fprintf fmt "(snd %a)"
+    | ESnd exp1 -> Format.fprintf fmt "(\x1B[38;5;130msnd\x1B[39m %a)"
         pp_expr exp1
     | ESigma ((id , exp1) , exp2) -> 
         if id = "_" then
-          Format.fprintf fmt "(%a × %a)"
+          Format.fprintf fmt "(%a \x1B[38;5;130m×\x1B[39m %a)"
           pp_expr exp1
           pp_expr exp2
         else
-          Format.fprintf fmt "(Σ (%a : %a), %a)"
+          Format.fprintf fmt "(\x1B[38;5;130mΣ\x1B[39m (%a \x1B[38;5;130m:\x1B[39m %a)\x1B[38;5;130m,\x1B[39m %a)"
           pp_ident id
           pp_expr exp1
           pp_expr exp2
