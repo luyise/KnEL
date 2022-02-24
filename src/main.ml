@@ -1,7 +1,5 @@
-open Ast
-open Astprinter
+open Code_random
 open Lexing
-open FileProceeding
 
 (* open NomDuFichier : ouvre un nom du fichier, de façon publique *)
 (* NomDuFichier.definition_interne : utilise localement la donnée d'un autre fichier *)
@@ -47,5 +45,7 @@ let main () =
         | [] -> assert false
   done;
   Knel_modules.main_file main_file
+
+let _ = FileProceeding.execute_file myFile
  
 let () = main ()

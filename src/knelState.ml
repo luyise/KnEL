@@ -6,7 +6,7 @@ open Base_tactics
 type status =
   | AllDone
   | InProof
-  | Error
+  | Error of string
   
 type knel_state = 
   { global_context : context
@@ -30,33 +30,36 @@ let new_knel_state : unit -> knel_state
 
 let rec execute_tac_list : knel_state -> tactic list -> knel_state
 = fun state tac_list ->
-  if state.status = Error then state
-  else begin
-    match state.environments , tac_list with
-      | _ , [] -> state
-      | (e :: e_tail) , (tac :: tac_tail) ->
-          let generated_envs , st =
-            try (apply_tactic e tac) , state.status with
-              | Invalid_tactic
-              | Unknown_ident
-              | Type_error ->
-                  [ e ] , Error
-          in
-          let new_env_list = (generated_envs @ e_tail) in
-          begin match new_env_list with
-            | [] ->
-                { global_context = state.global_context 
-                ; environments = [] 
-                ; status = AllDone }
-            | _ -> 
-                execute_tac_list 
-                  { global_context = state.global_context
-                  ; environments = new_env_list 
-                  ; status = st }
-                  tac_tail
-          end
-      | [] , _ ->
-          { global_context = state.global_context 
-          ; environments = [] 
-          ; status = Error }
-  end
+  match state.status with 
+    | Error (_) -> state
+    | _ -> begin
+      match state.environments , tac_list with
+        | _ , [] -> state
+        | (e :: e_tail) , (tac :: tac_tail) ->
+            let generated_envs , st =
+              try (apply_tactic e tac) , state.status with
+                | Invalid_tactic ->
+                    [ e ] , Error "Invalid tactic"
+                | Unknown_ident ->
+                    [ e ] , Error "Unknown ident"
+                | Type_error ->
+                    [ e ] , Error "Type error"
+            in
+            let new_env_list = (generated_envs @ e_tail) in
+            begin match new_env_list with
+              | [] ->
+                  { global_context = state.global_context 
+                  ; environments = [] 
+                  ; status = AllDone }
+              | _ -> 
+                  execute_tac_list 
+                    { global_context = state.global_context
+                    ; environments = new_env_list 
+                    ; status = st }
+                    tac_tail
+            end
+        | [] , _ ->
+            { global_context = state.global_context 
+            ; environments = [] 
+            ; status = Error "No goal remaining" }
+    end
