@@ -1,5 +1,4 @@
 open Ast
-open Environment
 open Renaming
 
 (* Le premier context correspond aux variables liées *)
@@ -7,7 +6,7 @@ open Renaming
 let rec get_varlib : ident list -> expr -> ident list
 = fun varlie term ->
   match term with
-    | EConst c -> []
+    | EConst _ -> []
     | EVar x ->
         if List.mem x varlie then []
         else [ x ]
@@ -42,10 +41,10 @@ let rec get_varlib : ident list -> expr -> ident list
 let rec substitute_inner : ident list -> ident list -> ident -> expr -> expr -> expr
 = fun idl varlib x term exp ->
   match exp with
-    | EConst c -> exp
+    | EConst _ -> exp
 
     | EVar y when y = x -> term
-    | EVar y -> exp
+    | EVar _ -> exp
 
     | ELam ((y , typ) , term_of_y) when y = x ->
         if List.mem x varlib then begin

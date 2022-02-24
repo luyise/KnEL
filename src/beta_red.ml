@@ -1,6 +1,4 @@
 open Ast
-open Environment
-open Renaming
 open Substitution
 
 (* Prend en argument une liste d'ident déjà utilisés par l'environnement courant, 
@@ -17,7 +15,7 @@ let rec beta_reduce : ident list -> expr -> expr
         let u' = beta_reduce idl u in
         let v' = beta_reduce idl v in
         begin match u' with
-          | ELam ((x , typ) , term_of_x) ->
+          | ELam ((x , _) , term_of_x) ->
               beta_reduce idl (substitute idl x v' term_of_x)
           | _ -> EApp (u' , v')
         end

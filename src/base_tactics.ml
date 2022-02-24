@@ -50,7 +50,7 @@ let apply_base_tactic : env -> base_tactic -> env list
               (substitute e.used_ident x term typ_over_typ) }
           ]
         else raise Invalid_tactic
-    | SigmaRecTac , EPi ((p , ESigma ((x , typ) , typ_over_typ)) , expr_of_p) ->
+    | SigmaRecTac , EPi ((_ , ESigma ((x , typ) , typ_over_typ)) , expr_of_p) ->
         let y = get_unused_ident (x :: e.used_ident) in
         [ { context = e.context
           ; used_ident = e.used_ident

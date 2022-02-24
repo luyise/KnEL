@@ -82,6 +82,7 @@ let rec compute_type_of_term : context -> ident list -> expr -> expr
                 | EConst "Type" , 
                   EConst "Type" ->
                     EConst "Type"
+                | _ -> raise Type_error
         end
     | EPair ((term1 , term2) , Some (ELam ((id , typ_a) , exp))) ->
         begin match in_context_opt id ctx with
@@ -109,8 +110,9 @@ let rec compute_type_of_term : context -> ident list -> expr -> expr
                           (substitute idl id term1 exp)
                         ) 
                   -> ESigma ((id , typ_a) , exp)
+                | _ -> raise Type_error
         end
-    | EPair ((term1 , term2) , Some exp) ->
+    | EPair ((term1 , _) , Some exp) ->
         begin match beta_reduce idl (compute_type_of_term ctx idl exp) with
           | EPi ((_ , typ_a) , _) ->
               begin match beta_reduce idl (compute_type_of_term ctx idl term1) with
@@ -127,7 +129,7 @@ let rec compute_type_of_term : context -> ident list -> expr -> expr
         end
     | ESnd term ->
         begin match compute_type_of_term ctx idl term with
-          | ESigma ((id , typ_a) , exp) -> substitute idl id (EFst term) exp
+          | ESigma ((id , _) , exp) -> substitute idl id (EFst term) exp
           | _ -> raise Type_error
         end
     | ESigma ((id , typ_a) , exp) ->
@@ -147,6 +149,7 @@ let rec compute_type_of_term : context -> ident list -> expr -> expr
                     (compute_type_of_term ctx' idl' exp)
                 with
                   | EConst "Type" , EConst "Type" -> EConst "Type"
+                  | _ -> raise Type_error
         end
     | ETaggedExpr (term , exp) ->
         if alpha_compare idl 

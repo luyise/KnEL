@@ -1,5 +1,4 @@
 open Ast
-open Environment
 open Renaming
 
 (* alpha_compare test si deux expression β-réduites sont α-équivalentes  *)

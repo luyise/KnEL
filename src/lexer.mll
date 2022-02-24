@@ -1,5 +1,4 @@
 {
-    open Ast
     open Parser
 
     exception UnknownChar of char

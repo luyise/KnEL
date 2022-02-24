@@ -175,7 +175,7 @@ let rec get_int env: parsed_tactic -> int = function
   | PTacVar id -> begin
     match SMap.find_opt id env with
       | Some (_, Tactic x, TacEnv env) -> get_int env x
-      | None -> assert false
+      | _ -> assert false
     end
   | PTacInt i -> i
   | _ -> assert false
@@ -184,7 +184,7 @@ let rec get_list env: parsed_tactic -> ident list = function
   | PTacVar id -> begin
     match SMap.find_opt id env with
       | Some (_, Tactic x, TacEnv env) -> get_list env x
-      | None -> assert false
+      | _ -> assert false
     end
   | PTacList l -> l
   | _ -> assert false
@@ -194,6 +194,7 @@ let rec get_ident env: parsed_tactic -> ident = function
     match SMap.find_opt id env with
       | Some (_, Tactic x, TacEnv env) -> get_ident env x
       | None -> id
+      | _ -> assert false
     end
   | _ -> assert false
 
