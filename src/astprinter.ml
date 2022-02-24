@@ -15,10 +15,16 @@ let rec pp_expr fmt (exp : expr) =
     | EApp (exp1 , exp2) -> Format.fprintf fmt "%a %a"
         pp_expr exp1
         pp_expr exp2
-    | EPi ((id , exp1) , exp2) -> Format.fprintf fmt "(Π (%a : %a) %a)"
-        pp_ident id
-        pp_expr exp1
-        pp_expr exp2
+    | EPi ((id , exp1) , exp2) ->
+        if id = "_" then
+          Format.fprintf fmt "(%a → %a)"
+          pp_expr exp1
+          pp_expr exp2
+        else
+          Format.fprintf fmt "(Π (%a : %a) %a)"
+          pp_ident id
+          pp_expr exp1
+          pp_expr exp2
     | EPair ((exp1 , exp2) , _) -> Format.fprintf fmt "(%a , %a)"
         pp_expr exp1
         pp_expr exp2
@@ -26,10 +32,16 @@ let rec pp_expr fmt (exp : expr) =
         pp_expr exp1
     | ESnd exp1 -> Format.fprintf fmt "(snd %a)"
         pp_expr exp1
-    | ESigma ((id , exp1) , exp2) -> Format.fprintf fmt "(Σ (%a : %a) %a)"
-        pp_ident id
-        pp_expr exp1
-        pp_expr exp2
+    | ESigma ((id , exp1) , exp2) -> 
+        if id = "_" then
+          Format.fprintf fmt "(%a × %a)"
+          pp_expr exp1
+          pp_expr exp2
+        else
+          Format.fprintf fmt "(Σ (%a : %a) %a)"
+          pp_ident id
+          pp_expr exp1
+          pp_expr exp2
     | ETaggedExpr (exp1 , _) -> Format.fprintf fmt "%a"
         pp_expr exp1
 
@@ -40,4 +52,3 @@ let pp_context fmt (ctx : context) =
         id
         pp_expr exp
     ) ctx
-    
