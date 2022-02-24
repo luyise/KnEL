@@ -13,7 +13,7 @@ let rec new_name dir name =
 let parse_file fname lexbuf =
   if not (SSet.mem fname !parsed_files)
   then begin
-    print_endline ("parsing "^fname^"...");
+    Printf.eprintf "parsing %s ...\n" fname;
     parsed_files := SSet.add fname !parsed_files;
     let (deps, ast) = Parser.file Lexer.next_token lexbuf in
     let deps2 = List.map (fun (e, as_name) -> new_name (Filename.dirname fname) e, as_name) deps in
