@@ -12,7 +12,7 @@ type fname =
 [@@deriving show]
 *)
 type file_status =
-  | ToDoStatus of knel_file
+  | ToDoStatus of Tactic.raw_knel_file
   | DoneStatus of context
 (*
 type module_tree =
@@ -161,8 +161,10 @@ let compile_file ?(show=false) f =
       let ctxt =
         List.fold_left (fun l (dep, as_name) -> List.rev_append (List.rev (context_of_file dep as_name)) l) [] deps
       in
-      let () = FileProceeding.execute_file ~show cnt in
-      let new_ctxt = ctxt_of_knel_file cnt in
+      let () = print_endline ("-- going though "^f) in
+      let (tac_env, knl_file) = Tactic.unraw_file Tactic.base_tactic_ctxt cnt in
+      let () = FileProceeding.execute_file ~show knl_file in
+      let new_ctxt = ctxt_of_knel_file knl_file in
       update_tree f (DoneStatus new_ctxt)
     | DoneStatus _ -> assert false 
   

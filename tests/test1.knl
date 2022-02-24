@@ -1,5 +1,7 @@
 open test0
 open test3
+open num.test_num
+open <-tests2.test4
 
 Tactic fast_tac (id : ident) =
     Intro id > Apply id
@@ -11,16 +13,15 @@ Proof
     Intro NNN_a;
     Intro a;
     Apply NNN_a;
-    fast_tac N_a;
+    fast_tac n_a;
     Exact a;
 QED
 
 Theorem:
     A × (A ⇒ B) ⇒ B
 Proof
-    ProdRec [a; f];
-    Exact (f a);
-QED
+    Intro p;
+Ongoing
 
 // Basic Tactics :
 //

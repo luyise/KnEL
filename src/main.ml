@@ -1,3 +1,5 @@
+open Ast
+open Astprinter
 open Lexing
 open FileProceeding
 

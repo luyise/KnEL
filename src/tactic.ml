@@ -5,30 +5,25 @@ exception UndefinedTactic of ident
 
 module SMap = Map.Make(String)
 
-type tac_arg =
-  | TATerm of term
-  | TATac of parsed_tactic
-  | TAIL of ident list
-  | TAInt of int
+let pp_ident fmt id = Format.fprintf fmt "%s" id
 
-and parsed_tactic =
-  | BasePTac of ident * tac_arg list
-  | SeqPTac of parsed_tactic * parsed_tactic
-  | OrPTac of parsed_tactic * parsed_tactic
+type tactic_ident =
+  | TIIntro
+  | TIApply
+  | TISplit
+  | TISigmaRec
+  | TIExact
+  | TITry
+  | TIDo
 
-
-type tac_arg_inner =
-  | ATerm of term
-  | AInt of int
-  | AIdent of ident
-  | AIdentL of ident list
-  | ATac of (tac_arg_inner list -> tactic)
-  | AReplace of ident
-
-type typed_tactic =
-  | BaseTTac of ident * tac_arg_inner list
-  | SeqTTac of typed_tactic * typed_tactic
-  | OrTTac of typed_tactic * typed_tactic
+type parsed_tactic =
+  | PTacVar of ident
+  | PTacInt of int
+  | PTacList of ident list
+  | PTacSeq of parsed_tactic * parsed_tactic
+  | PTacOr of parsed_tactic * parsed_tactic
+  | PTacApp of parsed_tactic * parsed_tactic
+  | PTacBase of tactic_ident
 
 type tactic_type =
   | TInt
@@ -37,174 +32,219 @@ type tactic_type =
   | TTac
   | TTerm
   | TArrow of tactic_type * tactic_type
+  | TUnknown
 
-type tactic_env = (ident * tactic_type) list
+type tactic_builder =
+  | Tactic of parsed_tactic
+  | Arg of ident * tactic_type * tactic_builder
 
-let rpt_builder = function
-  | [AInt i; ATac t] -> DoTac (i, t [])
+
+type raw_knel_section =
+  | RawHypothesisSection of context
+  | RawReasoningSection of 
+      (beggining_tag * 
+        ident option * 
+        expr *
+        parsed_tactic list *
+      ending_tag)
+  | RawTacticDeclSection of ident * tactic_builder
+
+type raw_knel_file = raw_knel_section list
+
+type tactic_env =
+  | TacEnv of (tactic_type * tactic_builder * tactic_env) SMap.t
+
+type tactic_ctxt = (tactic_type * tactic_builder * tactic_env) SMap.t
+
+
+let compatible t1 t2 = match t1, t2 with
+  | TUnknown, _ -> t2
+  | _, TUnknown -> t1
+  | _, _ when t1 = t2 -> t1
+  | _, _ -> raise TacticTypeError 
+
+let rec checktype_of_tactic (env: tactic_type SMap.t) expected parsed_tac : tactic_type =
+  match expected with
+  | TInt ->
+    begin match parsed_tac with
+      | PTacVar ident when SMap.find_opt ident env = Some TInt -> TInt
+      | PTacInt _ -> TInt
+      | PTacApp (pt1, pt2) ->
+        begin
+          let t1 = checktype_of_tactic env (TArrow (TUnknown, TInt)) pt1 in
+          match t1 with
+            | TArrow (t11, TInt) -> if t11 = checktype_of_tactic env t11 pt2 then TInt else raise TacticTypeError
+            | _ -> raise TacticTypeError
+        end
+      | _ -> raise TacticTypeError
+    end
+  | TIdent ->
+    begin match parsed_tac with
+      | PTacVar ident when SMap.find_opt ident env = Some TIdent || SMap.find_opt ident env = None -> TIdent
+      | PTacApp (pt1, pt2) ->
+        begin
+          let t1 = checktype_of_tactic env (TArrow (TUnknown, TIdent)) pt1 in
+          match t1 with
+            | TArrow (t11, TIdent) -> if t11 = checktype_of_tactic env t11 pt2 then TIdent else raise TacticTypeError
+            | _ -> raise TacticTypeError
+        end
+      | _ -> raise TacticTypeError
+    end
+  | TIdentL ->
+    begin match parsed_tac with
+      | PTacVar ident when SMap.find_opt ident env = Some TIdentL -> TIdentL
+      | PTacList _ -> TIdentL
+      | PTacApp (pt1, pt2) ->
+        begin
+          let t1 = checktype_of_tactic env (TArrow (TUnknown, TIdentL)) pt1 in
+          match t1 with
+            | TArrow (t11, TIdentL) -> if t11 = checktype_of_tactic env t11 pt2 then TIdentL else raise TacticTypeError
+            | _ -> raise TacticTypeError
+        end
+      | _ -> raise TacticTypeError
+    end
+  | TTac ->
+    begin match parsed_tac with
+      | PTacVar ident when SMap.find_opt ident env = Some TTac -> TTac
+      | PTacSeq (pt1, pt2) | PTacOr (pt1, pt2) ->
+        if TTac = checktype_of_tactic env TTac pt1 && TTac = checktype_of_tactic env TTac pt2
+        then TTac
+        else raise TacticTypeError
+      | PTacApp (pt1, pt2) ->
+        begin
+          let t1 = checktype_of_tactic env (TArrow (TUnknown, TTac)) pt1 in
+          match t1 with
+            | TArrow (t11, TTac) -> if t11 = checktype_of_tactic env t11 pt2 then TTac else raise TacticTypeError
+            | _ -> raise TacticTypeError
+        end
+      | _ -> raise TacticTypeError
+    end
+  | TTerm ->
+    begin match parsed_tac with
+      | PTacVar ident when SMap.find_opt ident env = Some TTerm || SMap.find_opt ident env = Some TIdent || SMap.find_opt ident env = None -> TTerm
+      | PTacInt _ | PTacApp (_, _) -> TTerm
+      | _ -> raise TacticTypeError
+    end
+  | TArrow (t1, t2) ->
+    begin match parsed_tac with
+      | PTacVar ident ->
+        begin match SMap.find_opt ident env with
+          | Some (TArrow (t3, t4)) -> TArrow (compatible t1 t3, compatible t2 t4)
+          | _ -> print_endline ident; raise TacticTypeError
+        end
+      | PTacApp (pt1, pt2) ->
+        begin match checktype_of_tactic env (TArrow (TUnknown, TArrow (t1, t2))) pt1 with
+          | TArrow (t3, TArrow (t4, t5)) ->
+            let _ = compatible t1 t4 in
+            let _ = compatible t2 t5 in
+            checktype_of_tactic env t3 pt2
+          | _ -> raise TacticTypeError
+        end
+      | _ -> raise TacticTypeError
+    end
+  | TUnknown -> assert false
+
+let rec checktype_of_tactic_builder (env: tactic_type SMap.t) = function
+    | Tactic pt ->
+      let t = checktype_of_tactic env TTac pt in
+      if t <> TTac then raise TacticTypeError
+      else t
+    | Arg (id, tt, tb) ->
+      TArrow (tt, checktype_of_tactic_builder (SMap.add id tt env) tb)
+
+let defaultTacticsList = [
+  "Intro", TArrow(TIdent, TTac), Arg ("v", TIdent, Tactic (PTacApp (PTacBase TIIntro, PTacVar "v")));
+  "Apply", TArrow(TTerm, TTac), Arg ("t", TTerm, Tactic (PTacApp (PTacBase TIApply, PTacVar "t")));
+  "Split", TArrow(TTerm, TTac), Arg ("t", TTerm, Tactic (PTacApp (PTacBase TISplit, PTacVar "t")));
+  "SigmaRec",  TTac, Tactic (PTacBase TISigmaRec);
+  "Exact", TArrow (TTerm, TTac), Arg ("t", TTerm, Tactic (PTacApp (PTacBase TIExact, PTacVar "t")));
+  "try", TArrow (TTac, TTac), Arg ("t", TTerm, Tactic (PTacApp (PTacBase TITry, PTacVar "t")));
+  "rpt", TArrow (TInt, TArrow (TTac, TTac)), Arg ("i", TInt, Arg ("t", TTerm, Tactic (PTacApp (PTacApp (PTacBase TIDo, PTacVar "i"), PTacVar "t"))));
+]
+
+let base_tactic_ctxt = List.fold_left (fun smap (id, tt, tb) -> SMap.add id (tt, tb, TacEnv SMap.empty) smap) SMap.empty defaultTacticsList
+
+let tactic_creator env id tb =
+  if SMap.mem id env
+  then raise TacticTypeError
+  else
+    let tt = checktype_of_tactic_builder (SMap.map (fun (x,_,_) -> x) env) tb in
+    SMap.add id (tt, tb, TacEnv env) env
+
+let rec get_int env: parsed_tactic -> int = function
+  | PTacVar id -> begin
+    match SMap.find_opt id env with
+      | Some (_, Tactic x, TacEnv env) -> get_int env x
+      | None -> assert false
+    end
+  | PTacInt i -> i
   | _ -> assert false
 
-let try_builder = function
-  | [ATac t] -> TryTac (t [])
+let rec get_list env: parsed_tactic -> ident list = function
+  | PTacVar id -> begin
+    match SMap.find_opt id env with
+      | Some (_, Tactic x, TacEnv env) -> get_list env x
+      | None -> assert false
+    end
+  | PTacList l -> l
   | _ -> assert false
 
-let intro_builder = function
-  | [AIdent id] -> BaseTac (IntroTac id)
+let rec get_ident env: parsed_tactic -> ident = function
+  | PTacVar id -> begin
+    match SMap.find_opt id env with
+      | Some (_, Tactic x, TacEnv env) -> get_ident env x
+      | None -> id
+    end
   | _ -> assert false
 
-let apply_builder = function
-  | [ATerm t] -> BaseTac (ApplyTac t)
-  | _ -> assert false
+let rec term_of_ptac env = function
+    | PTacVar id ->
+      begin match SMap.find_opt id env with
+        | Some (_, Tactic t, TacEnv env) -> term_of_ptac env t
+        | None -> EVar id
+        | _ -> assert false
+      end
+    | PTacApp (pt1, pt2) -> EApp (term_of_ptac env pt1, term_of_ptac env pt2)
+    | _ -> assert false
 
-let split_builder = function
-  | [] -> BaseTac SplitTac
-  | _ -> assert false
+let rec tac_of_tac_builder env1 env2 args pt = match args, pt with
+    | _, Tactic t -> (env2, args, t)
+    | hd::tl, Arg (id, tt, tb) -> tac_of_tac_builder env1 (SMap.add id (tt, Tactic hd, TacEnv env1) env2) tl tb
+    | _ -> assert false
 
-let prodrec_builder = function
-  | [AIdentL il] -> BaseTac (ProdRecTac il)
-  | _ -> assert false
+let rec compute_tactic args (env: tactic_ctxt) parsed_tac = match args, parsed_tac with
+    | _, PTacVar id ->
+      begin match SMap.find_opt id env with
+        | Some (_, tb, TacEnv env2) ->
+          let env, args, tac = tac_of_tac_builder env env2 args tb in
+          compute_tactic args env tac
+        | None -> assert false
+      end
+    | [], PTacSeq (pt1, pt2) ->
+      SeqTac (compute_tactic [] env pt1, compute_tactic [] env pt2)
+    | [], PTacOr (pt1, pt2) ->
+      OrTac (compute_tactic [] env pt1, compute_tactic [] env pt2)
+    | _, PTacApp (pt1, pt2) -> compute_tactic (pt2::args) env pt1
+    | [x], PTacBase TIIntro -> BaseTac (IntroTac (get_ident env x))
+    | [x], PTacBase TIApply -> BaseTac (ApplyTac (term_of_ptac env x))
+    | [x], PTacBase TISplit -> BaseTac (SplitTac (term_of_ptac env x))
+    | [], PTacBase TISigmaRec -> BaseTac SigmaRecTac
+    | [x], PTacBase TIExact -> BaseTac (ExactTac (term_of_ptac env x))
+    | [x], PTacBase TITry -> TryTac (compute_tactic [] env x)
+    | [x1; x2], PTacBase TIDo -> DoTac (get_int env x1, compute_tactic [] env x2)
+    | _ -> assert false
 
-let choose_builder = function
-  | [AInt i] -> BaseTac (ChooseTac i)
-  | _ -> assert false
 
-let sumrec_builder = function
-  | [] -> BaseTac SumRecTac
-  | _ -> assert false
+let unraw_section tac_env (tl: knel_file) (rs: raw_knel_section) = match rs with
+    | RawHypothesisSection ctxt ->
+      HypothesisSection ctxt :: tl
+    | RawTacticDeclSection (id, tb) ->
+      let () = tac_env := tactic_creator !tac_env id tb in tl
+    | RawReasoningSection (bt, name_opt, stmt, proof, et) ->
+      let _ = List.map (checktype_of_tactic (SMap.map (fun (x, _, _) -> x) !tac_env) TTac) proof in
+      ReasoningSection (bt, name_opt, stmt, List.map (compute_tactic [] !tac_env) proof, et) :: tl
 
-let exact_builder = function
-  | [ATerm t] -> BaseTac (ExactTac t)
-  | _ -> assert false
-
-
-let base_tactic_ctxt =
-  let l = [
-    "rpt",      rpt_builder,      TArrow (TInt, TArrow (TTac, TTac));
-    "try",      try_builder,      TArrow (TTac, TTac);
-    "Intro",    intro_builder,    TArrow (TIdent, TTac);
-    "Apply",    apply_builder,    TArrow (TTerm, TTac);
-    "Split",    split_builder,    TTac;
-    "ProdRec",  prodrec_builder,  TArrow (TIdentL, TTac);
-    "Choose",   choose_builder,   TArrow (TInt, TTac);
-    "SumRec",   sumrec_builder,   TTac;
-    "Exact",    exact_builder,    TArrow(TTerm, TTac);
-  ] in
-  List.fold_left (fun map (ident, tac_builder, tac_type) -> SMap.add ident (tac_builder, tac_type) map) SMap.empty l
-
-type tactic_ctxt = ((tac_arg_inner list -> tactic) * tactic_type) SMap.t
-
-let parsed_tactic_of_term _ = failwith "parsed_tactic_of_term needs to be implemented"
-
-let rec type_ctxt_builder smap = function
-  | [] -> smap
-  | (id, t)::tl -> type_ctxt_builder (SMap.add id t smap) tl
-
-let rec type_arg_list arg_types ctxt given_tac arg_list = match given_tac, arg_list with
-  | TArrow (TInt, t2),    TAInt i::tl -> AInt i :: type_arg_list arg_types ctxt t2 tl
-  | TArrow (TInt, t2),  TATerm (TVar ident)::tl
-    when SMap.find_opt ident arg_types = Some TInt ->
-    AReplace ident :: type_arg_list arg_types ctxt t2 tl
-  | TArrow (TIdent, t2),  TATerm (TVar ident)::tl
-    when SMap.find_opt ident arg_types = Some TIdent ->
-    AIdent ident :: type_arg_list arg_types ctxt t2 tl
-  | TArrow (TIdent, t2),  TATerm (TVar ident)::tl ->
-    AIdent ident :: type_arg_list arg_types ctxt t2 tl
-  | TArrow (TIdentL, t2), TAIL l::tl -> AIdentL l :: type_arg_list arg_types ctxt t2 tl
-  | TArrow (TIdent, t2),  TATerm (TVar ident)::tl
-    when SMap.find_opt ident arg_types = Some TIdentL ->
-    AIdent ident :: type_arg_list arg_types ctxt t2 tl
-  | TArrow (TTac, t2),  TATerm (TVar ident)::tl
-    when SMap.find_opt ident arg_types = Some TTac ->
-    AIdent ident :: type_arg_list arg_types ctxt t2 tl
-  | TArrow (TTac, t2),    TATerm t::tl ->
-    failwith "TODO tactic.ml line 120"
-  | TArrow (TTac, t2),    TATac t::tl ->
-    ATac (function | [] -> failwith "TODO tactic.ml line 122" | _ -> assert false) :: type_arg_list arg_types ctxt t2 tl
-    | TArrow (TTac, t2),  TATerm (TVar ident)::tl
-    when SMap.find_opt ident arg_types = Some TTerm ->
-    AIdent ident :: type_arg_list arg_types ctxt t2 tl
-  | TArrow (TTerm, t2),   TATerm term::tl -> ATerm term :: type_arg_list arg_types ctxt t2 tl
-  | TArrow (TArrow _ as t1, t2),  TATerm (TVar ident)::tl
-    when SMap.find_opt ident arg_types = Some t1 ->
-    AIdent ident :: type_arg_list arg_types ctxt t2 tl
-  | TArrow (TArrow _, _), _::_ -> failwith "TODO tactic reading tactic" 
-  | TTac, [] -> []
-  | _, _ -> raise TacticTypeError
-
-let rec type_tac ctxt arg_types = function
-  | OrPTac (t1, t2) -> OrTTac (type_tac ctxt arg_types t1, type_tac ctxt arg_types t2)
-  | SeqPTac (t1, t2) -> SeqTTac (type_tac ctxt arg_types t1, type_tac ctxt arg_types t2)
-  | BasePTac (ident, arg_list) ->
-    let tactic_type =
-      try SMap.find ident arg_types
-      with Not_found ->
-        try snd (SMap.find ident ctxt)
-        with Not_found -> raise (UndefinedTactic ident) in
-    let arg_list2 = type_arg_list arg_types ctxt tactic_type arg_list in
-    BaseTTac (ident, arg_list2)
-
-let tactic_creator : tactic_ctxt -> (ident * tactic_type) list -> parsed_tactic -> ((tac_arg_inner list -> tactic) * tactic_type) =
-  fun ctxt argl ptac ->
-    let ptac_typed = type_tac ctxt (type_ctxt_builder SMap.empty argl) ptac
-    in
-    let rec rewrite_tac smap = function
-      | OrTTac (t1, t2) -> OrTac (rewrite_tac smap t1, rewrite_tac smap t2)
-      | SeqTTac (t1, t2) -> SeqTac (rewrite_tac smap t1, rewrite_tac smap t2)
-      | BaseTTac  (id, arg_list) ->
-          begin 
-            let tac_builder = try
-              match SMap.find id smap with
-                | ATac tb -> tb
-                | _ -> assert false
-              with Not_found ->
-                try fst (SMap.find id ctxt)
-                with Not_found -> assert false
-            in
-            let arg_list2 = List.map
-              (function
-                | AReplace id -> SMap.find id smap
-                | arg -> arg)
-              arg_list
-          in tac_builder arg_list2
-          end
-    in 
-    let rec tac_builder_builder smap type_l arg_l = match type_l, arg_l with
-      | [], [] -> rewrite_tac smap ptac_typed
-      | (ident, _)::type_tl, arg::arg_tl -> tac_builder_builder (SMap.add ident arg smap) type_tl arg_tl
-      | _, _ -> assert false
-    in
-    let rec type_builder = function
-      | [] -> TTac
-      | (_, t)::tl -> TArrow (t, type_builder tl)
-    in
-    (tac_builder_builder SMap.empty argl, type_builder argl)
-
-    
-
-let rec compare_types : tactic_ctxt -> tactic_type -> tac_arg list -> tac_arg_inner list
-  = fun ctxt tac_type tac_l -> match tac_type, tac_l with
-    | TArrow (TInt, t2),    TAInt i::tl -> AInt i :: compare_types ctxt t2 tl
-    | TArrow (TIdent, t2),  TATerm (TVar ident)::tl -> AIdent ident :: compare_types ctxt t2 tl
-    | TArrow (TIdentL, t2), TAIL l::tl -> AIdentL l :: compare_types ctxt t2 tl
-    | TArrow (TTac, t2),    TATerm t::tl ->
-      ATac (function | [] -> compute_tactic ctxt (parsed_tactic_of_term t) | _ -> assert false) :: compare_types ctxt t2 tl
-    | TArrow (TTac, t2),    TATac t::tl ->
-      ATac (function | [] -> compute_tactic ctxt t | _ -> assert false) :: compare_types ctxt t2 tl
-    | TArrow (TTerm, t2),   TATerm term::tl -> ATerm term :: compare_types ctxt t2 tl
-    | TArrow (TArrow _, _), _::_ -> failwith "TODO tactic reading tactic" 
-    | TTac, [] -> []
-    | _, _ -> raise TacticTypeError
-
-and compute_tactic (ctxt : tactic_ctxt) : parsed_tactic -> tactic = function
-  | BasePTac (ident, ta_list) ->
-    let (builder, tactic_type) = 
-      try
-        SMap.find ident ctxt
-      with Not_found -> raise (UndefinedTactic ident) in
-    let argl = compare_types ctxt tactic_type ta_list in
-    builder argl
-  | SeqPTac (t1, t2) ->
-    SeqTac (compute_tactic ctxt t1, compute_tactic ctxt t2)
-  | OrPTac (t1, t2) ->
-    OrTac (compute_tactic ctxt t1, compute_tactic ctxt t2)
-
+let unraw_file (tac_env: tactic_ctxt) (l: raw_knel_file) : (tactic_ctxt * Ast.knel_file) =
+  let tac_env = ref tac_env in
+  let l = List.fold_left (unraw_section tac_env) [] l in
+  (!tac_env, List.rev l)

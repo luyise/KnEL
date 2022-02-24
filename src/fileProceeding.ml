@@ -1,7 +1,8 @@
 open Ast
+open Astprinter
+open Constants
 open Environment
 open KnelState
-open Envprinter
 open Knelprinter
 
 (* La fonction append_context prend en argument un contexte
@@ -41,15 +42,15 @@ let proceed_reasonment :
       knel_state 
   ->  beggining_tag 
   ->  ident option 
-  ->  sort
+  ->  expr
   ->  tactic list 
   ->  ending_tag
   ->  knel_state
-= fun state _ id_op goal_sort tacl end_tag ->
+= fun state _ id_op goal_typ tacl end_tag ->
   let (goal_id : string) = match id_op with
     | None -> "unamed_goal"
     | Some id ->
-        begin match search_for_term id state.global_context with
+        begin match in_context_opt id state.global_context with
           | None -> id
           | Some _ -> raise 
             (Wrong_declaration 
@@ -58,7 +59,11 @@ let proceed_reasonment :
   in
   let ready_to_reason_state =
     { global_context = state.global_context
-    ; environments = [{ context = state.global_context ; target = goal_sort }]
+    ; environments = 
+      [{ context = state.global_context 
+       ; used_ident = (List.map fst state.global_context) 
+          @ (List.map fst constants)
+       ; target = goal_typ }]
     ; status = InProof }
   in
   let final_state = execute_tac_list ready_to_reason_state tacl in
@@ -102,7 +107,7 @@ let proceed_reasonment :
             else
               Format.printf "\x1B[38;5;124m/!\\ %s was admitted\x1B[39m\n"
                 goal_id;
-            { global_context = (goal_id , goal_sort) :: state.global_context
+            { global_context = (goal_id , goal_typ) :: state.global_context
             ; environments = []
             ; status = AllDone }
         | Admitted , None ->
@@ -126,7 +131,7 @@ let proceed_reasonment :
                 goal_id;
             begin match id_op with
               | Some _ ->
-                { global_context = (goal_id , goal_sort) :: state.global_context
+                { global_context = (goal_id , goal_typ) :: state.global_context
                 ; environments = []
                 ; status = AllDone }
               | None ->
@@ -144,7 +149,7 @@ let proceed_reasonment :
                 goal_id;
             begin match id_op with
               | Some _ ->
-                { global_context = (goal_id , goal_sort) :: state.global_context
+                { global_context = (goal_id , goal_typ) :: state.global_context
                 ; environments = []
                 ; status = AllDone }
               | None ->
@@ -178,8 +183,8 @@ let execute_section : knel_state -> knel_section -> knel_state
     | AllDone -> begin match sec with
         | HypothesisSection ctx ->
             append_context state ctx
-        | ReasoningSection (beg_tag , id_op , goal_sort , tacl , end_tag) ->
-            proceed_reasonment state beg_tag id_op goal_sort tacl end_tag
+        | ReasoningSection (beg_tag , id_op , goal_typ , tacl , end_tag) ->
+            proceed_reasonment state beg_tag id_op goal_typ tacl end_tag
       end
 
 (* La fonction execute_file prend en argument un knel_file, i.e.
