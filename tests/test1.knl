@@ -4,7 +4,7 @@ open num.test_num
 open <-tests2.test4
 
 Tactic fast_tac (id : ident) =
-    Intro id > Apply id
+   Intro id > Apply id
 End
 
 Theorem my_first_Theorem:
@@ -24,7 +24,7 @@ Proof
 Ongoing
 
 Theorem:
-    ∀(x: int). ∃ (y: int). y + x = y + x
+    Π (x : int). Σ (y : int). y + x = y + x
 Proof
 Ongoing
 
@@ -39,5 +39,3 @@ Ongoing
 // Exact (t : term)
 //
 // Combined Tactics :
-//
-// 
