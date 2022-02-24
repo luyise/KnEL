@@ -46,9 +46,17 @@ let rec pp_expr fmt (exp : expr) =
         pp_expr exp1
 
 let pp_context fmt (ctx : context) =
-  List.iter
-    (fun (id , exp) -> 
-      Format.fprintf fmt "\t%s : %a\n" 
-        id
-        pp_expr exp
-    ) ctx
+  let f =
+    if !Config.html_view
+    then
+      (fun (name, s) -> 
+        Format.fprintf fmt "<p style=\"text-indent:20px;\">%s : %a</p>"
+          name
+          pp_expr s)
+    else
+      (fun (name, s) ->
+        Format.fprintf fmt "\t%s : %a\n" 
+          name
+          pp_expr s)
+  in
+  List.iter f ctx

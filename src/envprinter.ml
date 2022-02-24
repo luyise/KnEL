@@ -1,10 +1,20 @@
 open Astprinter
 open Environment
 
+
 let pp_env fmt (e : env) =
-  Format.fprintf fmt "\x1B[38;5;130mContext:\x1B[39m\n%a"
-    pp_context e.context;
-  Format.fprintf fmt "\n";
-  Format.fprintf fmt "\x1B[38;5;130mGoal:\x1B[39m\n";
-  Format.fprintf fmt "\t%a\n\n"
-    pp_expr e.target
+  if !Config.html_view
+  then begin
+    Format.fprintf fmt "<h3 style=\"color:#FF0000\";>Context:</h3>%a"
+      pp_context e.context;
+    Format.fprintf fmt "<h3 style=\"color:#FF0000\";>Goal:</h3>";
+    Format.fprintf fmt "<p style=\"text-indent:20px;\">%a</p>"
+      pp_expr e.target
+  end else begin
+    Format.fprintf fmt "\x1B[38;5;130mContext:\x1B[39m\n%a"
+      pp_context e.context;
+    Format.fprintf fmt "\n";
+    Format.fprintf fmt "\x1B[38;5;130mGoal:\x1B[39m\n";
+    Format.fprintf fmt "\t%a\n\n"
+      pp_expr e.target
+  end

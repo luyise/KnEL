@@ -2,10 +2,11 @@
     open Ast
     open Parser
 
-    exception UnknownChar
+    exception UnknownChar of char
 
     let kwd = [
         ("Admitted", ADMITTED);
+        ("as", AS);
         ("Definition", DEFINITION);
         ("End", END);
         ("in", IN);
@@ -16,6 +17,7 @@
         ("mapsto", MAPSTO);
         ("neg", NEG);
         ("Ongoing", ONGOING);
+        ("open", OPEN);
         ("Proof", PROOF);
         ("QED", QED);
         ("sum_in", SUMIN);
@@ -87,8 +89,9 @@ rule next_tokens = parse
     | "]"           { RSBRACKET }
     | ";"           { SEMICOLON }
     | "\u{033B}"    { LAMBDA } (* λ *)
+    | "."           { DOT }
     | eof           { EOF }
-    | _             { raise UnknownChar }
+    | _ as c        { raise (UnknownChar c) }
 
 {
     let next_token =

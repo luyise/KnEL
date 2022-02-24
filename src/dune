@@ -1,5 +1,10 @@
+(include_subdirs unqualified)
+
 (ocamllex
 	(modules lexer))
+
+(menhir
+	(modules parser))
 
 (executable
 	(promote (until-clean))
