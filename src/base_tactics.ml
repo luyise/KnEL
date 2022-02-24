@@ -15,11 +15,14 @@ let apply_base_tactic : env -> base_tactic -> env list
         begin match in_context_opt id e.context with
           | Some _ -> raise Invalid_tactic
           | None ->
-              let typ_over_typ' = rename e.used_ident x id typ_over_typ in
-              [ { context = (id , typ) :: e.context
-                ; used_ident = id :: e.used_ident
-                ; target = typ_over_typ' }
-              ]
+              if id = "_" then raise Invalid_tactic
+              else begin
+                let typ_over_typ' = rename e.used_ident x id typ_over_typ in
+                [ { context = (id , typ) :: e.context
+                  ; used_ident = id :: e.used_ident
+                  ; target = typ_over_typ' }
+                ]
+              end
         end
     | ApplyTac f_term , typ -> begin
         match beta_reduce e.used_ident 

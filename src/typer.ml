@@ -40,9 +40,13 @@ let rec compute_type_of_term : context -> ident list -> expr -> expr
               let exp_of_z = rename idl x z exp_of_x in
               compute_type_of_term ctx idl (ELam ((z , x_typ) , exp_of_z))
           | None ->
+            let (ctx' , idl') = 
+              if x = "_" then (ctx , idl) 
+              else (((x , x_typ) :: ctx) , (x :: idl)) 
+            in
             begin match
                 compute_type_of_term ctx idl x_typ ,
-                compute_type_of_term ((x , x_typ) :: ctx) (x :: idl) exp_of_x
+                compute_type_of_term ctx' idl' exp_of_x
               with
                 | EConst "Type" , typ_of_exp_of_x ->
                     EPi ((x , x_typ) , typ_of_exp_of_x)
@@ -67,9 +71,13 @@ let rec compute_type_of_term : context -> ident list -> expr -> expr
               let exp_of_z = rename idl id z exp in
               compute_type_of_term ctx idl (EPi ((z , typ_a) , exp_of_z))
           | None ->
+              let (ctx' , idl') = 
+                if id = "_" then (ctx , idl) 
+                else (((id , typ_a) :: ctx) , (id :: idl)) 
+              in
               match
                 beta_reduce idl (compute_type_of_term ctx idl typ_a) ,
-                beta_reduce idl (compute_type_of_term ((id , typ_a) :: ctx) (id :: idl) exp)
+                beta_reduce idl (compute_type_of_term ctx' idl' exp)
               with
                 | EConst "Type" , 
                   EConst "Type" ->
@@ -77,12 +85,20 @@ let rec compute_type_of_term : context -> ident list -> expr -> expr
         end
     | EPair ((term1 , term2) , Some (ELam ((id , typ_a) , exp))) ->
         begin match in_context_opt id ctx with
-          | Some _ -> raise Ident_colision
+          | Some _ ->
+              let z = get_unused_ident idl in
+              let exp_of_z = rename idl id z exp in
+              compute_type_of_term ctx idl 
+                (EPair ((term1 , term2) , Some (ELam ((z , typ_a) , exp_of_z))))
           | None ->
+              let (ctx' , idl') = 
+                if id = "_" then (ctx , idl) 
+                else (((id , typ_a) :: ctx) , (id :: idl))
+              in
               match
                 beta_reduce idl (compute_type_of_term ctx idl term1) ,
-                beta_reduce (id :: idl) 
-                  (compute_type_of_term ((id , typ_a) :: ctx) (id :: idl) exp) ,
+                beta_reduce idl' 
+                  (compute_type_of_term ctx' idl' exp) ,
                 beta_reduce idl (compute_type_of_term ctx idl term2)
               with
                 | typ_a' , EConst "Type" , exp'
@@ -121,10 +137,14 @@ let rec compute_type_of_term : context -> ident list -> expr -> expr
                 let exp_of_z = rename idl id z exp in
                 compute_type_of_term ctx idl (ESigma ((z , typ_a) , exp_of_z))
             | None ->
+                let (ctx' , idl') = 
+                  if id = "_" then (ctx , idl) 
+                  else (((id , typ_a) :: ctx) , (id :: idl)) 
+                in
                 match
                   beta_reduce idl (compute_type_of_term ctx idl typ_a) ,
-                  beta_reduce (id :: idl) 
-                    (compute_type_of_term ((id , typ_a) :: ctx) (id :: idl) exp)
+                  beta_reduce idl' 
+                    (compute_type_of_term ctx' idl' exp)
                 with
                   | EConst "Type" , EConst "Type" -> EConst "Type"
         end

@@ -45,7 +45,7 @@ let rec rename : ident list -> ident -> ident -> expr -> expr
         ELam ((z' , typ') , term')
     | ELam ((z , typ) , term) ->
         let typ' = rename idl x y typ in
-        let idl' = z :: idl in
+        let idl' = if z = "_" then idl else (z :: idl) in
         let term' = rename idl' x y term in
         ELam ((z , typ') , term')
 
@@ -61,7 +61,7 @@ let rec rename : ident list -> ident -> ident -> expr -> expr
         EPi ((z' , typ') , term')
     | EPi ((z , typ) , term) ->
         let typ' = rename idl x y typ in
-        let idl' = z :: idl in
+        let idl' = if z = "_" then idl else (z :: idl) in
         let term' = rename idl' x y term in
         EPi ((z , typ') , term')
       
@@ -85,7 +85,7 @@ let rec rename : ident list -> ident -> ident -> expr -> expr
         ESigma ((z' , typ') , term')
     | ESigma ((z , typ) , term) ->
         let typ' = rename idl x y typ in
-        let idl' = z :: idl in
+        let idl' = if z = "_" then idl else (z :: idl) in
         let term' = rename idl' x y term in
         ESigma ((z , typ') , term')
         

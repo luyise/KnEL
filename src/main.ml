@@ -1,4 +1,3 @@
-open Code_random
 open Lexing
 
 (* open NomDuFichier : ouvre un nom du fichier, de façon publique *)
@@ -46,6 +45,6 @@ let main () =
   done;
   Knel_modules.main_file main_file
 
-let _ = FileProceeding.execute_file myFile
+(* let _ = FileProceeding.execute_file Code_random.myFile *)
  
 let () = main ()
