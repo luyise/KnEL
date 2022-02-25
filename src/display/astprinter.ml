@@ -45,8 +45,8 @@ let rec pp_expr fmt (exp : expr) =
     | EApp (exp1 , exp2) -> Format.fprintf fmt "%a%a %a%a" (* "(%a %a)" *)
         (pp_ident CLR_par) "("
         pp_expr exp1
-        (pp_ident CLR_par) ")"
         pp_expr exp2
+        (pp_ident CLR_par) ")"
     | EPi ((id , exp1) , exp2) ->
         if id = "_" then              (* "(%a → %a)" *)
           Format.fprintf fmt "%a%a %a %a%a"

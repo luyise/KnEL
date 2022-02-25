@@ -262,7 +262,7 @@ expr_in:
 expr_bot:
     | VOID                  { EConst "Void" }
     | UNIT                  { EConst "Unit" }
-    | IDENT                 { EVar $1 }
+    | IDENT                 { if $1 = "Type" then EConst "Type" else EVar $1 }
     | LPAREN expr RPAREN    { $2 }
     | LPAREN expr COMMA expr RPAREN    { EPair (($2, $4), None) }
     | LPAREN expr COLON expr RPAREN    { ETaggedExpr ($2, $4) }

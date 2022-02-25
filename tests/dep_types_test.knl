@@ -1,13 +1,28 @@
-Variables = {
-  X : Type,
-  Y : Type,
-  P : X → Y → Type
-}
+//Variables = {
+//  X : Type,
+//  Y : Type,
+//  P : X → Y → Type
+//}
+//
+//Theorem Choice :
+//    (Π (x : X), Σ (y : Y), P x y)
+//  → (Σ (f : X → Y), Π (x : X), P x (f x))
+//Proof
+//  Intro H;
+//  Split [λ (x : X) → fst (H x)];
+//  Intro x;
+//  Exact [snd (H x)]
+//QED
 
-Theorem Choice :
-    (Π (x : X), Σ (y : Y), P x y)
-  → (Σ (f : X → Y), Π (x : X), P x (f x))
+Theorem sigma_inversion :
+  Π (X : Type), Π (Y : Type), Π (P : X → Y → Type),
+  (Σ (x : X), Σ (y : Y), P x y) → Σ (y : Y), Σ (x : X), P x y
 Proof
+  Intro X;
+  Intro Y;
+  Intro P;
   Intro H;
-  Split (λ (x : X) → fst (H x));
-Ongoing
+  Split [fst (snd H)];
+  Split [fst H];
+  Exact [snd (snd H)];
+QED

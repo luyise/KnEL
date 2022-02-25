@@ -157,7 +157,10 @@ let rec compute_type_of_term : context -> ident list -> expr -> expr
           (beta_reduce idl exp)
           then exp
         else raise Type_error
-  in Format.eprintf "type of %a is %a\n"
-    Astprinter.pp_expr term
-    Astprinter.pp_expr res;
-    res
+  in
+  if !Config.verbose then begin
+    Format.eprintf "type of %a is %a\n"
+      Astprinter.pp_expr term
+      Astprinter.pp_expr res
+  end;
+  res
