@@ -176,6 +176,8 @@ proof:
 
 tactic:
     | no_app_tactic             { $1 }
+(*    | tactic_no_cmp LPAREN expr RPAREN { PTacApp ($1, PTacTerm $3) }
+*)
     | tactic_no_cmp no_app_tactic
         { PTacApp ($1, $2) }
     | tactic VERTVERT tactic    { PTacOr ($1, $3) }
@@ -188,11 +190,12 @@ tactic_no_cmp:
 ;
 
 no_app_tactic:
+    | LSBRACKET expr RSBRACKET  { PTacExpr $2 }
     | IDENT                     { PTacVar $1 }
     | INT                       { PTacInt $1 }
     | LPAREN tactic RPAREN      { $2 }
-    | LSBRACKET separated_list(SEMICOLON, IDENT) RSBRACKET
-        { PTacList $2 }
+(*    | LSBRACKET separated_list(SEMICOLON, IDENT) RSBRACKET
+        { PTacList $2 }*)
 ;
 
 proof_end:

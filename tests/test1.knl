@@ -3,18 +3,16 @@ open test3
 open num.test_num
 open <-tests2.test4
 
-Tactic fast_tac (id : ident) =
-   Intro id > Apply id
-End
 
 Theorem my_first_Theorem:
     ¬¬¬A → ¬A
 Proof
     Intro NNN_a;
     Intro a;
-    Apply NNN_a;
-    fast_tac n_a;
-    Exact a;
+    Apply [NNN_a];
+    Intro n_a;
+    Apply [n_a];
+    Exact [a];
 QED
 
 Theorem:
