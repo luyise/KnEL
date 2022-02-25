@@ -19,18 +19,17 @@ type tactic_ident =
 type parsed_tactic =
   | PTacVar of ident
   | PTacInt of int
-  | PTacList of ident list
+  | PTacExpr of expr
   | PTacSeq of parsed_tactic * parsed_tactic
   | PTacOr of parsed_tactic * parsed_tactic
   | PTacApp of parsed_tactic * parsed_tactic
   | PTacBase of tactic_ident
 
 type tactic_type =
+  | TExpr
   | TInt
   | TIdent
-  | TIdentL
   | TTac
-  | TTerm
   | TArrow of tactic_type * tactic_type
   | TUnknown
 
@@ -61,7 +60,7 @@ let compatible t1 t2 = match t1, t2 with
   | TUnknown, _ -> t2
   | _, TUnknown -> t1
   | _, _ when t1 = t2 -> t1
-  | _, _ -> raise TacticTypeError 
+  | _, _ -> assert false 
 
 let rec checktype_of_tactic (env: tactic_type SMap.t) expected parsed_tac : tactic_type =
   match expected with
@@ -73,10 +72,10 @@ let rec checktype_of_tactic (env: tactic_type SMap.t) expected parsed_tac : tact
         begin
           let t1 = checktype_of_tactic env (TArrow (TUnknown, TInt)) pt1 in
           match t1 with
-            | TArrow (t11, TInt) -> if t11 = checktype_of_tactic env t11 pt2 then TInt else raise TacticTypeError
-            | _ -> raise TacticTypeError
+            | TArrow (t11, TInt) -> if t11 = checktype_of_tactic env t11 pt2 then TInt else assert false
+            | _ -> assert false
         end
-      | _ -> raise TacticTypeError
+      | _ -> assert false
     end
   | TIdent ->
     begin match parsed_tac with
@@ -85,23 +84,23 @@ let rec checktype_of_tactic (env: tactic_type SMap.t) expected parsed_tac : tact
         begin
           let t1 = checktype_of_tactic env (TArrow (TUnknown, TIdent)) pt1 in
           match t1 with
-            | TArrow (t11, TIdent) -> if t11 = checktype_of_tactic env t11 pt2 then TIdent else raise TacticTypeError
-            | _ -> raise TacticTypeError
+            | TArrow (t11, TIdent) -> if t11 = checktype_of_tactic env t11 pt2 then TIdent else assert false
+            | _ -> assert false
         end
-      | _ -> raise TacticTypeError
+      | _ -> assert false
     end
-  | TIdentL ->
+  | TExpr ->
     begin match parsed_tac with
-      | PTacVar ident when SMap.find_opt ident env = Some TIdentL -> TIdentL
-      | PTacList _ -> TIdentL
+      | PTacVar ident when SMap.find_opt ident env = Some TExpr -> TExpr
+      | PTacExpr _ -> TExpr
       | PTacApp (pt1, pt2) ->
         begin
-          let t1 = checktype_of_tactic env (TArrow (TUnknown, TIdentL)) pt1 in
+          let t1 = checktype_of_tactic env (TArrow (TUnknown, TExpr)) pt1 in
           match t1 with
-            | TArrow (t11, TIdentL) -> if t11 = checktype_of_tactic env t11 pt2 then TIdentL else raise TacticTypeError
-            | _ -> raise TacticTypeError
+            | TArrow (t11, TExpr) -> if t11 = checktype_of_tactic env t11 pt2 then TExpr else assert false
+            | _ -> assert false
         end
-      | _ -> raise TacticTypeError
+      | _ -> assert false
     end
   | TTac ->
     begin match parsed_tac with
@@ -109,28 +108,22 @@ let rec checktype_of_tactic (env: tactic_type SMap.t) expected parsed_tac : tact
       | PTacSeq (pt1, pt2) | PTacOr (pt1, pt2) ->
         if TTac = checktype_of_tactic env TTac pt1 && TTac = checktype_of_tactic env TTac pt2
         then TTac
-        else raise TacticTypeError
+        else assert false
       | PTacApp (pt1, pt2) ->
         begin
           let t1 = checktype_of_tactic env (TArrow (TUnknown, TTac)) pt1 in
           match t1 with
-            | TArrow (t11, TTac) -> if t11 = checktype_of_tactic env t11 pt2 then TTac else raise TacticTypeError
-            | _ -> raise TacticTypeError
+            | TArrow (t11, TTac) -> if t11 = checktype_of_tactic env t11 pt2 then TTac else assert false
+            | _ -> assert false
         end
-      | _ -> raise TacticTypeError
-    end
-  | TTerm ->
-    begin match parsed_tac with
-      | PTacVar ident when SMap.find_opt ident env = Some TTerm || SMap.find_opt ident env = Some TIdent || SMap.find_opt ident env = None -> TTerm
-      | PTacInt _ | PTacApp (_, _) -> TTerm
-      | _ -> raise TacticTypeError
+      | _ -> assert false
     end
   | TArrow (t1, t2) ->
     begin match parsed_tac with
       | PTacVar ident ->
         begin match SMap.find_opt ident env with
           | Some (TArrow (t3, t4)) -> TArrow (compatible t1 t3, compatible t2 t4)
-          | _ -> print_endline ident; raise TacticTypeError
+          | _ -> print_endline ident; assert false
         end
       | PTacApp (pt1, pt2) ->
         begin match checktype_of_tactic env (TArrow (TUnknown, TArrow (t1, t2))) pt1 with
@@ -138,35 +131,35 @@ let rec checktype_of_tactic (env: tactic_type SMap.t) expected parsed_tac : tact
             let _ = compatible t1 t4 in
             let _ = compatible t2 t5 in
             checktype_of_tactic env t3 pt2
-          | _ -> raise TacticTypeError
+          | _ -> assert false
         end
-      | _ -> raise TacticTypeError
+      | _ -> assert false
     end
   | TUnknown -> assert false
 
 let rec checktype_of_tactic_builder (env: tactic_type SMap.t) = function
     | Tactic pt ->
       let t = checktype_of_tactic env TTac pt in
-      if t <> TTac then raise TacticTypeError
+      if t <> TTac then assert false
       else t
     | Arg (id, tt, tb) ->
       TArrow (tt, checktype_of_tactic_builder (SMap.add id tt env) tb)
 
 let defaultTacticsList = [
   "Intro", TArrow(TIdent, TTac), Arg ("v", TIdent, Tactic (PTacApp (PTacBase TIIntro, PTacVar "v")));
-  "Apply", TArrow(TTerm, TTac), Arg ("t", TTerm, Tactic (PTacApp (PTacBase TIApply, PTacVar "t")));
-  "Split", TArrow(TTerm, TTac), Arg ("t", TTerm, Tactic (PTacApp (PTacBase TISplit, PTacVar "t")));
+  "Apply", TArrow(TExpr, TTac), Arg ("t", TExpr, Tactic (PTacApp (PTacBase TIApply, PTacVar "t")));
+  "Split", TArrow(TExpr, TTac), Arg ("t", TExpr, Tactic (PTacApp (PTacBase TISplit, PTacVar "t")));
   "SigmaRec",  TTac, Tactic (PTacBase TISigmaRec);
-  "Exact", TArrow (TTerm, TTac), Arg ("t", TTerm, Tactic (PTacApp (PTacBase TIExact, PTacVar "t")));
-  "try", TArrow (TTac, TTac), Arg ("t", TTerm, Tactic (PTacApp (PTacBase TITry, PTacVar "t")));
-  "rpt", TArrow (TInt, TArrow (TTac, TTac)), Arg ("i", TInt, Arg ("t", TTerm, Tactic (PTacApp (PTacApp (PTacBase TIDo, PTacVar "i"), PTacVar "t"))));
+  "Exact", TArrow (TExpr, TTac), Arg ("t", TExpr, Tactic (PTacApp (PTacBase TIExact, PTacVar "t")));
+  "try", TArrow (TTac, TTac), Arg ("t", TExpr, Tactic (PTacApp (PTacBase TITry, PTacVar "t")));
+  "rpt", TArrow (TInt, TArrow (TTac, TTac)), Arg ("i", TInt, Arg ("t", TExpr, Tactic (PTacApp (PTacApp (PTacBase TIDo, PTacVar "i"), PTacVar "t"))));
 ]
 
 let base_tactic_ctxt = List.fold_left (fun smap (id, tt, tb) -> SMap.add id (tt, tb, TacEnv SMap.empty) smap) SMap.empty defaultTacticsList
 
 let tactic_creator env id tb =
   if SMap.mem id env
-  then raise TacticTypeError
+  then assert false
   else
     let tt = checktype_of_tactic_builder (SMap.map (fun (x,_,_) -> x) env) tb in
     SMap.add id (tt, tb, TacEnv env) env
@@ -180,15 +173,6 @@ let rec get_int env: parsed_tactic -> int = function
   | PTacInt i -> i
   | _ -> assert false
 
-let rec get_list env: parsed_tactic -> ident list = function
-  | PTacVar id -> begin
-    match SMap.find_opt id env with
-      | Some (_, Tactic x, TacEnv env) -> get_list env x
-      | _ -> assert false
-    end
-  | PTacList l -> l
-  | _ -> assert false
-
 let rec get_ident env: parsed_tactic -> ident = function
   | PTacVar id -> begin
     match SMap.find_opt id env with
@@ -199,6 +183,7 @@ let rec get_ident env: parsed_tactic -> ident = function
   | _ -> assert false
 
 let rec term_of_ptac env = function
+    | PTacExpr e -> e
     | PTacVar id ->
       begin match SMap.find_opt id env with
         | Some (_, Tactic t, TacEnv env) -> term_of_ptac env t

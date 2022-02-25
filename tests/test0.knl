@@ -1,4 +1,0 @@
-
-Tactic fast_tac (id : ident) =
-Intro id > Apply id
-End

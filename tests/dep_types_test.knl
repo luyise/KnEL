@@ -4,7 +4,7 @@ Variables = {
   P : X → Y → Type
 }
 
-Theorem Choice : 
+Theorem Choice :
     (Π (x : X), Σ (y : Y), P x y)
   → (Σ (f : X → Y), Π (x : X), P x (f x))
 Proof
