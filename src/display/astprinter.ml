@@ -13,12 +13,30 @@ let ansi_escape_code clr = match clr with
   | CLR_par -> "\x1B[38;5;242m"     (* gris, terne *)
   | CLR_cst -> "\x1B[38;5;181m"     (* ocre, pâle *)
   | CLR_var -> "\x1B[38;5;109m"     (* vert, pâle *)
-  | CLR_nam -> "\x1B[38;5;183m"     (* lavande, pâle *)
+  | CLR_nam -> "\x1B[38;5;174m"     (* lavande, pâle *)
   | CLR_def -> "\x1B[39m"      (* gris, très pâle *)
 
+let html_left_tag clr = match clr with
+  | CLR_elm -> "<font color = \"#f6c266\">"     (* orange, pâle *)
+  | CLR_par -> "<font color = \"#505050\">"     (* gris, terne *)
+  | CLR_cst -> "<font color = \"#F5B7B1\">"     (* ocre, pâle *)
+  | CLR_var -> "<font color = \"#96ab9c\">"     (* vert, pâle *)
+  | CLR_nam -> "<font color = \"#d98880\">"     (* lavande, pâle *)
+  | CLR_def -> "<font color = \"#F2F3F4\">"     (* gris, très pâle *)
+
 let pp_ident clr fmt ident =
-  let pref = ansi_escape_code clr in
-  let suff = ansi_escape_code CLR_def in
+  let pref = 
+    if !Config.html_view then
+      html_left_tag clr
+    else
+      ansi_escape_code clr
+  in
+  let suff = 
+    if !Config.html_view then
+      "</font>"
+    else
+      ansi_escape_code CLR_def
+  in
   Format.fprintf fmt "%s%s%s" pref ident suff
 
 let rec pp_expr fmt (exp : expr) =
@@ -110,14 +128,16 @@ let pp_context fmt (ctx : context) =
   let f =
     if !Config.html_view
     then
-      (fun (name, s) -> 
-        Format.fprintf fmt "<p style=\"text-indent:20px;\">%s : %a</p>"
-          name
+      (fun (name, s) ->
+        Format.fprintf fmt "<br>&emsp;&emsp; %a %a %a"
+          (pp_ident CLR_nam) name
+          (pp_ident CLR_def) ":"
           pp_expr s)
     else
       (fun (name, s) ->
-        Format.fprintf fmt "\t%a : %a\n" 
-          (pp_ident CLR_var) name
+        Format.fprintf fmt "\t%a %a %a\n" 
+          (pp_ident CLR_nam) name
+          (pp_ident CLR_def) ":"
           pp_expr s)
   in
   List.iter f (List.rev ctx)

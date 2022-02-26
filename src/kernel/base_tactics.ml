@@ -71,7 +71,7 @@ let apply_base_tactic : env -> base_tactic -> env list
           | None ->
             let term_typ = beta_reduce e.used_ident (compute_type_of_term e.context e.used_ident term) in
             let typ' = beta_reduce e.used_ident typ in
-            if alpha_compare e.used_ident typ typ' then
+            if alpha_compare e.used_ident term_typ typ' then
               [ { context = (id , typ') :: e.context
               ; definitions = (id , term) :: e.definitions
               ; used_ident = id :: e.used_ident

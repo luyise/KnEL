@@ -17,7 +17,7 @@ let pp_status fmt (st : status) =
 let pp_knel_state fmt (state : knel_state) =
   if !Config.html_view
   then begin
-    Format.fprintf fmt "<b style=\"color:#A04000\">Status: %a</b>"
+    Format.fprintf fmt "<b style=\"color:#af601a\">Status: %a</b>"
       pp_status state.status;
     (* Format.fprintf fmt "<h3>Global context:</h3>\n%a"
       pp_context state.global_context; *)
@@ -25,7 +25,7 @@ let pp_knel_state fmt (state : knel_state) =
       | [] -> ()
       | e :: e_tail ->
           pp_env fmt e;
-          Format.fprintf fmt "<b style=\"color:#A04000\">%d other goals remaining</b>"
+          Format.fprintf fmt "<b style=\"color:#af601a\">%d other goals remaining</b>"
             (List.length e_tail)
   end else begin
     Format.fprintf fmt "\n";

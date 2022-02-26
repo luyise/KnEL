@@ -13,6 +13,10 @@ let set_file f = Parsing.files_to_parse := f :: !Parsing.files_to_parse
 
 let () = Config.parse_arguments set_file
 
+(* Style de l'affichage html *)
+let _ = if !Config.html_view then
+  Format.printf "<font face=\"Ubuntu; FreeSans\">";;
+
 let () = if !Config.shutdown then exit 0
 
 let check_file_name filename =
@@ -48,3 +52,7 @@ let main () =
 (* let _ = FileProceeding.execute_file Code_random.myFile *)
  
 let () = main ()
+
+(* gestion du style html *)
+let _ = if !Config.html_view then
+  Format.printf "</font>";;

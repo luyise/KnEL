@@ -21,11 +21,11 @@ let pp_def fmt (defs : (ident * expr) list) =
 let pp_env fmt (e : env) =
   if !Config.html_view
   then begin
-    Format.fprintf fmt "<h4 style=\"color:#A04000\">Context</h4>%a"
+    Format.fprintf fmt "<br><br><b style=\"color:#af601a\">Context:</b> %a"
       pp_context e.context;
-    Format.fprintf fmt "<h4 style=\"color:#A04000\">Definitions:</h4>%a"
+    Format.fprintf fmt "<br><br><b style=\"color:#af601a\">Definitions:</b> %a"
       pp_def e.definitions;
-    Format.fprintf fmt "<h4 style=\"color:#A04000\">Goal:</h4>";
+    Format.fprintf fmt "<br><br><b style=\"color:#af601a\">Goal:</b>";
     Format.fprintf fmt "<p style=\"text-indent:20px;\">%a</p>"
       pp_expr e.target
   end else begin
