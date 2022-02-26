@@ -274,11 +274,11 @@ let execute_file : ?show:bool -> knel_file -> context -> (ident * expr) list -> 
       if !Config.html_view
       then begin
         Format.printf "<p>File succesfully read, state of KnEL when reached end of file: </p>";
-        Format.printf "<p><b style=\"color:#652A0E\">Status:</b> %a</p>\n\n"
+        Format.printf "<br><br><p><b style=\"color:#af601a\">Status:</b> %a</p>"
           pp_status final_state.status;
-        Format.printf "<h4 style=\"color:#9B673C\">Final context:</h4> \n%a\n"
+        Format.printf "<b style=\"color:#af601a\">Final context:</b><br> %a"
           pp_context final_state.global_context;
-        Format.printf "<h4 style=\"color:#9B673C\">Terms defined:</h4> \n%a\n"
+        Format.printf "<br><br><b style=\"color:#af601a\">Terms defined:</b> \n%a\n"
           pp_def final_state.definitions
       end else begin
         Format.printf "File succesfully read, state of KnEL when reached end of file: \n\n";
