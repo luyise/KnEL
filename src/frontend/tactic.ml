@@ -147,14 +147,14 @@ let rec checktype_of_tactic_builder (env: tactic_type SMap.t) = function
       TArrow (tt, checktype_of_tactic_builder (SMap.add id tt env) tb)
 
 let defaultTacticsList = [
-  "Intro", TArrow(TIdent, TTac), Arg ("v", TIdent, Tactic (PTacApp (PTacBase TIIntro, PTacVar "v")));
-  "Apply", TArrow(TExpr, TTac), Arg ("t", TExpr, Tactic (PTacApp (PTacBase TIApply, PTacVar "t")));
-  "Split", TArrow(TExpr, TTac), Arg ("t", TExpr, Tactic (PTacApp (PTacBase TISplit, PTacVar "t")));
+  "Intro", TArrow(TIdent, TTac), Tactic (PTacBase TIIntro);
+  "Apply", TArrow(TExpr, TTac), Tactic (PTacBase TIApply);
+  "Split", TArrow(TExpr, TTac), Tactic (PTacBase TISplit);
   "SigmaRec",  TTac, Tactic (PTacBase TISigmaRec);
-  "Exact", TArrow (TExpr, TTac), Arg ("t", TExpr, Tactic (PTacApp (PTacBase TIExact, PTacVar "t")));
-  "try", TArrow (TTac, TTac), Arg ("t", TExpr, Tactic (PTacApp (PTacBase TITry, PTacVar "t")));
-  "rpt", TArrow (TInt, TArrow (TTac, TTac)), Arg ("i", TInt, Arg ("t", TExpr, Tactic (PTacApp (PTacApp (PTacBase TIDo, PTacVar "i"), PTacVar "t"))));
-  "Define", TArrow (TIdent, TArrow (TExpr, TArrow (TExpr, TTac))), Arg ("i", TIdent, Arg("term" , TExpr, Arg ("typ", TExpr, Tactic (PTacApp (PTacApp (PTacApp (PTacBase TIDefine, PTacVar "i"), PTacVar "term"), PTacVar "typ")))))
+  "Exact", TArrow (TExpr, TTac), Tactic (PTacBase TIExact);
+  "try", TArrow (TTac, TTac), Tactic (PTacBase TITry);
+  "rpt", TArrow (TInt, TArrow (TTac, TTac)), Tactic (PTacBase TIDo);
+  "Define", TArrow (TIdent, TArrow (TExpr, TArrow (TExpr, TTac))), Tactic (PTacBase TIDefine);
 ]
 
 let base_tactic_ctxt = List.fold_left (fun smap (id, tt, tb) -> SMap.add id (tt, tb, TacEnv SMap.empty) smap) SMap.empty defaultTacticsList
