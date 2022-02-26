@@ -17,3 +17,10 @@ let rec in_context_opt : ident -> context -> expr option
     | [] -> None
     | (id' , exp) :: _ when id = id' -> Some exp
     | _ :: ctx_tail -> in_context_opt id ctx_tail
+
+let rec in_definitions_opt : ident -> (ident * expr) list -> expr option
+= fun id defs ->
+  match defs with
+    | [] -> None
+    | (id' , term) :: _ when id = id' -> Some term
+    | _ :: defs_tail -> in_definitions_opt id defs_tail

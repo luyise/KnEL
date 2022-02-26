@@ -43,6 +43,7 @@ type base_tactic =
   | ExactTac of expr             (* Démontre un objectif en invoquant 
                                     une variable du contexte *)
   | DefineTac of ident * expr * expr      (* Défini un term à partir des éléments du contexte courant : correspond à un let in. *)
+  | UnfoldTac of ident
 
 type tactic =
   | BaseTac of base_tactic

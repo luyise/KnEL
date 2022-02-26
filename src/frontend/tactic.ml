@@ -61,7 +61,7 @@ let compatible t1 t2 = match t1, t2 with
   | TUnknown, _ -> t2
   | _, TUnknown -> t1
   | _, _ when t1 = t2 -> t1
-  | _, _ -> assert false 
+  | _, _ -> assert false
 
 let rec checktype_of_tactic (env: tactic_type SMap.t) expected parsed_tac : tactic_type =
   match expected with

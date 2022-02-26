@@ -65,9 +65,32 @@ let apply_base_tactic : env -> base_tactic -> env list
         let t' = beta_reduce e.used_ident t in
         if alpha_compare e.used_ident t' typ then []
         else raise Invalid_tactic
-    | DefineTac _ , _ ->
-        assert false
-        (* TO_DO *)
+    | DefineTac (id, term, typ) , t ->
+        begin match in_context_opt id e.context with
+          | Some _ -> raise Invalid_tactic
+          | None ->
+            let term_typ = beta_reduce e.used_ident (compute_type_of_term e.context e.used_ident term) in
+            let typ' = beta_reduce e.used_ident typ in
+            if alpha_compare e.used_ident typ typ' then
+              [ { context = (id , typ') :: e.context
+              ; definitions = (id , term) :: e.definitions
+              ; used_ident = id :: e.used_ident
+              ; target = t }
+              ]
+            else raise Type_error
+        end
+    | UnfoldTac id , t ->
+        let term = match in_definitions_opt id e.definitions
+          with
+            | Some term' -> term'
+            | None -> raise Invalid_tactic
+        in
+        let rewritten_target = substitute e.used_ident id term t in
+        [ { context = e.context
+          ; definitions = e.definitions
+          ; used_ident = e.used_ident
+          ; target = rewritten_target }
+        ]
     | _ -> raise Invalid_tactic
 
 let rec apply_tactic : env -> tactic -> env list
