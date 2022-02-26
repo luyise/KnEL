@@ -10,6 +10,7 @@
 %token AMPERAMPER   (* && *)
 %token AND          (* and ∧ *)
 %token ARROW        (* -> → *)
+%token DEF          (* := *)
 %token DEFINITION   (* Definition *)
 %token COLON        (* : *)
 %token COMMA        (* , *)
@@ -108,7 +109,7 @@ parent:
 
 decl_list:
     | EOF                   { [] }
-    | definition decl_list  { $2 }
+    | definition decl_list  { $1::$2 }
     | inductive decl_list   { $2 }
     | theorem decl_list     { $1::$2 }
     | tactic_decl decl_list { $1::$2 }
@@ -116,7 +117,13 @@ decl_list:
 ;
 
 hypothesis_intro:
-    | VARIABLES EQ LBRACKET separated_list(SEMICOLON, var_def) RBRACKET { RawHypothesisSection $4 }
+    | VARIABLES EQ LBRACKET var_def_list { RawHypothesisSection $4 }
+;
+
+var_def_list:
+    | var_def SEMICOLON var_def_list { $1::$3 }
+    | var_def RBRACKET  { [$1] }
+    | RBRACKET          { [] }
 ;
 
 var_def:
@@ -144,7 +151,7 @@ tactic_arg_type:
 ;
 
 definition:
-    | DEFINITION IDENT COLON def_bloc END { $2 }
+    | DEFINITION IDENT COLON expr DEF expr END { RawDefinitionSection ($2, $4, $6) }
 ;
 
 def_bloc:

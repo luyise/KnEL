@@ -1,0 +1,22 @@
+Variables = {
+    num : Type;
+    zero : num;
+    Succ : num -> num;
+    add : num -> num -> num;
+    num_ind : ∀ P : num -> Type, P zero × (∀n : num, P n → P (Succ n)) → ∀n : num, P n;
+    ge : num -> num -> Type;
+    ge_refl : ∀ x : num, ge x x;
+    ge_trans : ∀ x : num, ∀ y : num, ∀ z : num, ge x y → ge y z → ge x z;
+    ge_succ : ∀ x : num, ge x (Succ x);
+}
+
+Theorem ge_zero:
+    ∀ x : num, ge zero x
+Proof
+    Apply [num_ind (ge zero)];
+    Split [ge_refl zero];
+    Intro n;
+    Intro ge_0_n;
+    Apply [ge_trans zero n (Succ n) ge_0_n];
+    Exact [ge_succ n];
+QED

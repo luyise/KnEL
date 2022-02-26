@@ -7,7 +7,7 @@ module SMap = Map.Make(String)
 
 type file_status =
   | ToDoStatus of Tactic.raw_knel_file
-  | DoneStatus of context
+  | DoneStatus of ((ident * expr * expr) list * context)
 
 let build_module_map : (file_status * (string * string) list) SMap.t ref = ref SMap.empty
 
@@ -24,14 +24,21 @@ let context_of_file fname as_name =
   let (file_status, _) = SMap.find fname !build_module_map in
   match file_status with
     | ToDoStatus _ -> assert false
-    | DoneStatus ctxt ->
-      List.map (fun (name, c) -> (as_name ^ "." ^name, c)) ctxt
+    | DoneStatus (defs, ctxt) ->
+      [], List.map (fun (name, c) -> (as_name ^ "." ^name, c)) ctxt
 
 let rec ctxt_of_knel_file = function
-    | [] -> []
-    | HypothesisSection ctxt::tl -> ctxt @ ctxt_of_knel_file tl
+    | [] -> [], []
+    | HypothesisSection ctxt::tl ->
+        let (defs, ctxt_tl) = ctxt_of_knel_file tl in
+          (defs, ctxt @ ctxt_tl)
     | ReasoningSection (_, None, _, _, _)::tl -> ctxt_of_knel_file tl
-    | ReasoningSection (_, Some name, statement, _, _)::tl -> (name, statement)::ctxt_of_knel_file tl
+    | ReasoningSection (_, Some name, statement, _, _)::tl ->
+      let (defs, ctxt_tl) = ctxt_of_knel_file tl in
+        (defs, (name, statement) :: ctxt_tl)
+    | DefinitionSection (i, e1, e2)::tl ->
+      let (defs_tl, ctxt) = ctxt_of_knel_file tl in
+        ((i, e1, e2) :: defs_tl, ctxt)
 
 let update_tree f data =
   let deps = SMap.find f !build_module_map in
@@ -41,14 +48,19 @@ let compile_file ?(show=false) f =
   let (content, deps) = SMap.find f !build_module_map
   in match content with
     | ToDoStatus cnt ->
-      let ctxt =
-        List.fold_left (fun l (dep, as_name) -> List.rev_append (List.rev (context_of_file dep as_name)) l) [] deps
+      let (defs, ctxt) =
+        List.fold_right
+          (fun (dep, as_name) (defs_l, ctxt_l) -> 
+            let (defs, ctxt) = context_of_file dep as_name in
+              (defs @ defs_l, ctxt @ ctxt_l))
+          deps
+          ([], [])
       in
       let () = Format.eprintf "compiling %s ...\n" f in
       let (tac_env, knl_file) = Tactic.unraw_file Tactic.base_tactic_ctxt cnt in
-      let () = FileProceeding.execute_file ~show knl_file [] [] in
-      let new_ctxt = ctxt_of_knel_file knl_file in
-      update_tree f (DoneStatus new_ctxt)
+      let () = FileProceeding.execute_file ~show knl_file ctxt defs in
+      let new_defs, new_ctxt = ctxt_of_knel_file knl_file in
+      update_tree f (DoneStatus (new_defs, new_ctxt))
     | DoneStatus _ -> assert false 
   
 

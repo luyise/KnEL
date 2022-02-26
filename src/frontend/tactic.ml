@@ -48,6 +48,7 @@ type raw_knel_section =
         parsed_tactic list *
       ending_tag)
   | RawTacticDeclSection of ident * tactic_builder
+  | RawDefinitionSection of ident * expr * expr
 
 type raw_knel_file = raw_knel_section list
 
@@ -57,9 +58,10 @@ type tactic_env =
 type tactic_ctxt = (tactic_type * tactic_builder * tactic_env) SMap.t
 
 
-let compatible t1 t2 = match t1, t2 with
+let rec compatible t1 t2 = match t1, t2 with
   | TUnknown, _ -> t2
   | _, TUnknown -> t1
+  | TArrow(t3, t4), TArrow (t5, t6) -> TArrow (compatible t3 t5, compatible t4 t6)
   | _, _ when t1 = t2 -> t1
   | _, _ -> assert false
 
@@ -129,9 +131,8 @@ let rec checktype_of_tactic (env: tactic_type SMap.t) expected parsed_tac : tact
       | PTacApp (pt1, pt2) ->
         begin match checktype_of_tactic env (TArrow (TUnknown, TArrow (t1, t2))) pt1 with
           | TArrow (t3, TArrow (t4, t5)) ->
-            let _ = compatible t1 t4 in
-            let _ = compatible t2 t5 in
-            checktype_of_tactic env t3 pt2
+            let _ = checktype_of_tactic env t3 pt2 in
+            TArrow (compatible t1 t4, compatible t2 t5)
           | _ -> assert false
         end
       | _ -> assert false
@@ -227,6 +228,8 @@ let rec compute_tactic args (env: tactic_ctxt) parsed_tac = match args, parsed_t
 let unraw_section tac_env (tl: knel_file) (rs: raw_knel_section) = match rs with
     | RawHypothesisSection ctxt ->
       HypothesisSection ctxt :: tl
+    | RawDefinitionSection (i, e1, e2) ->
+        DefinitionSection (i, e1, e2) :: tl
     | RawTacticDeclSection (id, tb) ->
       let () = tac_env := tactic_creator !tac_env id tb in tl
     | RawReasoningSection (bt, name_opt, stmt, proof, et) ->
