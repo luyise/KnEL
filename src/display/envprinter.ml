@@ -7,8 +7,8 @@ let pp_def fmt (defs : (ident * expr) list) =
     if !Config.html_view
     then
       (fun (name, def) -> 
-        Format.fprintf fmt "<p style=\"text-indent:20px;\">%s = %a</p>"
-          name
+        Format.fprintf fmt "<p style=\"text-indent:20px;\">%a = %a</p>"
+          (pp_ident CLR_nam) name
           pp_expr def)
     else
       (fun (name, def) ->
@@ -21,11 +21,11 @@ let pp_def fmt (defs : (ident * expr) list) =
 let pp_env fmt (e : env) =
   if !Config.html_view
   then begin
-    Format.fprintf fmt "<h3 style=\"color:#FF0000\";>Context:</h3>%a"
+    Format.fprintf fmt "<h4 style=\"color:#A04000\">Context</h4>%a"
       pp_context e.context;
-    Format.fprintf fmt "<h3 style=\"color:#FF0000\";>Definitions:</h3>%a"
+    Format.fprintf fmt "<h4 style=\"color:#A04000\">Definitions:</h4>%a"
       pp_def e.definitions;
-    Format.fprintf fmt "<h3 style=\"color:#FF0000\";>Goal:</h3>";
+    Format.fprintf fmt "<h4 style=\"color:#A04000\">Goal:</h4>";
     Format.fprintf fmt "<p style=\"text-indent:20px;\">%a</p>"
       pp_expr e.target
   end else begin

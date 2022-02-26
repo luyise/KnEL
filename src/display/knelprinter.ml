@@ -5,9 +5,9 @@ let pp_status fmt (st : status) =
   let str = 
     if !Config.html_view
     then match st with
-      | AllDone -> "<b style=\"color:#00FF00\">All Done</b>"
-      | InProof -> "<b style=\"color:#0000FF\">In Proof</b>"
-      | Error str   -> "<b style=\"color:#FF0000\">Error: "^str^"</b>"
+      | AllDone -> "<b style=\"color:#1E8449\">All Done</b>"
+      | InProof -> "<b style=\"color:#1F618D\">In Proof</b>"
+      | Error str   -> "<b style=\"color:#922B21\">Error: "^str^"</b>"
     else match st with
       | AllDone -> "\x1B[38;5;106mAll Done\x1B[39m"
       | InProof -> "\x1B[38;5;62mIn Proof\x1B[39m"
@@ -17,7 +17,7 @@ let pp_status fmt (st : status) =
 let pp_knel_state fmt (state : knel_state) =
   if !Config.html_view
   then begin
-    Format.fprintf fmt "<p>Status : %a</p>"
+    Format.fprintf fmt "<b style=\"color:#A04000\">Status: %a</b>"
       pp_status state.status;
     (* Format.fprintf fmt "<h3>Global context:</h3>\n%a"
       pp_context state.global_context; *)
@@ -25,7 +25,7 @@ let pp_knel_state fmt (state : knel_state) =
       | [] -> ()
       | e :: e_tail ->
           pp_env fmt e;
-          Format.fprintf fmt "<p>%d Other goals remaining</p>"
+          Format.fprintf fmt "<b style=\"color:#A04000\">%d other goals remaining</b>"
             (List.length e_tail)
   end else begin
     Format.fprintf fmt "\n";

@@ -18,7 +18,7 @@ Lemma Cap_exchange :
 Proof
   Intro U;
   Intro V;
-  Define Ge [λ (U : A) → λ (V : A) → Le V U] [A → A → Type];
+  //Define Ge [λ (U : A) → λ (V : A) → Le V U] [A → A → Type];
 
   //Apply [λ (p : (Le (Cap U V) V) × (Le (Cap U V) U)) 
   //  → InfCap V U (Cap U V) (fst p) (snd p)];

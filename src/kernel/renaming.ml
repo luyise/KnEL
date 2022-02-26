@@ -6,7 +6,7 @@ let get_unused_ident : (ident list) -> ident
     List.filter_map
     (fun id -> 
       if id.[0] = 'x' then 
-        Some (String.sub id 1 (String.length id))
+        Some (String.sub id 1 ((String.length id) - 1))
       else None
     ) id_list
   in
