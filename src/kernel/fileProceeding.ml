@@ -4,6 +4,7 @@ open Astprinter
 open Beta_red
 open Constants
 open Environment
+open Envprinter
 open KnelState
 open Knelprinter
 open Typer
@@ -28,20 +29,20 @@ let append_definition : (knel_state * bool) -> ident -> expr -> expr -> (knel_st
     ; definitions = state.definitions
     ; environments = []
     ; status = Error "Type error" } ,
-    false
+    prompt_enabled
   with
       | Unknown_ident ->
           { global_context = state.global_context
           ; definitions = state.definitions
           ; environments = []
           ; status = Error "Unknown ident" } ,
-          false
+          prompt_enabled
       | Type_error ->
           { global_context = state.global_context
           ; definitions = state.definitions
           ; environments = []
           ; status = Error "Type error" } ,
-          false
+          prompt_enabled
   end
 
 (* La fonction append_context prend en argument un contexte
@@ -251,7 +252,7 @@ let execute_section : (knel_state * bool) -> knel_section -> (knel_state * bool)
         | ReasoningSection (beg_tag , id_op , goal_typ , tacl , end_tag) ->
             proceed_reasonment state prompt_enabled beg_tag id_op goal_typ tacl end_tag
         | DefinitionSection (id, typ, term) ->
-            append_definition (state , prompt_enabled) id typ term
+            append_definition (state , prompt_enabled) id term typ
       end
 
 (* La fonction execute_file prend en argument un knel_file, i.e.
@@ -276,13 +277,17 @@ let execute_file : ?show:bool -> knel_file -> context -> (ident * expr) list -> 
         Format.printf "<p><b style=\"color:#652A0E\">Status:</b> %a</p>\n\n"
           pp_status final_state.status;
         Format.printf "<h4 style=\"color:#9B673C\">Final context:</h4> \n%a\n"
-          pp_context final_state.global_context
+          pp_context final_state.global_context;
+        Format.printf "<h4 style=\"color:#9B673C\">Terms defined:</h4> \n%a\n"
+          pp_def final_state.definitions
       end else begin
         Format.printf "File succesfully read, state of KnEL when reached end of file: \n\n";
         Format.printf "\x1B[38;5;130mStatus:\x1B[39m %a\n\n"
           pp_status final_state.status;
         Format.printf "\x1B[38;5;130mFinal context:\x1B[39m \n%a\n"
-          pp_context final_state.global_context
+          pp_context final_state.global_context;
+        Format.printf "\x1B[38;5;130mTerms defined:\x1B[39m \n%a\n"
+          pp_def final_state.definitions
       end;
   with
     | Wrong_declaration message ->

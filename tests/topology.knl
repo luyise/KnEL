@@ -13,15 +13,20 @@ Variables = {
     Le W U → Le W V → Le W (Cap U V)
 }
 
-Lemma Cap_exchange :
-  Π (U : A), Π (V : A), Le (Cap U V) (Cap V U)
-Proof
-  Intro U;
-  Intro V;
-  //Define Ge [λ (U : A) → λ (V : A) → Le V U] [A → A → Type];
+Definition Eq : A → A → Type :=
+  λ (U : A) → λ (V : A) → 
+    ((Le U V) × (Le V U))
+End
+
+//Lemma Cap_exchange :
+//  Π (U : A), Π (V : A), Le (Cap U V) (Cap V U)
+//Proof
+//  Intro U;
+//  Intro V;
+//  Define Ge [λ (U : A) → λ (V : A) → Le V U] [A → A → Type];
 
   //Apply [λ (p : (Le (Cap U V) V) × (Le (Cap U V) U)) 
   //  → InfCap V U (Cap U V) (fst p) (snd p)];
   //Split [LeCap2 U V];
   //Exact [LeCap1 U V];
-Ongoing
+//Ongoing
