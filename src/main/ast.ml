@@ -42,6 +42,7 @@ type base_tactic =
                                     pour introduire un terme du type +[ - ] → t *)
   | ExactTac of expr             (* Démontre un objectif en invoquant 
                                     une variable du contexte *)
+  | DefineTac of ident * expr * expr      (* Défini un term à partir des éléments du contexte courant : correspond à un let in. *)
 
 type tactic =
   | BaseTac of base_tactic
@@ -67,5 +68,8 @@ type knel_section =
         expr *
         tactic list *
       ending_tag)
+  | DefinitionSection of
+      (ident * expr * expr)
+      (* nom de la définition, son type, son lambda term *)
 
 type knel_file = knel_section list

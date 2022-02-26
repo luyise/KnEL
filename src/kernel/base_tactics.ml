@@ -19,6 +19,7 @@ let apply_base_tactic : env -> base_tactic -> env list
               else begin
                 let typ_over_typ' = rename e.used_ident x id typ_over_typ in
                 [ { context = (id , typ) :: e.context
+                  ; definitions = e.definitions
                   ; used_ident = id :: e.used_ident
                   ; target = typ_over_typ' }
                 ]
@@ -34,6 +35,7 @@ let apply_base_tactic : env -> base_tactic -> env list
               (beta_reduce e.used_ident typ')
               && not (List.mem x (get_varlib [] typ')) -> 
               [ { context = e.context
+                ; definitions = e.definitions
                 ; used_ident = e.used_ident
                 ; target = s }
               ]
@@ -45,6 +47,7 @@ let apply_base_tactic : env -> base_tactic -> env list
         let typ' = beta_reduce e.used_ident typ in
         if alpha_compare e.used_ident term_typ typ' then
           [ { context = e.context
+            ; definitions = e.definitions
             ; used_ident = e.used_ident
             ; target = beta_reduce e.used_ident 
               (substitute e.used_ident x term typ_over_typ) }
@@ -53,6 +56,7 @@ let apply_base_tactic : env -> base_tactic -> env list
     | SigmaRecTac , EPi ((_ , ESigma ((x , typ) , typ_over_typ)) , expr_of_p) ->
         let y = get_unused_ident (x :: e.used_ident) in
         [ { context = e.context
+          ; definitions = e.definitions
           ; used_ident = e.used_ident
           ; target = EPi ((x , typ) , EPi ((y , typ_over_typ), EApp (expr_of_p , (EPair ((EVar x , EVar y), Some (ESigma ((x , typ) , typ_over_typ))))))) }
         ]
@@ -61,6 +65,9 @@ let apply_base_tactic : env -> base_tactic -> env list
         let t' = beta_reduce e.used_ident t in
         if alpha_compare e.used_ident t' typ then []
         else raise Invalid_tactic
+    | DefineTac _ , _ ->
+        assert false
+        (* TO_DO *)
     | _ -> raise Invalid_tactic
 
 let rec apply_tactic : env -> tactic -> env list

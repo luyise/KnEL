@@ -1,22 +1,60 @@
+open Alpha_renaming
 open Ast
 open Astprinter
+open Beta_red
 open Constants
 open Environment
 open KnelState
 open Knelprinter
+open Typer
+
+exception Wrong_declaration of string
+
+let append_definition : (knel_state * bool) -> ident -> expr -> expr -> (knel_state * bool)
+= fun (state , prompt_enabled) name term typ ->
+  begin try
+  let idl = List.map fst state.global_context in
+  let typ' = beta_reduce idl
+    (compute_type_of_term state.global_context idl term)
+  in
+  if alpha_compare idl typ' typ then
+    { global_context = (name , typ) :: state.global_context
+    ; definitions = (name, term) :: state.definitions
+    ; environments = []
+    ; status = AllDone } ,
+    prompt_enabled
+  else
+    { global_context = state.global_context
+    ; definitions = state.definitions
+    ; environments = []
+    ; status = Error "Type error" } ,
+    false
+  with
+      | Unknown_ident ->
+          { global_context = state.global_context
+          ; definitions = state.definitions
+          ; environments = []
+          ; status = Error "Unknown ident" } ,
+          false
+      | Type_error ->
+          { global_context = state.global_context
+          ; definitions = state.definitions
+          ; environments = []
+          ; status = Error "Type error" } ,
+          false
+  end
 
 (* La fonction append_context prend en argument un contexte
     [ ctx : context ]
   et, sous reserve que le knel_state ne soit pas dans un
   état d'erreur ou de preuve, l'ajoute au contexte global *)
 
-exception Wrong_declaration of string
-
 let append_context : knel_state -> context -> knel_state
 = fun state ctx ->
   match state.status with
     | AllDone ->
         { global_context = ctx @ state.global_context 
+        ; definitions = state.definitions
         ; environments = [] 
         ; status = AllDone }
     | InProof -> raise (Wrong_declaration "Didn't expect a variable declaration now.")
@@ -62,8 +100,10 @@ let proceed_reasonment :
   in
   let ready_to_reason_state =
     { global_context = state.global_context
+    ; definitions = state.definitions
     ; environments = 
-      [{ context = state.global_context
+      [{ context = List.rev state.global_context
+       ; definitions = List.rev state.definitions
        ; used_ident = (List.map fst state.global_context) 
           @ (List.map fst constants)
        ; target = goal_typ }]
@@ -104,6 +144,7 @@ let proceed_reasonment :
                 pp_knel_state final_state
             end;
             { global_context = state.global_context
+            ; definitions = state.definitions
             ; environments = []
             ; status = AllDone } ,
             false
@@ -116,6 +157,7 @@ let proceed_reasonment :
                 goal_id
             end;
             { global_context = (goal_id , goal_typ) :: state.global_context
+            ; definitions = state.definitions
             ; environments = []
             ; status = AllDone } ,
             true
@@ -126,6 +168,7 @@ let proceed_reasonment :
               Format.printf "\x1B[38;5;124m/!\\ An unamed goal has been admitted, this is bad but will have no effect because you didn't named it\x1B[39m\n"
             end;
             { global_context = state.global_context
+            ; definitions = state.definitions
             ; environments = []
             ; status = AllDone } ,
             true
@@ -142,11 +185,13 @@ let proceed_reasonment :
             begin match id_op with
               | Some _ ->
                 { global_context = (goal_id , goal_typ) :: state.global_context
+                ; definitions = state.definitions
                 ; environments = []
                 ; status = AllDone } ,
                 true
               | None ->
                 { global_context = state.global_context
+                ; definitions = state.definitions
                 ; environments = []
                 ; status = AllDone } ,
                 true
@@ -162,11 +207,13 @@ let proceed_reasonment :
             begin match id_op with
               | Some _ ->
                 { global_context = (goal_id , goal_typ) :: state.global_context
+                ; definitions = state.definitions
                 ; environments = []
                 ; status = AllDone } ,
                 true
               | None ->
                 { global_context = state.global_context
+                ; definitions = state.definitions
                 ; environments = []
                 ; status = AllDone } ,
                 true
@@ -184,6 +231,7 @@ let proceed_reasonment :
                 pp_knel_state final_state
             end;
             { global_context = state.global_context
+            ; definitions = state.definitions
             ; environments = []
             ; status = AllDone } ,
             false
@@ -202,15 +250,18 @@ let execute_section : (knel_state * bool) -> knel_section -> (knel_state * bool)
             (append_context state ctx , prompt_enabled)
         | ReasoningSection (beg_tag , id_op , goal_typ , tacl , end_tag) ->
             proceed_reasonment state prompt_enabled beg_tag id_op goal_typ tacl end_tag
+        | DefinitionSection (id, typ, term) ->
+            append_definition (state , prompt_enabled) id typ term
       end
 
 (* La fonction execute_file prend en argument un knel_file, i.e.
-  une liste de sections se succédant dans le fichier .knl
-  et l'execute *)
+  une liste de sections se succédant dans le fichier .knl,
+  un context initial, ainsi qu'une liste de définitions initiale,
+  et execute le corps du fichier .knl *)
 
-let execute_file : ?show:bool -> knel_file -> unit
-= fun ?(show=true) file ->
-  let fresh_state = new_knel_state () in
+let execute_file : ?show:bool -> knel_file -> context -> (ident * expr) list -> unit
+= fun ?(show=true) file ctx defs ->
+  let fresh_state = new_knel_state ctx defs in
   try
     let (final_state , prompt_enabled) =
       List.fold_left 

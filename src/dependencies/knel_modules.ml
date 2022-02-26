@@ -46,7 +46,7 @@ let compile_file ?(show=false) f =
       in
       let () = Format.eprintf "compiling %s ...\n" f in
       let (tac_env, knl_file) = Tactic.unraw_file Tactic.base_tactic_ctxt cnt in
-      let () = FileProceeding.execute_file ~show knl_file in
+      let () = FileProceeding.execute_file ~show knl_file [] [] in
       let new_ctxt = ctxt_of_knel_file knl_file in
       update_tree f (DoneStatus new_ctxt)
     | DoneStatus _ -> assert false 

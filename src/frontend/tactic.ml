@@ -15,6 +15,7 @@ type tactic_ident =
   | TIExact
   | TITry
   | TIDo
+  | TIDefine
 
 type parsed_tactic =
   | PTacVar of ident
@@ -153,6 +154,7 @@ let defaultTacticsList = [
   "Exact", TArrow (TExpr, TTac), Arg ("t", TExpr, Tactic (PTacApp (PTacBase TIExact, PTacVar "t")));
   "try", TArrow (TTac, TTac), Arg ("t", TExpr, Tactic (PTacApp (PTacBase TITry, PTacVar "t")));
   "rpt", TArrow (TInt, TArrow (TTac, TTac)), Arg ("i", TInt, Arg ("t", TExpr, Tactic (PTacApp (PTacApp (PTacBase TIDo, PTacVar "i"), PTacVar "t"))));
+  "Define", TArrow (TIdent, TArrow (TExpr, TArrow (TExpr, TTac))), Arg ("i", TIdent, Arg("term" , TExpr, Arg ("typ", TExpr, Tactic (PTacApp (PTacApp (PTacApp (PTacBase TIDefine, PTacVar "i"), PTacVar "term"), PTacVar "typ")))))
 ]
 
 let base_tactic_ctxt = List.fold_left (fun smap (id, tt, tb) -> SMap.add id (tt, tb, TacEnv SMap.empty) smap) SMap.empty defaultTacticsList
@@ -218,6 +220,7 @@ let rec compute_tactic args (env: tactic_ctxt) parsed_tac = match args, parsed_t
     | [x], PTacBase TIExact -> BaseTac (ExactTac (term_of_ptac env x))
     | [x], PTacBase TITry -> TryTac (compute_tactic [] env x)
     | [x1; x2], PTacBase TIDo -> DoTac (get_int env x1, compute_tactic [] env x2)
+    | [x1; x2; x3], PTacBase TIDefine -> BaseTac (DefineTac (get_ident env x1, term_of_ptac env x2, term_of_ptac env x3))
     | _ -> assert false
 
 

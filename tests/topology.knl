@@ -9,12 +9,17 @@ Variables = {
   LeCap2 : Π (U : A), Π (V : A), Le (Cap U V) V;
   SupJoin : Π (I : Type), Π (W : A),
     (Π (i : I), Le (U i) W) → Le (Join U) W;
-  InfCap : Π (U : A), Π (V : A),
+  InfCap : Π (U : A), Π (V : A), Π (W : A),
     Le W U → Le W V → Le W (Cap U V)
 }
 
 Lemma Cap_exchange :
   Π (U : A), Π (V : A), Le (Cap U V) (Cap V U)
 Proof
-
+  Intro U;
+  Intro V;
+  //Apply [λ (p : (Le (Cap U V) V) × (Le (Cap U V) U)) 
+  //  → InfCap V U (Cap U V) (fst p) (snd p)];
+  //Split [LeCap2 U V];
+  //Exact [LeCap1 U V];
 Ongoing

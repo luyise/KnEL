@@ -120,4 +120,4 @@ let pp_context fmt (ctx : context) =
           (pp_ident CLR_var) name
           pp_expr s)
   in
-  List.iter f ctx
+  List.iter f (List.rev ctx)

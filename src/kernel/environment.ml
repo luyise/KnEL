@@ -1,7 +1,12 @@
 open Ast
 
+(* Les définitions sont des identifiants qui pointent vers un lambda term déjà défini,
+il permettent de rendre les termes plus concis et plus lisibles, ainsi qu'à introduire des notions 
+Il devrait toujours y avoir pour chaque définition, un élément du context qui lui associe un type !*)
+
 type env =
   { context : context
+  ; definitions : (ident * expr) list
   ; used_ident : ident list
   ; target : expr
   }
