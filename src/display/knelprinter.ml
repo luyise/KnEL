@@ -29,7 +29,7 @@ let pp_knel_state fmt (state : knel_state) =
             (List.length e_tail)
   end else begin
     Format.fprintf fmt "\n";
-    Format.fprintf fmt "\x1B[38;5;130mStatus:\x1B[39m %a\n\n"
+    Format.fprintf fmt "\x1B[1m\x1B[38;5;130mStatus:\x1B[24m\x1B[22m %a\n\n"
       pp_status state.status;
     (* Format.fprintf fmt "\x1B[38;5;130mGlobal context:\x1B[39m \n%a"
       pp_context state.global_context; *)

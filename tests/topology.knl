@@ -1,0 +1,20 @@
+Variables = {
+  A : Type;
+  Le : A → A → Type;
+  Join : Π (I : Type), Π (U : I → A), A;
+  Cap : Π (U : A), Π (V : A), A;
+  LeJoin : Π (I : Type), Π (U : I → A),
+    Π (i : I),  Le (U i) (Join U);
+  LeCap1 : Π (U : A), Π (V : A), Le (Cap U V) U;
+  LeCap2 : Π (U : A), Π (V : A), Le (Cap U V) V;
+  SupJoin : Π (I : Type), Π (W : A),
+    (Π (i : I), Le (U i) W) → Le (Join U) W;
+  InfCap : Π (U : A), Π (V : A),
+    Le W U → Le W V → Le W (Cap U V)
+}
+
+Lemma Cap_exchange :
+  Π (U : A), Π (V : A), Le (Cap U V) (Cap V U)
+Proof
+
+Ongoing

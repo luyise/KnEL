@@ -116,7 +116,7 @@ decl_list:
 ;
 
 hypothesis_intro:
-    | VARIABLES EQ LBRACKET separated_list(COMMA, var_def) RBRACKET { RawHypothesisSection $4 }
+    | VARIABLES EQ LBRACKET separated_list(SEMICOLON, var_def) RBRACKET { RawHypothesisSection $4 }
 ;
 
 var_def:
