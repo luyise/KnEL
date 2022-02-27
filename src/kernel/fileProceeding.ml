@@ -14,22 +14,30 @@ exception Wrong_declaration of string
 let append_definition : (knel_state * bool) -> ident -> expr -> expr -> (knel_state * bool)
 = fun (state , prompt_enabled) name term typ ->
   begin try
-  let idl = List.map fst state.global_context in
-  let typ' = beta_reduce idl
-    (compute_type_of_term state.global_context idl term)
-  in
-  if alpha_compare idl typ' typ then
-    { global_context = (name , typ) :: state.global_context
-    ; definitions = (name, term) :: state.definitions
-    ; environments = []
-    ; status = AllDone } ,
-    prompt_enabled
-  else
-    { global_context = state.global_context
-    ; definitions = state.definitions
-    ; environments = []
-    ; status = Error "Type error" } ,
-    prompt_enabled
+    let idl = List.map fst state.global_context in
+    let typ' = beta_reduce idl
+      (compute_type_of_term state.global_context idl term)
+    in
+    if alpha_compare idl typ' typ then begin
+      if !Config.html_view then begin
+        Format.printf "%s was defined<br>"
+          name
+      end else begin
+        Format.printf "%s was defined\n"
+          name
+      end;
+      { global_context = (name , typ) :: state.global_context
+      ; definitions = (name, term) :: state.definitions
+      ; environments = []
+      ; status = AllDone } ,
+      prompt_enabled
+    end else begin
+      { global_context = state.global_context
+      ; definitions = state.definitions
+      ; environments = []
+      ; status = Error "Type error" } ,
+      prompt_enabled
+    end
   with
       | Unknown_ident ->
           { global_context = state.global_context
@@ -135,12 +143,12 @@ let proceed_reasonment :
         | Ongoing , _ ->
             if !Config.html_view then begin
               if prompt_enabled then
-              Format.printf "<p>while working on %s, the reasonment was not finished, last state before giving up:</p>\n%a\n"
+              Format.printf "reasoning about %s:<br>%a<br>"
                 goal_id
                 pp_knel_state final_state
             end else begin
               if prompt_enabled then
-              Format.printf "while working on %s, the reasonment was not finished, last state before giving up: \n%a\n"
+              Format.printf "reasoning about %s:\n%a\n"
                 goal_id
                 pp_knel_state final_state
             end;
@@ -164,9 +172,9 @@ let proceed_reasonment :
             true
         | Admitted , None ->
             if !Config.html_view then begin
-              Format.printf "<p style=\"color:#00FF00\">/!\\ An unamed goal has been admitted, this is bad but will have no effect because you didn't named it</p>\n"
+              Format.printf "<p style=\"color:#00FF00\">/!\\ An unamed goal has been admitted</p>\n"
             end else begin
-              Format.printf "\x1B[38;5;124m/!\\ An unamed goal has been admitted, this is bad but will have no effect because you didn't named it\x1B[39m\n"
+              Format.printf "\x1B[38;5;124m/!\\ An unamed goal has been admitted\x1B[39m\n"
             end;
             { global_context = state.global_context
             ; definitions = state.definitions
@@ -177,7 +185,7 @@ let proceed_reasonment :
     | AllDone -> begin match end_tag with
         | Qed ->
             if !Config.html_view then begin
-              Format.printf "<p>%s succesfully achieved</p>\n"
+              Format.printf "%s succesfully achieved<br>"
                 goal_id
             end else begin
               Format.printf "%s succesfully achieved\n"
@@ -222,12 +230,12 @@ let proceed_reasonment :
         | Ongoing ->
             if !Config.html_view then begin
               if prompt_enabled then
-              Format.printf "<p>while working on %s, the reasonment wasn't closed, but it seems like you could have type Qed instead. The last context before Ongoing keyword was:</p>\n%a\n"
+              Format.printf "reasoning about %s:<br>%a<br>"
                 goal_id
                 pp_knel_state final_state
             end else begin
               if prompt_enabled then
-              Format.printf "while working on %s, the reasonment wasn't closed, but it seems like you could have type Qed instead. The last context before Ongoing keyword was: \n%a\n"
+              Format.printf "reasoning about %s:\n%a\n"
                 goal_id
                 pp_knel_state final_state
             end;

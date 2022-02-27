@@ -125,19 +125,27 @@ let rec pp_expr fmt (exp : expr) =
         pp_expr exp1
 
 let pp_context fmt (ctx : context) =
-  let f =
-    if !Config.html_view
-    then
+  if !Config.html_view then begin
+    Format.fprintf fmt "<br><br>";
+    let f =
       (fun (name, s) ->
-        Format.fprintf fmt "<br>&emsp;&emsp; %a %a %a"
+        Format.fprintf fmt "<p style = \"margin-top: -12px; margin-left: 30px; text-indent: -15px\" >";
+        Format.fprintf fmt "%a %a %a"
           (pp_ident CLR_nam) name
           (pp_ident CLR_def) ":"
-          pp_expr s)
-    else
+          pp_expr s;
+        Format.fprintf fmt "</p>"
+      )
+    in
+    List.iter f (List.rev ctx)
+  end else begin
+    let f =
       (fun (name, s) ->
         Format.fprintf fmt "\t%a %a %a\n" 
           (pp_ident CLR_nam) name
           (pp_ident CLR_def) ":"
           pp_expr s)
-  in
-  List.iter f (List.rev ctx)
+    in
+    List.iter f (List.rev ctx)
+  end
+  
