@@ -284,7 +284,10 @@ expr_bot:
                 in match lopt with
                     | None -> assert false
                     | Some e -> e }
-    | LPAREN expr COLON expr RPAREN    { ETaggedExpr ($2, $4) }
+    | LPAREN expr COLON expr RPAREN    { 
+        match $2 with
+            | Epair (p, None) -> Epair (p, Some $4)
+            | _ -> ETaggedExpr ($2, $4) }
 ;
 
 binding_list_ne:
