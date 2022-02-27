@@ -30,7 +30,7 @@ type base_tactic =
   | IntroTac of ident             (* Former un terme de type Π (a : A) (B a) *)
   | ApplyTac of expr              (* Passe d'un objectif B à un objectif A sachant *)
                                   (*  l'existence de f : Π (_ : A) B dans le context *)
-  | SplitTac of expr              (* Former un terme de type Σ (a : A) (B a), demande le premier argument *)
+  (* | SplitTac of expr              Former un terme de type Σ (a : A) (B a), demande le premier argument *)
   (* | SigmaIndTac                    Appliquer le récurseur non dépendant de Σ (a : A) (B a),  *)
                                   (*    pour introduire un terme du type (Σ (a : A) (B a)) → C,   *)
                                   (*    i.e. demande de montrer Π (a : A) (B a) → C *)            
