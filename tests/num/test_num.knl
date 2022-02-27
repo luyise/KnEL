@@ -6,7 +6,7 @@ Variables = {
     num_ind : ∀ P : num -> Type, P zero × (∀n : num, P n → P (Succ n)) → ∀n : num, P n;
     ge : num -> num -> Type;
     ge_refl : ∀ x : num, ge x x;
-    ge_trans : ∀ x : num, ∀ y : num, ∀ z : num, ge x y → ge y z → ge x z;
+    ge_trans : ∀ x y z : num, ge x y → ge y z → ge x z;
     ge_succ : ∀ x : num, ge x (Succ x);
 }
 

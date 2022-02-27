@@ -3,8 +3,7 @@ open test3
 open num.test_num
 open <-tests2.test4
 
-Definition id : Type → Type :=
-    λ (x : Type) → x
+Definition id (x: Type) : Type := x
 End
 
 Theorem my_first_Theorem:

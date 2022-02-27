@@ -2,6 +2,12 @@
     open Ast
     open Tactic
 
+let mk_sigma = List.fold_right (fun p e -> ESigma (p, e))
+let mk_lam = List.fold_right (fun p e -> ELam (p, e))
+let mk_pi = List.fold_right (fun p e -> EPi (p, e))
+
+let mk_pair_list il t = List.map (fun i -> (i, t)) il
+
 %}
 
 %token ADMITTED     (* Admitted *)
@@ -65,9 +71,8 @@
 %start file
 
 %nonassoc EXISTS LAMBDA ALL
-%left AMPERAMPER
 %left VERTVERT
-%right ARROW IMPLIES EQUIV
+%right ARROW
 
 %left COMMA
 %left AND
@@ -110,7 +115,7 @@ parent:
 decl_list:
     | EOF                   { [] }
     | definition decl_list  { $1::$2 }
-    | inductive decl_list   { $2 }
+(*    | inductive decl_list   { $2 }*)
     | theorem decl_list     { $1::$2 }
     | tactic_decl decl_list { $1::$2 }
     | hypothesis_intro decl_list { $1::$2 }
@@ -151,13 +156,15 @@ tactic_arg_type:
 ;
 
 definition:
-    | DEFINITION IDENT COLON expr DEF expr END { RawDefinitionSection ($2, $4, $6) }
+    | DEFINITION IDENT binding_list COLON expr DEF expr END {
+        let typ, expr = List.fold_right
+            (fun (id, typ) (target_type, target_expr) ->
+                EPi (("_", typ), target_type), ELam ((id, typ), target_expr))
+            $3 ($5, $7)
+        in
+        RawDefinitionSection ($2, typ, expr) }
 ;
-
-def_bloc:
-    | (* EMPTY *) { () }
-;
-
+(*
 inductive:
     | INDUCTIVE IDENT COLON type_decl EQ list(induc_bloc) END { $2 }
 ;
@@ -165,7 +172,7 @@ inductive:
 induc_bloc:
     | VERT IDENT COLON expr { ($2, $4) }
 ;
-
+*)
 theorem:
     | thm_keyword IDENT? COLON expr PROOF proof { RawReasoningSection ($1, $2, $4, fst $6, snd $6) }
 ;
@@ -219,18 +226,18 @@ type_decl:
 ;
 
 expr:
-    | ALL IDENT COLON expr COMMA expr %prec ALL 
-        { EPi (($2, $4), $6) }
-    | EXISTS IDENT COLON expr COMMA expr %prec EXISTS
-        { ESigma (($2, $4), $6) }
-    | LAMBDA IDENT COLON expr_no_arrow ARROW expr %prec LAMBDA
-        { ELam (($2, $4), $6) }
-    | ALL LPAREN IDENT COLON expr RPAREN COMMA expr %prec ALL 
-        { EPi (($3, $5), $8) }
-    | EXISTS LPAREN IDENT COLON expr RPAREN COMMA expr %prec EXISTS
-        { ESigma (($3, $5), $8) }
-    | LAMBDA LPAREN IDENT COLON expr RPAREN ARROW expr %prec LAMBDA
-        { ELam (($3, $5), $8) }
+    | ALL nonempty_list(IDENT) COLON expr COMMA expr %prec ALL 
+        { mk_pi (mk_pair_list $2 $4) $6 }
+    | EXISTS nonempty_list(IDENT) COLON expr COMMA expr %prec EXISTS
+        { mk_sigma (mk_pair_list $2 $4) $6 }
+    | LAMBDA nonempty_list(IDENT) COLON expr_no_arrow ARROW expr %prec LAMBDA
+        { mk_lam (mk_pair_list $2 $4) $6 }
+    | ALL binding_list_ne COMMA expr %prec ALL 
+        { mk_pi $2 $4 }
+    | EXISTS binding_list_ne COMMA expr %prec EXISTS
+        { mk_sigma $2 $4 }
+    | LAMBDA binding_list_ne ARROW expr %prec LAMBDA
+        { mk_lam $2 $4 }
     | expr_in               { $1 }
     | expr binop_expr expr  { EApp (EApp(EConst $2, $1), $3) }
     | expr PROD expr        { ESigma (("_", $1), $3) }
@@ -241,18 +248,18 @@ expr:
 ;
 
 expr_no_arrow:
-    | ALL IDENT COLON expr DOT expr_no_arrow %prec ALL 
-        { EPi (($2, $4), $6) }
-    | EXISTS IDENT COLON expr DOT expr_no_arrow %prec EXISTS
-        { ESigma (($2, $4), $6) }
-    | LAMBDA IDENT COLON expr_no_arrow ARROW expr_no_arrow %prec LAMBDA
-        { ELam (($2, $4), $6) }
-    | ALL LPAREN IDENT COLON expr RPAREN DOT expr_no_arrow %prec ALL 
-        { EPi (($3, $5), $8) }
-    | EXISTS LPAREN IDENT COLON expr RPAREN DOT expr_no_arrow %prec EXISTS
-        { ESigma (($3, $5), $8) }
-    | LAMBDA LPAREN IDENT COLON expr RPAREN ARROW expr_no_arrow %prec LAMBDA
-        { ELam (($3, $5), $8) }
+    | ALL nonempty_list(IDENT) COLON expr DOT expr_no_arrow %prec ALL 
+        { mk_pi (mk_pair_list $2 $4) $6 }
+    | EXISTS nonempty_list(IDENT) COLON expr DOT expr_no_arrow %prec EXISTS
+        { mk_sigma (mk_pair_list $2 $4) $6 }
+    | LAMBDA nonempty_list(IDENT) COLON expr_no_arrow ARROW expr_no_arrow %prec LAMBDA
+        { mk_lam (mk_pair_list $2 $4) $6 }
+    | ALL binding_list_ne DOT expr_no_arrow %prec ALL 
+        { mk_pi $2 $4 }
+    | EXISTS binding_list_ne DOT expr_no_arrow %prec EXISTS
+        { mk_sigma $2 $4 }
+    | LAMBDA binding_list_ne ARROW expr_no_arrow %prec LAMBDA
+        { mk_lam $2 $4 }
     | expr_in               { $1 }
     | expr_no_arrow COMMA expr_no_arrow       { EPair (($1, $3), None) }
     | expr_no_arrow binop_expr expr_no_arrow  { EApp (EApp(EConst $2, $1), $3) }
@@ -260,6 +267,17 @@ expr_no_arrow:
     | NEG expr_no_arrow              { EPi (("_", $2), EConst "Void") }
     | FST expr_no_arrow              { EFst $2 }
     | SND expr_no_arrow              { ESnd $2 }
+;
+
+binding_list_ne:
+    | LPAREN nonempty_list(IDENT) COLON expr RPAREN binding_list
+        { mk_pair_list $2 $4 @ $6 }
+;
+
+binding_list:
+    | LPAREN nonempty_list(IDENT) COLON expr RPAREN binding_list
+        { mk_pair_list $2 $4 @ $6 }
+    | (* EMPTY *) { [] }
 ;
 
 expr_in:
