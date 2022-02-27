@@ -17,6 +17,7 @@ type tactic_ident =
   | TIDo
   | TIDefine
   | TIUnfold
+  | TIReduce
 
 type parsed_tactic =
   | PTacVar of ident
@@ -158,6 +159,7 @@ let defaultTacticsList = [
   "rpt", TArrow (TInt, TArrow (TTac, TTac)), Tactic (PTacBase TIDo);
   "Define", TArrow (TIdent, TArrow (TExpr, TArrow (TExpr, TTac))), Tactic (PTacBase TIDefine);
   "Unfold", TArrow (TIdent, TTac), Tactic (PTacBase TIUnfold);
+  "Reduce", TTac, Tactic (PTacBase TIReduce);
 ]
 
 let base_tactic_ctxt = List.fold_left (fun smap (id, tt, tb) -> SMap.add id (tt, tb, TacEnv SMap.empty) smap) SMap.empty defaultTacticsList
@@ -225,6 +227,7 @@ let rec compute_tactic args (env: tactic_ctxt) parsed_tac = match args, parsed_t
     | [x1; x2], PTacBase TIDo -> DoTac (get_int env x1, compute_tactic [] env x2)
     | [x1; x2; x3], PTacBase TIDefine -> BaseTac (DefineTac (get_ident env x1, term_of_ptac env x2, term_of_ptac env x3))
     | [x], PTacBase TIUnfold -> BaseTac (UnfoldTac (get_ident env x))
+    | [], PTacBase TIReduce -> BaseTac (ReduceTac)
     | _ -> assert false
 
 
