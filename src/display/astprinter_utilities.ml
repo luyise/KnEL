@@ -14,6 +14,10 @@ let rec unfold_sigma b l = function
   | ESigma ((id, typ), exp) when b = (id = "_") -> unfold_pi b ((id,typ)::l) exp
   | exp -> ("_", exp)::l
 
+let rec unfold_pair = function
+  | EPair ((e1, e2), _) -> e1::unfold_pair e2
+  | exp -> [exp]
+
 let rec fold_pair_list = function
  | [(id, typ)] -> [[id], typ]
  | [] -> raise PPrinter_internal_error

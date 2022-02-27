@@ -119,11 +119,10 @@ let rec pp_expr fmt (exp : expr) =
           (pp_ident CLR_elm) ","
           pp_expr exp
           (pp_ident CLR_par) ")"
-    | EPair ((exp1 , exp2) , _) -> Format.fprintf fmt "%a%a %a %a%a"    (* "(%a , %a)" *)
+    | EPair (_, _) ->
+      Format.fprintf fmt "%a%a%a"    (* "(%a, %a)" *)
         (pp_ident CLR_par) "("
-        pp_expr exp1
-        (pp_ident CLR_elm) ","
-        pp_expr exp2
+        (pp_list_sep pp_expr (fun fmt () -> pp_ident CLR_elm fmt ", ")) (unfold_pair exp)
         (pp_ident CLR_par) ")"
     | EFst exp1 -> Format.fprintf fmt "%a%a %a%a"       (* "(fst %a)" *)
         (pp_ident CLR_par) "("
