@@ -17,7 +17,7 @@ let pp_status fmt (st : status) =
 let pp_knel_state fmt (state : knel_state) =
   if !Config.html_view
   then begin
-    Format.fprintf fmt "<b style=\"color:#af601a\">Status: %a</b>"
+    Format.fprintf fmt "<br><b style=\"color:#af601a\">Status: %a</b>"
       pp_status state.status;
     (* Format.fprintf fmt "<h3>Global context:</h3>\n%a"
       pp_context state.global_context; *)
