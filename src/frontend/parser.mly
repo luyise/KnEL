@@ -277,17 +277,19 @@ expr_bot:
     | VOID                  { EConst "Void" }
     | UNIT                  { EConst "Unit" }
     | IDENT                 { if $1 = "Type" then EConst "Type" else EVar $1 }
-    | LPAREN separated_nonempty_list(COMMA, expr) RPAREN
+    | LPAREN expr COLON expr RPAREN    { ETaggedExpr ($2, $4) }
+    | LPAREN expr RPAREN    { $2 }
+    | LPAREN expr COMMA expr RPAREN     { EPair (($2, $4), None) }
+    | LPAREN expr COMMA expr COMMA separated_nonempty_list(COMMA, expr) RPAREN
             { let lopt = List.fold_right (fun e1 e_tl -> match e_tl with
                 | None -> Some e1
-                | Some e2 -> Some (EPair ((e1, e2), None))) $2 None
+                | Some e2 -> Some (EPair ((e1, e2), None))) ($2::$4::$6) None
                 in match lopt with
                     | None -> assert false
                     | Some e -> e }
-    | LPAREN expr COLON expr RPAREN    { 
-        match $2 with
-            | EPair (p, None) -> EPair (p, Some $4)
-            | _ -> ETaggedExpr ($2, $4) }
+
+    | LPAREN expr COMMA expr RPAREN IN expr_bot
+        { EPair (($2, $4), Some $7) }
 ;
 
 binding_list_ne:
