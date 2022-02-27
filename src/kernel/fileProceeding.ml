@@ -111,8 +111,8 @@ let proceed_reasonment :
     { global_context = state.global_context
     ; definitions = state.definitions
     ; environments = 
-      [{ context = List.rev state.global_context
-       ; definitions = List.rev state.definitions
+      [{ context = (*List.rev*) state.global_context
+       ; definitions = (*List.rev*) state.definitions
        ; used_ident = (List.map fst state.global_context) 
           @ (List.map fst constants)
        ; target = goal_typ }]

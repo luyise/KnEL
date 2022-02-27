@@ -21,10 +21,10 @@ Theorem:
     A × (A → B) → B
 Proof
     Intro p;
-Ongoing
+Admitted
 
 Theorem:
-    ∀ x: int, ∃ y: int, y + x = y + x
+    ∀ x: int, ∃ y: int, (y + x = y + x, x, y)
 Proof
 Ongoing
 

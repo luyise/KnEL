@@ -269,6 +269,24 @@ expr_no_arrow:
     | SND expr_no_arrow              { ESnd $2 }
 ;
 
+expr_in:
+    | expr_in expr_bot  { EApp ($1, $2) }
+    | expr_bot          { $1 }
+
+expr_bot:
+    | VOID                  { EConst "Void" }
+    | UNIT                  { EConst "Unit" }
+    | IDENT                 { if $1 = "Type" then EConst "Type" else EVar $1 }
+    | LPAREN separated_nonempty_list(COMMA, expr) RPAREN
+            { let lopt = List.fold_right (fun e1 e_tl -> match e_tl with
+                | None -> Some e1
+                | Some e2 -> Some (EPair ((e1, e2), None))) $2 None
+                in match lopt with
+                    | None -> assert false
+                    | Some e -> e }
+    | LPAREN expr COLON expr RPAREN    { ETaggedExpr ($2, $4) }
+;
+
 binding_list_ne:
     | LPAREN nonempty_list(IDENT) COLON expr RPAREN binding_list
         { mk_pair_list $2 $4 @ $6 }
@@ -278,19 +296,6 @@ binding_list:
     | LPAREN nonempty_list(IDENT) COLON expr RPAREN binding_list
         { mk_pair_list $2 $4 @ $6 }
     | (* EMPTY *) { [] }
-;
-
-expr_in:
-    | expr_in expr_bot  { EApp ($1, $2) }
-    | expr_bot          { $1 }
-
-expr_bot:
-    | VOID                  { EConst "Void" }
-    | UNIT                  { EConst "Unit" }
-    | IDENT                 { if $1 = "Type" then EConst "Type" else EVar $1 }
-    | LPAREN expr RPAREN    { $2 }
-    | LPAREN expr COMMA expr RPAREN    { EPair (($2, $4), None) }
-    | LPAREN expr COLON expr RPAREN    { ETaggedExpr ($2, $4) }
 ;
 
 %inline binop_expr:
