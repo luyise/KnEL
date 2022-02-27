@@ -15,7 +15,7 @@ let ansi_escape_code clr = match clr with
   | CLR_cst -> "\x1B[38;5;181m"     (* ocre, pâle *)
   | CLR_var -> "\x1B[38;5;109m"     (* vert, pâle *)
   | CLR_nam -> "\x1B[38;5;174m"     (* lavande, pâle *)
-  | CLR_def -> "\x1B[39m"      (* gris, très pâle *)
+  | CLR_def -> "\x1B[39m"           (* gris, très pâle *)
 
 let html_left_tag clr = match clr with
   | CLR_elm -> "<font color = \"#f6c266\">"     (* orange, pâle *)

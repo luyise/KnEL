@@ -286,7 +286,7 @@ expr_bot:
                     | Some e -> e }
     | LPAREN expr COLON expr RPAREN    { 
         match $2 with
-            | Epair (p, None) -> Epair (p, Some $4)
+            | EPair (p, None) -> EPair (p, Some $4)
             | _ -> ETaggedExpr ($2, $4) }
 ;
 
