@@ -37,3 +37,22 @@ let rec pp_list_sep pp pp_sep fmt = function
   | [] -> raise PPrinter_internal_error
   | [x] -> pp fmt x
   | x::tl -> Format.fprintf fmt "%a%a%a" pp x pp_sep () (pp_list_sep pp pp_sep) tl
+
+type struct_element =
+  | STop
+  | STypeBind
+  | SPair
+  | SApp
+  | SLam
+  | SPi
+  | SSigma
+  | SArrow
+  | SProd
+  | SProj
+
+let needs_par above here = match above, here with
+  | STop, _ | SPair, _ -> false
+  | SPi, _ | SSigma, _ -> false
+  | STypeBind, _ -> false
+  | SArrow, SApp -> false
+  | _, _ -> true
