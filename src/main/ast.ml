@@ -44,6 +44,7 @@ type base_tactic =
                                     une variable du contexte *)
   | DefineTac of ident * expr * expr      (* Défini un term à partir des éléments du contexte courant : correspond à un let in. *)
   | UnfoldTac of ident
+  | ReduceTac
 
 type tactic =
   | BaseTac of base_tactic

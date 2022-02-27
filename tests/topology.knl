@@ -23,6 +23,6 @@ Lemma Cap_exchange :
 Proof
   Intro U;
   Intro V;
-  //Unfold Eq;
+  Unfold Eq;
 
 Ongoing

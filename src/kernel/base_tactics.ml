@@ -91,6 +91,13 @@ let apply_base_tactic : env -> base_tactic -> env list
           ; used_ident = e.used_ident
           ; target = rewritten_target }
         ]
+    | ReduceTac , t ->
+        let reduced_goal = beta_reduce e.used_ident t in
+        [ { context = e.context
+          ; definitions = e.definitions
+          ; used_ident = e.used_ident
+          ; target = reduced_goal }
+        ]
     | _ -> raise Invalid_tactic
 
 let rec apply_tactic : env -> tactic -> env list
