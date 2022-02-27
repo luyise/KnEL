@@ -50,16 +50,23 @@ let rec pp_expr_inner above fmt (exp : expr) =
         )
     | EVar id -> Format.fprintf fmt "%a"
         (pp_ident CLR_var) id
-    | ELam ((id , exp1) , exp2) -> Format.fprintf fmt "%a%a %a%a %a %a%a %a %a%a" (* "(λ (%a : %a) → %a)" *)
+    | ELam (_, _) ->
+      let (hd, tl) = match unfold_lam [] exp with
+        | (_, hd)::tl -> (hd, List.rev tl)
+        | _ -> raise PPrinter_internal_error
+      in Format.fprintf fmt "%a%a %a %a %a%a" (* "(λ (%a : %a) → %a)" *)
         (pp_ident CLR_par) (if needs_par above SLam then "(" else "")
         (pp_ident CLR_elm) "λ"
-        (pp_ident CLR_par) "("
-        (pp_ident CLR_var) id
-        (pp_ident CLR_elm) ":"
-        (pp_expr_inner STypeBind) exp1
-        (pp_ident CLR_par) ")"
+        (pp_list (fun fmt (idl, exp) ->
+          Format.fprintf fmt "%a%a %a %a%a"
+            (pp_ident CLR_par) "("
+            (pp_list (pp_ident CLR_var)) idl
+            (pp_ident CLR_elm) ":"
+            (pp_expr_inner STypeBind) exp
+            (pp_ident CLR_par) ")"
+        )) (fold_pair_list tl)
         (pp_ident CLR_elm) "→"
-        (pp_expr_inner SLam) exp2
+        (pp_expr_inner SLam) hd
         (pp_ident CLR_par) (if needs_par above SLam then ")" else "")
     | EApp (_ , _) ->
         let expL = unfold_app [] exp in

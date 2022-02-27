@@ -10,7 +10,7 @@ let pp_ident fmt id = Format.fprintf fmt "%s" id
 type tactic_ident =
   | TIIntro
   | TIApply
-  | TISplit
+  (* | TISplit *)
   | TISigmaRec
   | TIExact
   | TITry
@@ -152,7 +152,7 @@ let rec checktype_of_tactic_builder (env: tactic_type SMap.t) = function
 let defaultTacticsList = [
   "Intro", TArrow(TIdent, TTac), Tactic (PTacBase TIIntro);
   "Apply", TArrow(TExpr, TTac), Tactic (PTacBase TIApply);
-  "Split", TArrow(TExpr, TTac), Tactic (PTacBase TISplit);
+  (* "Split", TArrow(TExpr, TTac), Tactic (PTacBase TISplit); *)
   "SigmaRec",  TTac, Tactic (PTacBase TISigmaRec);
   "Exact", TArrow (TExpr, TTac), Tactic (PTacBase TIExact);
   "try", TArrow (TTac, TTac), Tactic (PTacBase TITry);
@@ -220,7 +220,7 @@ let rec compute_tactic args (env: tactic_ctxt) parsed_tac = match args, parsed_t
     | _, PTacApp (pt1, pt2) -> compute_tactic (pt2::args) env pt1
     | [x], PTacBase TIIntro -> BaseTac (IntroTac (get_ident env x))
     | [x], PTacBase TIApply -> BaseTac (ApplyTac (term_of_ptac env x))
-    | [x], PTacBase TISplit -> BaseTac (SplitTac (term_of_ptac env x))
+    (* | [x], PTacBase TISplit -> BaseTac (SplitTac (term_of_ptac env x)) *)
     | [], PTacBase TISigmaRec -> BaseTac SigmaRecTac
     | [x], PTacBase TIExact -> BaseTac (ExactTac (term_of_ptac env x))
     | [x], PTacBase TITry -> TryTac (compute_tactic [] env x)

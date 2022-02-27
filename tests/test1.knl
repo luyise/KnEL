@@ -3,7 +3,7 @@ open test3
 open num.test_num
 open <-tests2.test4
 
-Definition id (x: Type) : Type := x
+Definition id (x y: Type) : Type := x
 End
 
 Theorem my_first_Theorem:

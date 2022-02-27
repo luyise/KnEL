@@ -41,7 +41,7 @@ let apply_base_tactic : env -> base_tactic -> env list
               ]
           | _ -> raise Invalid_tactic
         end
-    | SplitTac term , ESigma ((x , typ) , typ_over_typ) ->
+    (* | SplitTac term , ESigma ((x , typ) , typ_over_typ) ->
         let term_typ = beta_reduce e.used_ident 
           (compute_type_of_term e.context e.used_ident term) in
         let typ' = beta_reduce e.used_ident typ in
@@ -52,7 +52,7 @@ let apply_base_tactic : env -> base_tactic -> env list
             ; target = beta_reduce e.used_ident 
               (substitute e.used_ident x term typ_over_typ) }
           ]
-        else raise Invalid_tactic
+        else raise Invalid_tactic *)
     | SigmaRecTac , EPi ((_ , ESigma ((x , typ) , typ_over_typ)) , expr_of_p) ->
         let y = get_unused_ident (x :: e.used_ident) in
         [ { context = e.context
