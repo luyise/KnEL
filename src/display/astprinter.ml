@@ -1,4 +1,5 @@
 open Ast
+open Astprinter_utilities
 
 type coloration =
   | CLR_elm   (* couleur des éléments, tels que →, Π, λ, Σ, , ...*)
@@ -60,30 +61,63 @@ let rec pp_expr fmt (exp : expr) =
         (pp_ident CLR_elm) "→"
         pp_expr exp2
         (pp_ident CLR_par) ")"
-    | EApp (exp1 , exp2) -> Format.fprintf fmt "%a%a %a%a" (* "(%a %a)" *)
+    | EApp (_ , _) ->
+        let expL = unfold_app [] exp in
+        Format.fprintf fmt "%a%a%a" (* "(%a %a)" *)
         (pp_ident CLR_par) "("
-        pp_expr exp1
-        pp_expr exp2
+        (pp_list pp_expr) expL
         (pp_ident CLR_par) ")"
-    | EPi ((id , exp1) , exp2) ->
-        if id = "_" then              (* "(%a → %a)" *)
-          Format.fprintf fmt "%a%a %a %a%a"
+    | EPi (("_", _) , _) ->
+        Format.fprintf fmt "%a%a%a" (* "(%a → %a)" *)
           (pp_ident CLR_par) "("
-          pp_expr exp1
-          (pp_ident CLR_elm) "→" 
-          pp_expr exp2
+          (pp_list_sep
+            (fun fmt (id, expr) -> pp_expr fmt expr)
+            (fun fmt () -> pp_ident CLR_elm fmt " → ")) (List.rev (unfold_pi true [] exp))
           (pp_ident CLR_par) ")"
-        else                          (* "(Π (%a : %a), %a)"*)
-          Format.fprintf fmt "%a%a %a%a %a %a%a%a %a%a"
+    | EPi (_, _) ->
+        let (exp, tl) = match unfold_pi false [] exp with
+          | (_,exp)::tl -> exp, List.rev tl
+          | _ -> raise PPrinter_internal_error
+        in
+          Format.fprintf fmt "%a%a %a%a %a%a" (* "(Π (%a : %a), %a)"*)
           (pp_ident CLR_par) "("
           (pp_ident CLR_elm) "Π"
-          (pp_ident CLR_par) "("
-          (pp_ident CLR_var) id
-          (pp_ident CLR_elm) ":"
-          pp_expr exp1
-          (pp_ident CLR_par) ")"
+          (pp_list (fun fmt (idl, exp1) ->
+            Format.fprintf fmt "%a%a %a %a%a"
+            (pp_ident CLR_par) "("
+            (pp_list (pp_ident CLR_var)) idl
+            (pp_ident CLR_elm) ":"
+            pp_expr exp1
+            (pp_ident CLR_par) ")"
+          )) (fold_pair_list tl)
           (pp_ident CLR_elm) ","
-          pp_expr exp2
+          pp_expr exp
+          (pp_ident CLR_par) ")"
+    | ESigma (("_", _) , _) ->
+        Format.fprintf fmt "%a%a%a" (* "(%a → %a)" *)
+          (pp_ident CLR_par) "("
+          (pp_list_sep
+            (fun fmt (id, expr) -> pp_expr fmt expr)
+            (fun fmt () -> pp_ident CLR_elm fmt " × ")) (List.rev (unfold_sigma true [] exp))
+          (pp_ident CLR_par) ")"
+    | ESigma (_, _) ->
+        let (exp, tl) = match unfold_sigma false [] exp with
+          | (_,exp)::tl -> exp, List.rev tl
+          | _ -> raise PPrinter_internal_error
+        in
+          Format.fprintf fmt "%a%a %a%a %a%a" (* "(Π (%a : %a), %a)"*)
+          (pp_ident CLR_par) "("
+          (pp_ident CLR_elm) "Σ"
+          (pp_list (fun fmt (idl, exp1) ->
+            Format.fprintf fmt "%a%a %a %a%a"
+            (pp_ident CLR_par) "("
+            (pp_list (pp_ident CLR_var)) idl
+            (pp_ident CLR_elm) ":"
+            pp_expr exp1
+            (pp_ident CLR_par) ")"
+          )) (fold_pair_list tl)
+          (pp_ident CLR_elm) ","
+          pp_expr exp
           (pp_ident CLR_par) ")"
     | EPair ((exp1 , exp2) , _) -> Format.fprintf fmt "%a%a %a %a%a"    (* "(%a , %a)" *)
         (pp_ident CLR_par) "("
@@ -101,26 +135,6 @@ let rec pp_expr fmt (exp : expr) =
         (pp_ident CLR_cst) "snd"
         pp_expr exp1
         (pp_ident CLR_par) ")"
-    | ESigma ((id , exp1) , exp2) -> 
-        if id = "_" then              (* "(%a × %a)" *)
-          Format.fprintf fmt "%a%a %a %a%a"
-          (pp_ident CLR_par) "("
-          pp_expr exp1
-          (pp_ident CLR_elm) "×" 
-          pp_expr exp2
-          (pp_ident CLR_par) ")"
-        else                          (* "(Σ (%a : %a), %a)"*)
-          Format.fprintf fmt "%a%a %a%a %a %a%a%a %a%a"
-          (pp_ident CLR_par) "("
-          (pp_ident CLR_elm) "Σ"
-          (pp_ident CLR_par) "("
-          (pp_ident CLR_var) id
-          (pp_ident CLR_elm) ":"
-          pp_expr exp1
-          (pp_ident CLR_par) ")"
-          (pp_ident CLR_elm) ","
-          pp_expr exp2
-          (pp_ident CLR_par) ")"
     | ETaggedExpr (exp1 , _) -> Format.fprintf fmt "%a"
         pp_expr exp1
 
