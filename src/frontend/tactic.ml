@@ -14,7 +14,6 @@ let pp_ident fmt id = Format.fprintf fmt "%s" id
 type tactic_ident =
   | TIIntro
   | TIApply
-  (* | TISplit *)
   | TISigmaRec
   | TIExact
   | TITry
@@ -189,7 +188,6 @@ let rec checktype_of_tactic_builder (env: tactic_type SMap.t) = function
 let defaultTacticsList = [
   "Intro", TArrow(TIdent, TTac), TIIntro;
   "Apply", TArrow(TExpr, TTac), TIApply;
-  (* "Split", TArrow(TExpr, TTac), Tactic (PTacBase TISplit); *)
   "SigmaRec",  TTac, TISigmaRec;
   "Exact", TArrow (TExpr, TTac), TIExact;
   "try", TArrow (TTac, TTac), TITry;
@@ -206,7 +204,6 @@ let tactic_creator env id tb =
   then assert false
   else
     let (tt, tb) = checktype_of_tactic_builder (SMap.map (fun (x,_,_) -> x) env) tb in
-    (* Format.printf "new tac %s %a\n" id pp_tactic_builder tb; *)
     SMap.add id (tt, tb, TacEnv env) env
 
 let rec get_int env: parsed_tactic -> int = function
@@ -259,7 +256,6 @@ let rec compute_tactic args (env: tactic_ctxt) parsed_tac = match args, parsed_t
     | _, PTacReplace id ->
       begin match SMap.find_opt id env with
         | Some (_, tb, TacEnv env) ->
-          (* Format.printf "%s %a\n" id pp_tactic_builder tb; *)
           let env, args, tac = tac_of_tac_builder env args tb in
           compute_tactic args env tac
         | None -> assert false
@@ -271,7 +267,6 @@ let rec compute_tactic args (env: tactic_ctxt) parsed_tac = match args, parsed_t
     | _, PTacApp (pt1, pt2) -> compute_tactic ((pt2, env)::args) env pt1
     | [x,env], PTacBase TIIntro -> BaseTac (IntroTac (get_ident env x))
     | [x,env], PTacBase TIApply -> BaseTac (ApplyTac (term_of_ptac env x))
-    (* | [x], PTacBase TISplit -> BaseTac (SplitTac (term_of_ptac env x)) *)
     | [], PTacBase TISigmaRec -> BaseTac SigmaRecTac
     | [x,env], PTacBase TIExact -> BaseTac (ExactTac (term_of_ptac env x))
     | [x,env], PTacBase TITry -> TryTac (compute_tactic [] env x)

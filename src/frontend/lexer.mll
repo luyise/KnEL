@@ -61,7 +61,7 @@ rule next_tokens = parse
     | space         { next_tokens lexbuf }
     | '\n'          { Lexing.new_line lexbuf; next_tokens lexbuf }
     | ident as id   { id_or_kwd id }
-    | integer as i  { INT (int_of_string i) }
+    | integer as i  { INT i }
     | "&&"          { AMPERAMPER }
     | '+'           { PLUS }
     | '-'           { MINUS }
