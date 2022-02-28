@@ -10,18 +10,18 @@
         ("End", END);
         ("fst", FST);
         ("in", IN);
-        ("Inductive", INDUCTIVE);
+        (* ("Inductive", INDUCTIVE); *)
         ("lam", LAMBDA);
         ("Lemma", LEMMA);
-        ("let", LET);
-        ("mapsto", MAPSTO);
+        (* ("let", LET); *)
+        (* ("mapsto", MAPSTO); *)
         ("neg", NEG);
         ("Ongoing", ONGOING);
         ("open", OPEN);
         ("Proof", PROOF);
         ("QED", QED);
         ("snd", SND);
-        ("sum_in", SUMIN);
+        (* ("sum_in", SUMIN); *)
         ("Tactic", TACTIC);
         ("Theorem", THEOREM);
         ("Unit", UNIT);
@@ -45,7 +45,11 @@ let integer = digit+
 
 let letter = lower_case | upper_case | '_'
 
-let ident = letter (letter | digit)*
+let word_mid = (letter | digit) *
+
+let word_end = '.' word_mid
+
+let ident = letter word_mid word_end*
 
 let comment_smp = "//" [^'\n']*
 
@@ -64,15 +68,15 @@ rule next_tokens = parse
     | '/'           { DIV }
     | ":"           { COLON }
     | '='           { EQ }
-    | "=>" | "⇒"    { IMPLIES }
+    (* | "=>" | "⇒"    { IMPLIES } *)
     | '<'           { LOWER }
     | "<="  | "⩽"   { LOWEREQ }
     | ">"           { GREATER }
     | ">="  | "⩾"   { GREATEREQ }
-    | "<=>" | "⇔"   { EQUIV }
+    (* | "<=>" | "⇔"   { EQUIV } *)
     | '('           { LPAREN }
     | ')'           { RPAREN }
-    | '|'           { VERT }
+    (* | '|'           { VERT } *)
     | "||"          { VERTVERT }
     | "->" | "→"    { ARROW }
     | '*'           { STAR }
@@ -82,7 +86,8 @@ rule next_tokens = parse
         { ALL } (* ∀ Π *)
     | "\u{2203}" | '?' | "\u{03A3}"
         { EXISTS } (* ∃ Σ *)
-    | "\u{21A6}"    { MAPSTO } (* ↦ *)
+    (* | "\u{21A6}"    { MAPSTO } *)
+    (* ↦ *)
     | "\u{00AC}"    { NEG } (* ¬ *)
     | "\u{22A4}"    { UNIT } (* ⊤ *)
     | "\u{22A5}"    { VOID } (* ⊥ *)
@@ -90,12 +95,14 @@ rule next_tokens = parse
     | "∨"           { OR }
     | "{"           { LBRACKET }
     | "}"           { RBRACKET }
-    | "["           { LSBRACKET }
-    | "]"           { RSBRACKET }
+    (* | "["           { LSBRACKET }
+    | "]"           { RSBRACKET } *)
     | ";"           { SEMICOLON }
     | ":="          { DEF }
     | "\u{03BB}"    { LAMBDA } (* λ *)
     | "."           { DOT }
+    | "&&"          { AMPERAMPER }
+    | "||"          { VERTVERT }
     | eof           { EOF }
     | _ as c        { raise (UnknownChar c) }
 

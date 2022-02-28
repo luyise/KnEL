@@ -78,7 +78,7 @@ let rec pp_expr_inner above fmt (exp : expr) =
         Format.fprintf fmt "%a%a%a" (* "(%a → %a)" *)
           (pp_ident CLR_par) (if needs_par above SArrow then "(" else "")
           (pp_list_sep
-            (fun fmt (id, expr) -> pp_expr_inner SArrow fmt expr)
+            (fun fmt (_, expr) -> pp_expr_inner SArrow fmt expr)
             (fun fmt () -> pp_ident CLR_elm fmt " → ")) (List.rev (unfold_pi true [] exp))
           (pp_ident CLR_par) (if needs_par above SArrow then ")" else "")
     | EPi (_, _) ->
@@ -104,7 +104,7 @@ let rec pp_expr_inner above fmt (exp : expr) =
         Format.fprintf fmt "%a%a%a" (* "(%a × %a)" *)
           (pp_ident CLR_par) (if needs_par above SProd then "(" else "")
           (pp_list_sep
-            (fun fmt (id, expr) -> pp_expr_inner SProd fmt expr)
+            (fun fmt (_, expr) -> pp_expr_inner SProd fmt expr)
             (fun fmt () -> pp_ident CLR_elm fmt " × ")) (List.rev (unfold_sigma true [] exp))
           (pp_ident CLR_par) (if needs_par above SProd then ")" else "")
     | ESigma (_, _) ->

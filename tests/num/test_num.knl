@@ -1,3 +1,5 @@
+open <-Lib
+
 Variables = {
     num : Type;
     zero : num;
@@ -13,10 +15,10 @@ Variables = {
 Theorem ge_zero:
     ∀ x : num, ge zero x
 Proof
-    Apply [num_ind (ge zero)];
-//    Split [ge_refl zero];
-//    Intro n;
-//    Intro ge_0_n;
-//    Apply [ge_trans zero n (Succ n) ge_0_n];
-//    Exact [ge_succ n];
-Admitted
+    Apply (num_ind (ge zero));
+    Lib.Split (ge zero zero) (Π (n : num), ge zero n → ge zero (Succ n)) (ge_refl zero);
+    Intro n;
+    Intro ge_0_n;
+    Apply (ge_trans zero n (Succ n) ge_0_n);
+    Exact (ge_succ n);
+QED

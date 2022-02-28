@@ -8,7 +8,7 @@ let parsed_files = ref SSet.empty
 let rec new_name dir name =
   if String.length name > 3 && name.[0] = '.' && name.[1] = '.' && name.[2] = '/' && dir <> "."
   then new_name (Filename.dirname dir) (String.sub name 3 ((String.length name) - 3))
-  else dir^"/"^(String.sub name 0 ((String.length name) - 1))^".knl"
+  else dir^"/"^name^".knl"
 
 let parse_file fname lexbuf =
   if not (SSet.mem fname !parsed_files)

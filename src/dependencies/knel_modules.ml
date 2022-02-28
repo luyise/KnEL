@@ -7,7 +7,7 @@ module SMap = Map.Make(String)
 
 type file_status =
   | ToDoStatus of Tactic.raw_knel_file
-  | DoneStatus of ((ident * expr * expr) list * context)
+  | DoneStatus of ((ident * expr * expr) list * context * Tactic.tactic_ctxt)
 
 let build_module_map : (file_status * (string * string) list) SMap.t ref = ref SMap.empty
 
@@ -24,8 +24,8 @@ let context_of_file fname as_name =
   let (file_status, _) = SMap.find fname !build_module_map in
   match file_status with
     | ToDoStatus _ -> assert false
-    | DoneStatus (defs, ctxt) ->
-      [], List.map (fun (name, c) -> (as_name ^ "." ^name, c)) ctxt
+    | DoneStatus (_, ctxt, tactics) ->
+      [], List.map (fun (name, c) -> (as_name ^ "." ^name, c)) ctxt, Tactic.map_tac_ctxt (fun name -> as_name ^ "." ^ name) tactics
 
 let rec ctxt_of_knel_file = function
     | [] -> [], []
@@ -48,19 +48,19 @@ let compile_file ?(show=false) f =
   let (content, deps) = SMap.find f !build_module_map
   in match content with
     | ToDoStatus cnt ->
-      let (defs, ctxt) =
+      let (defs, ctxt, tac_env) =
         List.fold_right
-          (fun (dep, as_name) (defs_l, ctxt_l) -> 
-            let (defs, ctxt) = context_of_file dep as_name in
-              (defs @ defs_l, ctxt @ ctxt_l))
+          (fun (dep, as_name) (defs_l, ctxt_l, tac_l) -> 
+            let (defs, ctxt, tac) = context_of_file dep as_name in
+              (defs @ defs_l, ctxt @ ctxt_l, Tactic.tac_ctxt_merge tac tac_l))
           deps
-          ([], [])
+          ([], [], Tactic.base_tactic_ctxt)
       in
       let () = Format.eprintf "compiling %s ...\n" f in
-      let (tac_env, knl_file) = Tactic.unraw_file Tactic.base_tactic_ctxt cnt in
+      let (tac_env, knl_file) = Tactic.unraw_file tac_env cnt in
       let () = FileProceeding.execute_file ~show knl_file (List.rev ctxt) (List.rev defs) in
       let new_defs, new_ctxt = ctxt_of_knel_file knl_file in
-      update_tree f (DoneStatus (new_defs, new_ctxt))
+      update_tree f (DoneStatus (new_defs, new_ctxt, tac_env))
     | DoneStatus _ -> assert false 
   
 

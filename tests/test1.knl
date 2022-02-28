@@ -1,7 +1,8 @@
 open test0
 open test3
-open num.test_num
+open num.test_num as Num
 open <-tests2.test4
+open Lib
 
 Definition id (x y: Type) : Type := x
 End
@@ -11,22 +12,33 @@ Theorem my_first_Theorem:
 Proof
     Intro NNN_a;
     Intro a;
-    Apply [NNN_a];
-    Intro n_a;
-    Apply [n_a];
-    Exact [a];
+    Apply NNN_a;
+    Lib.fast_tac n_a;
+    Exact a;
 QED
 
 Theorem:
-    A × (A → B) → B
+    ∀ (X: Type) (P Q R: X → Type), 
+        (∀ x : X, P x → Q x) →
+        (∀ x : X, Q x → R x) → 
+        (∃ x : X, P x) → ∃ x : X, R x
 Proof
-    Intro p;
-Admitted
+    Intro X;
+    Intro P;
+    Intro Q;
+    Intro R;
+    Intro I1;
+    Intro I2;
+    Intro Ex;
+    Lib.Apply_in X Q R I2;
+    Lib.Apply_in X P Q I1;
+    Exact Ex;
+QED
 
 Theorem:
     ∀ x: int, ∃ y: int, (y + x = y + x, x, y)
 Proof
-Ongoing
+Admitted
 
 // Basic Tactics :
 //

@@ -11,7 +11,7 @@ let rec unfold_pi b l = function
   | exp -> ("_", exp)::l
 
 let rec unfold_sigma b l = function
-  | ESigma ((id, typ), exp) when b = (id = "_") -> unfold_pi b ((id,typ)::l) exp
+  | ESigma ((id, typ), exp) when b = (id = "_") -> unfold_sigma b ((id,typ)::l) exp
   | exp -> ("_", exp)::l
 
 let rec unfold_lam l = function
@@ -23,14 +23,12 @@ let rec unfold_pair = function
   | exp -> [exp]
 
 let rec fold_pair_list = function
- | [(id, typ)] -> [[id], typ]
- | [] -> raise PPrinter_internal_error
+ | [] -> []
  | (id, typ)::tl ->
-    let (idl, typ2)::l = fold_pair_list tl in
-    if typ = typ2 then
-        (id::idl, typ2)::l
-    else
-      ([id], typ)::(idl, typ2)::l
+    begin match fold_pair_list tl with
+      | (idl, typ2)::l when typ = typ2 -> (id::idl, typ2)::l
+      | l -> ([id], typ)::l
+    end
 
 let rec pp_list pp fmt = function
   | [] -> raise PPrinter_internal_error

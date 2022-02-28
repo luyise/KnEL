@@ -25,25 +25,25 @@ let mk_pair_list il t = List.map (fun i -> (i, t)) il
 %token END          (* End *)
 %token EOF
 %token EQ           (* = *)
-%token EQUIV        (* <=> ⇔ *)
+// %token EQUIV        (* <=> ⇔ *)
 %token EXISTS       (* ∃ ? *)
 %token FST          (* fst *)
 %token GREATER      (* > *)
 %token GREATEREQ    (* >= ⩾ *)
 %token <Ast.ident> IDENT
-%token IMPLIES      (* => ⇒ *)
+// %token IMPLIES      (* => ⇒ *)
 %token IN           (* in *)
 %token <int> INT
-%token INDUCTIVE    (* Inductive *)
+// %token INDUCTIVE    (* Inductive *)
 %token LAMBDA       (* lam λ *)
 %token LBRACKET     (* { *)
 %token LEMMA        (* Lemma *)
-%token LET          (* let *)
+// %token LET          (* let *)
 %token LOWER        (* < *)
 %token LOWEREQ      (* <= ⩽ *)
 %token LPAREN       (* ( *)
-%token LSBRACKET    (* [ *)
-%token MAPSTO       (* mapsto ↦ *)
+// %token LSBRACKET    (* [ *)
+// %token MAPSTO       (* mapsto ↦ *)
 %token MINUS        (* - *)
 %token NEG          (* neg ¬ *)
 %token ONGOING      (* Ongoing *)
@@ -55,22 +55,23 @@ let mk_pair_list il t = List.map (fun i -> (i, t)) il
 %token QED          (* QED *)
 %token RBRACKET     (* } *)
 %token RPAREN       (* ) *)
-%token RSBRACKET    (* ] *)
+// %token RSBRACKET    (* ] *)
 %token SEMICOLON    (* ; *)
 %token STAR         (* * *)
 %token SND          (* snd *)
-%token SUMIN        (* sum_in *)
+// %token SUMIN        (* sum_in *)
 %token TACTIC       (* Tactic *)
 %token THEOREM      (* Theorem *)
 %token UNIT         (* Unit ⊤ *)
 %token VARIABLES    (* Variables *)
-%token VERT         (* | *)
+// %token VERT         (* | *)
 %token VERTVERT     (* || *)
 %token VOID         (* Void ⊥ *)
 
 %start file
 
 %nonassoc EXISTS LAMBDA ALL
+%left AMPERAMPER
 %left VERTVERT
 %right ARROW
 
@@ -92,17 +93,17 @@ file:
 ;
 
 opening:
-    | OPEN parent separated_nonempty_list(DOT, IDENT) {
+    | OPEN parent IDENT {
         (List.fold_left
             (fun name _ -> "../"^name)
-            (List.fold_right (fun f1 f2 -> f1^"/"^f2) $3 "")
+            (String.map (fun c -> if c = '.' then '/' else c) $3)
             $2,
-        List.hd (List.rev $3))
+        List.hd (List.rev (String.split_on_char '.' $3)))
     }
-    | OPEN parent separated_nonempty_list(DOT, IDENT) AS IDENT {
+    | OPEN parent IDENT AS IDENT {
         (List.fold_left
             (fun name _ -> "../"^name)
-            (List.fold_right (fun f1 f2 -> f1^"/"^f2) $3 "")
+            (String.map (fun c -> if c = '.' then '/' else c) $3)
             $2,
         $5)
     }
@@ -136,24 +137,29 @@ var_def:
 ;
 
 tactic_decl:
-    | TACTIC IDENT tactic_arg_def_list { 
-        RawTacticDeclSection ($2, $3) }
+    | TACTIC IDENT binding_list_ne EQ expr END
+        { RawTacticDeclSection ($2, mk_lam $3 $5) }
 ;
 
-tactic_arg_def_list:
-    | EQ tactic END { Tactic $2 }
-    | tactic_arg_def tactic_arg_def_list { Arg (fst $1, snd $1, $2) }
+// tac_arg_list_ne:
+//     | LPAREN nonempty_list(IDENT) COLON expr RPAREN binding_list
+//         { mk_pair_list $2 $4 @ $6 }
+// ;
 
-tactic_arg_def:
-    | LPAREN IDENT COLON tactic_arg_type RPAREN { ($2, $4) }
-;
+// tactic_arg_def_list:
+//     | EQ expr END { $2 }
+//     | tactic_arg_def tactic_arg_def_list { ELam ((fst $1, snd $1), $2) }
 
-tactic_arg_type:
-    | INT       { TInt }
-    | TACTIC    { TTac }
-    | IDENT     { assert ($1 = "ident"); TIdent }
-    | tactic_arg_type ARROW tactic_arg_type { TArrow ($1, $3) }
-;
+// tactic_arg_def:
+//     | LPAREN IDENT COLON expr RPAREN { ($2, $4) }
+// ;
+
+// tactic_arg_type:
+//     | INT       { TInt }
+//     | TACTIC    { TTac }
+//     | IDENT     { assert ($1 = "ident"); TIdent }
+//     | tactic_arg_type ARROW tactic_arg_type { TArrow ($1, $3) }
+// ;
 
 definition:
     | DEFINITION IDENT binding_list COLON expr DEF expr END {
@@ -183,34 +189,34 @@ thm_keyword:
 ;
 
 proof:
-    | tactic SEMICOLON proof { $1::fst $3, snd $3 }
-    | tactic proof_end      { [$1], $2 }
+    | expr SEMICOLON proof { $1::fst $3, snd $3 }
+    | expr proof_end      { [$1], $2 }
     | proof_end             { [], $1 }
 ;
 
-tactic:
-    | no_app_tactic             { $1 }
-(*    | tactic_no_cmp LPAREN expr RPAREN { PTacApp ($1, PTacTerm $3) }
-*)
-    | tactic_no_cmp no_app_tactic
-        { PTacApp ($1, $2) }
-    | tactic VERTVERT tactic    { PTacOr ($1, $3) }
-    | tactic GREATER tactic     { PTacSeq ($1, $3) }
-;
+// tactic:
+//     | no_app_tactic             { $1 }
+// (*    | tactic_no_cmp LPAREN expr RPAREN { PTacApp ($1, PTacTerm $3) }
+// *)
+//     | tactic_no_cmp no_app_tactic
+//         { PTacApp ($1, $2) }
+//     | tactic VERTVERT tactic    { PTacOr ($1, $3) }
+//     | tactic GREATER tactic     { PTacSeq ($1, $3) }
+// ;
 
-tactic_no_cmp:
-    | no_app_tactic             { $1 }
-    | tactic_no_cmp no_app_tactic { PTacApp ($1, $2)}
-;
+// tactic_no_cmp:
+//     | no_app_tactic             { $1 }
+//     | tactic_no_cmp no_app_tactic { PTacApp ($1, $2)}
+// ;
 
-no_app_tactic:
-    | LSBRACKET expr RSBRACKET  { PTacExpr $2 }
-    | IDENT                     { PTacVar $1 }
-    | INT                       { PTacInt $1 }
-    | LPAREN tactic RPAREN      { $2 }
-(*    | LSBRACKET separated_list(SEMICOLON, IDENT) RSBRACKET
-        { PTacList $2 }*)
-;
+// no_app_tactic:
+//     | LSBRACKET expr RSBRACKET  { PTacExpr $2 }
+//     | IDENT                     { PTacVar $1 }
+//     | INT                       { PTacInt $1 }
+//     | LPAREN tactic RPAREN      { $2 }
+// (*    | LSBRACKET separated_list(SEMICOLON, IDENT) RSBRACKET
+//         { PTacList $2 }*)
+// ;
 
 proof_end:
     | ADMITTED  { Admitted }
@@ -218,12 +224,12 @@ proof_end:
     | ONGOING   { Ongoing }
 ;
 
-type_decl:
-    | type_decl ARROW type_decl { () }
-    | LPAREN type_decl RPAREN   { () }
-    | type_decl STAR type_decl  { () }
-    | IDENT                     { () }
-;
+// type_decl:
+//     | type_decl ARROW type_decl { () }
+//     | LPAREN type_decl RPAREN   { () }
+//     | type_decl STAR type_decl  { () }
+//     | IDENT                     { () }
+// ;
 
 expr:
     | ALL nonempty_list(IDENT) COLON expr COMMA expr %prec ALL 
@@ -315,4 +321,6 @@ binding_list:
     | LOWEREQ   { "<=" }
     | AND       { "and" }
     | OR        { "or" }
+    | VERTVERT  { "||" }
+    | AMPERAMPER {"&&" }
 ;

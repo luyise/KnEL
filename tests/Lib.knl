@@ -1,0 +1,43 @@
+Theorem split_thm:
+    ∀(P1 P2 : Type), P1 → P2 → P1 × P2
+Proof
+    Intro P1;
+    Intro P2;
+    Intro p1;
+    Intro p2;
+    Exact (p1, p2) in (λx : P1 → P2);
+QED
+
+Tactic Split (P1 P2 p1 : Expr) =
+    Apply (split_thm P1 P2 p1)
+End
+
+Tactic fast_tac (id : Ident) = 
+    Intro id && Apply id
+End
+
+Theorem apply_in_thm:
+    ∀ (X : Type) (P Q : X → Type),
+        (∀ x : X, P x → Q x)
+        → (∃ x : X , P x) → ∃ x : X, Q x
+Proof
+    Intro X;
+    Intro P;
+    Intro Q;
+    Intro imp;
+    Intro exists;
+    Exact ((fst exists, imp (fst exists) (snd exists)) in (λ x : X → Q x))
+QED
+
+Tactic Apply_in (X P Q IMP : Expr) =
+    Apply (apply_in_thm X P Q IMP)
+End
+
+Theorem claim_thm:
+    ∀ (A B : Type), A × (A → B) → B
+Proof
+    Intro A;
+    Intro B;
+    Intro p;
+    Exact ((snd p) (fst p));
+QED
