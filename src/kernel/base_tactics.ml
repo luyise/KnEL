@@ -41,25 +41,26 @@ let apply_base_tactic : env -> base_tactic -> env list
               ]
           | _ -> raise Invalid_tactic
         end
-    (* | SplitTac term , ESigma ((x , typ) , typ_over_typ) ->
-        let term_typ = beta_reduce e.used_ident 
-          (compute_type_of_term e.context e.used_ident term) in
+    | SigmaRecTac , EPi ((id , ESigma ((x , typ) , typ_over_typ)) , exp_of_p) ->
         let typ' = beta_reduce e.used_ident typ in
-        if alpha_compare e.used_ident term_typ typ' then
-          [ { context = e.context
+        let typ_over_typ' = beta_reduce e.used_ident typ_over_typ in
+        let typ_of_exp_of_p = beta_reduce e.used_ident (compute_type_of_term e.context e.used_ident exp_of_p) in
+        if (alpha_compare e.used_ident (EPi (("p", (ESigma ((x , typ') , typ_over_typ'))) , EConst "Type")) typ_of_exp_of_p) then begin
+          if id = "_" then begin
+            [ { context = e.context
             ; definitions = e.definitions
             ; used_ident = e.used_ident
-            ; target = beta_reduce e.used_ident 
-              (substitute e.used_ident x term typ_over_typ) }
-          ]
-        else raise Invalid_tactic *)
-    | SigmaRecTac , EPi ((_ , ESigma ((x , typ) , typ_over_typ)) , expr_of_p) ->
-        let y = get_unused_ident (x :: e.used_ident) in
-        [ { context = e.context
-          ; definitions = e.definitions
-          ; used_ident = e.used_ident
-          ; target = EPi ((x , typ) , EPi ((y , typ_over_typ), EApp (expr_of_p , (EPair ((EVar x , EVar y), Some (ESigma ((x , typ) , typ_over_typ))))))) }
-        ]
+            ; target = EPi (("_" , typ) , EPi (("_" , typ_over_typ), exp_of_p)) }
+            ]
+          end else begin
+            let y = get_unused_ident (x :: e.used_ident) in
+            [ { context = e.context
+              ; definitions = e.definitions
+              ; used_ident = e.used_ident
+              ; target = EPi ((x , typ) , EPi ((y , typ_over_typ), EApp (exp_of_p , (EPair ((EVar x , EVar y), Some (ESigma ((x , typ) , typ_over_typ))))))) }
+            ]
+          end
+      end else raise Invalid_tactic
     | ExactTac exp , t ->
         let typ = beta_reduce e.used_ident (compute_type_of_term e.context e.used_ident exp) in
         let t' = beta_reduce e.used_ident t in

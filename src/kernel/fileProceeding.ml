@@ -169,7 +169,7 @@ let proceed_reasonment :
             ; definitions = state.definitions
             ; environments = []
             ; status = AllDone } ,
-            true
+            prompt_enabled
         | Admitted , None ->
             if !Config.html_view then begin
               Format.printf "<p style=\"color:#00FF00\">/!\\ An unamed goal has been admitted</p>\n"
@@ -180,7 +180,7 @@ let proceed_reasonment :
             ; definitions = state.definitions
             ; environments = []
             ; status = AllDone } ,
-            true
+            prompt_enabled
       end
     | AllDone -> begin match end_tag with
         | Qed ->

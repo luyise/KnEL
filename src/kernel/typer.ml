@@ -84,42 +84,46 @@ let rec compute_type_of_term : context -> ident list -> expr -> expr
                     EConst "Type"
                 | _ -> raise Type_error
         end
-    | EPair ((term1 , term2) , Some (ELam ((id , typ_a) , exp))) ->
-        begin match in_context_opt id ctx with
-          | Some _ ->
-              let z = get_unused_ident idl in
-              let exp_of_z = rename idl id z exp in
-              compute_type_of_term ctx idl 
-                (EPair ((term1 , term2) , Some (ELam ((z , typ_a) , exp_of_z))))
-          | None ->
-              let (ctx' , idl') = 
-                if id = "_" then (ctx , idl) 
-                else (((id , typ_a) :: ctx) , (id :: idl))
-              in
-              match
-                beta_reduce idl (compute_type_of_term ctx idl term1) ,
-                beta_reduce idl' 
-                  (compute_type_of_term ctx' idl' exp) ,
-                beta_reduce idl (compute_type_of_term ctx idl term2)
-              with
-                | typ_a' , EConst "Type" , exp'
-                  when alpha_compare idl typ_a typ_a'
-                  && alpha_compare idl
-                        exp' 
-                        (beta_reduce idl 
-                          (substitute idl id term1 exp)
-                        ) 
-                  -> ESigma ((id , typ_a) , exp)
-                | _ -> raise Type_error
-        end
-    | EPair ((term1 , _) , Some exp) ->
-        begin match beta_reduce idl (compute_type_of_term ctx idl exp) with
-          | EPi ((_ , typ_a) , _) ->
-              begin match beta_reduce idl (compute_type_of_term ctx idl term1) with
-                | typ when alpha_compare idl typ typ_a -> raise Unable_to_infer_type
-                | _ -> raise Type_error
-              end
-          | _ -> raise Type_error
+    | EPair ((term1 , term2) , Some typ) ->
+        let typ' = beta_reduce idl typ in
+        begin match typ' with
+          | ELam ((id , typ_a) , exp) ->
+            begin match in_context_opt id ctx with
+              | Some _ ->
+                  let z = get_unused_ident idl in
+                  let exp_of_z = rename idl id z exp in
+                  compute_type_of_term ctx idl 
+                    (EPair ((term1 , term2) , Some (ELam ((z , typ_a) , exp_of_z))))
+              | None ->
+                  let (ctx' , idl') = 
+                    if id = "_" then (ctx , idl) 
+                    else (((id , typ_a) :: ctx) , (id :: idl))
+                  in
+                  match
+                    beta_reduce idl (compute_type_of_term ctx idl term1) ,
+                    beta_reduce idl' 
+                      (compute_type_of_term ctx' idl' exp) ,
+                    beta_reduce idl (compute_type_of_term ctx idl term2)
+                  with
+                    | typ_a' , EConst "Type" , exp'
+                      when alpha_compare idl typ_a typ_a'
+                      && alpha_compare idl
+                            exp'
+                            (beta_reduce idl 
+                              (substitute idl id term1 exp)
+                            ) 
+                      -> ESigma ((id , typ_a) , exp)
+                    | _ -> raise Type_error
+            end
+          | exp ->
+            begin match beta_reduce idl (compute_type_of_term ctx idl exp) with
+              | EPi ((_ , typ_a) , _) ->
+                  begin match beta_reduce idl (compute_type_of_term ctx idl term1) with
+                    | typ when alpha_compare idl typ typ_a -> raise Unable_to_infer_type
+                    | _ -> raise Type_error
+                  end
+              | _ -> raise Type_error
+            end
         end
     | EPair _ -> raise Unable_to_infer_type
     | EFst term ->

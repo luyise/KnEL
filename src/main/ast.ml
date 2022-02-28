@@ -73,5 +73,9 @@ type knel_section =
   | DefinitionSection of
       (ident * expr * expr)
       (* nom de la définition, son type, son lambda term *)
+  (* | InductiveSection of
+      ident (* nom de la famille inductive à définir *)
+      * expr (* type de la famille inductive à définir *)
+      *  *)
 
 type knel_file = knel_section list
