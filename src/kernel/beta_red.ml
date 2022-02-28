@@ -27,14 +27,16 @@ let rec beta_reduce : ident list -> expr -> expr
         EPair ((beta_reduce idl exp1 , beta_reduce idl exp2) , None)
     | EFst exp1 -> 
         let exp1' = beta_reduce idl exp1 in
-        match exp1' with
+        begin match exp1' with
             | EPair ((left_exp , _) , _) -> left_exp
             | _ -> EFst exp1'
+        end
     | ESnd exp1 -> 
         let exp1' = beta_reduce idl exp1 in
-        match exp1' with
+        begin match exp1' with
             | EPair ((_ , right_exp) , _) -> right_exp
             | _ -> ESnd exp1'
+        end
     | ESigma ((y , typ) , term_of_y) ->
         ESigma ((y , beta_reduce idl typ) , beta_reduce (y :: idl) term_of_y)
     | ETaggedExpr (exp1 , typ) ->
