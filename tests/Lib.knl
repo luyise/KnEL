@@ -41,3 +41,17 @@ Proof
     Intro p;
     Exact ((snd p) (fst p));
 QED
+
+Theorem generalize_thm:
+    ∀ (A B : Type), A → (A → B) → B
+Proof
+    Intro a;
+    Intro b;
+    Intro a;
+    Intro f;
+    Exact (f a);
+QED
+
+Tactic Generalize (A B a : Expr) =
+    Apply (generalize_thm A B a)
+End
