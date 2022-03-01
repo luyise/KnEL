@@ -74,6 +74,12 @@ let rec pp_expr_inner above fmt (exp : expr) =
         (pp_ident CLR_par) (if needs_par above SApp then "(" else "")
         (pp_list (pp_expr_inner SApp)) expL
         (pp_ident CLR_par) (if needs_par above SApp then ")" else "")
+    | EPi (("_", e), EConst "Void") ->
+      Format.fprintf fmt "%a%a%a%a" (* "(%a %a)" *)
+      (pp_ident CLR_par) (if needs_par above SNeg then "(" else "")
+      (pp_ident CLR_cst) "¬" 
+      (pp_expr_inner  SNeg) e
+      (pp_ident CLR_par) (if needs_par above SNeg then ")" else "")
     | EPi (("_", _) , _) ->
         Format.fprintf fmt "%a%a%a" (* "(%a → %a)" *)
           (pp_ident CLR_par) (if needs_par above SArrow then "(" else "")

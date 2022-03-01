@@ -51,10 +51,12 @@ type struct_element =
   | SArrow
   | SProd
   | SProj
+  | SNeg
 
 let needs_par above here = match above, here with
   | STop, _ | SPair, _ -> false
   | SPi, _ | SSigma, _ -> false
   | STypeBind, _ -> false
   | SArrow, SApp -> false
+  | SNeg, SNeg -> false
   | _, _ -> true
