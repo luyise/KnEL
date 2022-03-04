@@ -97,6 +97,7 @@ let proceed_reasonment :
   ->  ending_tag
   ->  (knel_state * bool)
 = fun state prompt_enabled _ id_op goal_typ tacl end_tag ->
+  let _ = compute_type_of_term state.global_context (List.map fst state.global_context) goal_typ in
   let (goal_id : string) = match id_op with
     | None -> "unamed_goal"
     | Some id ->

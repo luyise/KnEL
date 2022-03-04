@@ -18,7 +18,7 @@ let rec compute_type_of_term : context -> ident list -> expr -> expr
   match term with
     | EConst c ->
         begin match
-        (List.find_opt 
+        (List.find_opt
           (function
             | c' , _ when c = c' -> true
             | _ -> false
