@@ -28,10 +28,10 @@ exception Ident_colision
 let rec rename : ident list -> ident -> ident -> expr -> expr
 = fun idl x y exp ->
   if (List.mem y idl) then raise Ident_colision
-  else let desc = 
+  else let desc : expr_desc =
   match exp.desc with
     | EConst z when z = x -> raise Cannot_rename_a_constant
-    | EConst _ -> exp
+    | EConst _ -> exp.desc
 
     | EVar z when z = x -> EVar y
     | EVar _ -> exp
