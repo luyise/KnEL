@@ -33,7 +33,7 @@ let mk_pair_list il t = List.map (fun i -> (i, t)) il
 %token <Ast.ident> IDENT
 // %token IMPLIES      (* => ⇒ *)
 %token IN           (* in *)
-%token <int> INT
+%token <string> INT
 // %token INDUCTIVE    (* Inductive *)
 %token LAMBDA       (* lam λ *)
 %token LBRACKET     (* { *)
@@ -282,6 +282,7 @@ expr_in:
 expr_bot:
     | VOID                  { EConst "Void" }
     | UNIT                  { EConst "Unit" }
+    | INT                   { EConst $1 }
     | IDENT                 { if $1 = "Type" then EConst "Type" else EVar $1 }
     | LPAREN expr COLON expr RPAREN    { ETaggedExpr ($2, $4) }
     | LPAREN expr RPAREN    { $2 }
