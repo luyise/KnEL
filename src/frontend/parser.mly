@@ -55,7 +55,7 @@ let mk_pair_list il t = List.map (fun i -> (i, t)) il
 %token LOWER        (* < *)
 %token LOWEREQ      (* <= ⩽ *)
 %token LPAREN       (* ( *)
-// %token LSBRACKET    (* [ *)
+%token LSBRACKET    (* [ *)
 // %token MAPSTO       (* mapsto ↦ *)
 %token MINUS        (* - *)
 %token NEG          (* neg ¬ *)
@@ -68,7 +68,7 @@ let mk_pair_list il t = List.map (fun i -> (i, t)) il
 %token QED          (* QED *)
 %token RBRACKET     (* } *)
 %token RPAREN       (* ) *)
-// %token RSBRACKET    (* ] *)
+%token RSBRACKET    (* ] *)
 %token SEMICOLON    (* ; *)
 %token STAR         (* * *)
 %token SND          (* snd *)
@@ -99,7 +99,7 @@ let mk_pair_list il t = List.map (fun i -> (i, t)) il
 %nonassoc NEG SND FST
 
 %type <(string * string) list * Tactic.raw_knel_file> file
-%type <(ident * expr) list> primitives
+%type <(ident * expr) list * (ident * expr) list> primitives
 
 %%
 
@@ -108,8 +108,9 @@ file:
 ;
 
 primitives:
-    | separated_list(SEMICOLON, primitives_decl)
-        list(beta_rules) EOF { $1 }
+    | EOF { ([], []) }
+    | primitives_decl SEMICOLON primitives { $1::fst $3, snd $3 }
+    | beta_rules SEMICOLON primitives { fst $3, $1::snd $3 }
 ;
 
 primitives_decl:
@@ -117,8 +118,8 @@ primitives_decl:
 ;
 
 beta_rules:
-    | IDENT { $1 }
-    // | LSBRACKET IDENT RSBRACKET expr { ($2, $4) }
+    | LSBRACKET IDENT RSBRACKET expr { ($2, $4) }
+;
 
 opening:
     | OPEN parent IDENT {

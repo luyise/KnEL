@@ -102,8 +102,8 @@ rule next_tokens = parse
     | "∨"           { OR }
     | "{"           { LBRACKET }
     | "}"           { RBRACKET }
-    (* | "["           { LSBRACKET }
-    | "]"           { RSBRACKET } *)
+    | "["           { LSBRACKET }
+    | "]"           { RSBRACKET }
     | ";"           { SEMICOLON }
     | ":="          { DEF }
     | "\u{03BB}"    { LAMBDA } (* λ *)
