@@ -34,9 +34,9 @@ let rec rename : ident list -> ident -> ident -> expr -> expr
     | EConst _ -> exp.desc
 
     | EVar z when z = x -> EVar y
-    | EVar _ -> exp
+    | EVar _ -> exp.desc
 
-    | ELam ((z , _) , _) when z = x -> exp
+    | ELam ((z , _) , _) when z = x -> exp.desc
     | ELam ((z , typ) , term) when z = y ->
         let z' = get_unused_ident idl in
         let typ' = rename idl x y typ in
@@ -52,7 +52,7 @@ let rec rename : ident list -> ident -> ident -> expr -> expr
     | EApp (exp1 , exp2) ->
         EApp (rename idl x y exp1 , rename idl x y exp2)
 
-    | EPi ((z , _) , _) when z = x -> exp
+    | EPi ((z , _) , _) when z = x -> exp.desc
     | EPi ((z , typ) , term) when z = y ->
         let z' = get_unused_ident idl in
         let typ' = rename idl x y typ in
@@ -76,7 +76,7 @@ let rec rename : ident list -> ident -> ident -> expr -> expr
     | EFst term -> EFst (rename idl x y term)
     | ESnd term -> ESnd (rename idl x y term)
 
-    | ESigma ((z , _) , _) when z = x -> exp
+    | ESigma ((z , _) , _) when z = x -> exp.desc
     | ESigma ((z , typ) , term) when z = y ->
         let z' = get_unused_ident idl in
         let typ' = rename idl x y typ in

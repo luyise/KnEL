@@ -44,6 +44,6 @@ let rec alpha_compare : ident list -> expr -> expr -> bool
           alpha_compare idl typ1 typ1'
           && alpha_compare (y1 :: idl) term_of_y1 term_of_y1'
         end
-    | ETaggedExpr (u1 , _) , exp2 -> alpha_compare idl u1 exp2
-    | exp1 , ETaggedExpr (u2 , _) -> alpha_compare idl exp1 u2
+    | ETaggedExpr (u1 , _) , _ -> alpha_compare idl u1 exp2
+    | _ , ETaggedExpr (u2 , _) -> alpha_compare idl exp1 u2
     | _ -> false

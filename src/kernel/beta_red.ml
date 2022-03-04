@@ -16,9 +16,9 @@ let rec beta_reduce : ident list -> expr -> expr
     | EApp (u , v) ->
         let u' = beta_reduce idl u in
         let v' = beta_reduce idl v in
-        begin match u' with
+        begin match u'.desc with
           | ELam ((x , _) , term_of_x) ->
-              beta_reduce idl (substitute idl x v' term_of_x)
+              (beta_reduce idl (substitute idl x v' term_of_x)).desc
           | _ -> EApp (u' , v')
         end
     | EPi ((y , typ) , term_of_y) ->
@@ -29,14 +29,14 @@ let rec beta_reduce : ident list -> expr -> expr
         EPair ((beta_reduce idl exp1 , beta_reduce idl exp2) , None)
     | EFst exp1 -> 
         let exp1' = beta_reduce idl exp1 in
-        begin match exp1' with
-            | EPair ((left_exp , _) , _) -> left_exp
+        begin match exp1'.desc with
+            | EPair ((left_exp , _) , _) -> left_exp.desc
             | _ -> EFst exp1'
         end
     | ESnd exp1 -> 
         let exp1' = beta_reduce idl exp1 in
-        begin match exp1' with
-            | EPair ((_ , right_exp) , _) -> right_exp
+        begin match exp1'.desc with
+            | EPair ((_ , right_exp) , _) -> right_exp.desc
             | _ -> ESnd exp1'
         end
     | ESigma ((y , typ) , term_of_y) ->
@@ -44,5 +44,6 @@ let rec beta_reduce : ident list -> expr -> expr
     | ETaggedExpr (exp1 , typ) ->
         ETaggedExpr (beta_reduce idl exp1 , beta_reduce idl typ)
   in
-    { desc = desc
-    ; loc = exp.location }
+  { desc = desc
+  ; loc = exp.loc
+  }
