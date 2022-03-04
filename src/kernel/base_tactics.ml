@@ -10,7 +10,7 @@ exception Invalid_tactic
 
 let apply_base_tactic : env -> base_tactic -> env list
 = fun e tac ->
-  match tac , e.target with
+  match tac , e.target.desc with
     | IntroTac id , EPi ((x , typ) , typ_over_typ) ->
         begin match in_context_opt id e.context with
           | Some _ -> raise Invalid_tactic
@@ -26,12 +26,12 @@ let apply_base_tactic : env -> base_tactic -> env list
               end
         end
     | ApplyTac f_term , typ -> begin
-        match beta_reduce e.used_ident 
-          (compute_type_of_term e.context e.used_ident f_term) 
+        match (beta_reduce e.used_ident 
+          (compute_type_of_term e.context e.used_ident f_term)).desc
           with
           | EPi ((x , s) , typ')
             when alpha_compare e.used_ident
-              (beta_reduce e.used_ident typ) 
+              (beta_reduce e.used_ident e.target) 
               (beta_reduce e.used_ident typ')
               && not (List.mem x (get_varlib [] typ')) -> 
               [ { context = e.context
@@ -41,32 +41,53 @@ let apply_base_tactic : env -> base_tactic -> env list
               ]
           | _ -> raise Invalid_tactic
         end
-    | SigmaRecTac , EPi ((id , ESigma ((x , typ) , typ_over_typ)) , exp_of_p) ->
+    | SigmaRecTac , EPi ((id , { desc = ESigma ((x , typ) , typ_over_typ) ; _ }) , exp_of_p) ->
         let typ' = beta_reduce e.used_ident typ in
         let typ_over_typ' = beta_reduce e.used_ident typ_over_typ in
         let typ_of_exp_of_p = beta_reduce e.used_ident (compute_type_of_term e.context e.used_ident exp_of_p) in
-        if (alpha_compare e.used_ident (EPi (("p", (ESigma ((x , typ') , typ_over_typ'))) , EConst "Type")) typ_of_exp_of_p) then begin
+        if (alpha_compare e.used_ident 
+          { desc = EPi (("p", { desc = ESigma ((x , typ') , typ_over_typ') ; loc = Location.none }) , { desc = EConst "Type" ; loc = Location.none }) 
+          ; loc = Location.none } typ_of_exp_of_p) then begin
           if id = "_" then begin
             [ { context = e.context
             ; definitions = e.definitions
             ; used_ident = e.used_ident
-            ; target = EPi (("_" , typ) , EPi (("_" , typ_over_typ), exp_of_p)) }
-            ]
+            ; target = { desc = EPi (("_" , typ) , { desc = EPi (("_" , typ_over_typ), exp_of_p) ; loc = Location.none }) ; loc = Location.none }
+            } ]
           end else begin
             let y = get_unused_ident (x :: e.used_ident) in
             [ { context = e.context
               ; definitions = e.definitions
               ; used_ident = e.used_ident
-              ; target = EPi ((x , typ) , EPi ((y , typ_over_typ), EApp (exp_of_p , (EPair ((EVar x , EVar y), Some (ESigma ((x , typ) , typ_over_typ))))))) }
-            ]
+              ; target = 
+                { desc = EPi ((x , typ) , 
+                  { desc = EPi ((y , typ_over_typ), 
+                    { desc = EApp (exp_of_p , 
+                      { desc = EPair (
+                          ( { desc = EVar x ; loc = Location.none } ,
+                            { desc = EVar y ; loc = Location.none }
+                          ) ,
+                          Some
+                            { desc = ESigma ((x , typ) , typ_over_typ)
+                            ; loc = Location.none
+                            })
+                      ; loc = Location.none
+                      })
+                    ; loc = Location.none
+                    })
+                  ; loc = Location.none 
+                  })
+                ; loc = Location.none
+                }
+            } ]
           end
       end else raise Invalid_tactic
-    | ExactTac exp , t ->
+    | ExactTac exp , _ ->
         let typ = beta_reduce e.used_ident (compute_type_of_term e.context e.used_ident exp) in
-        let t' = beta_reduce e.used_ident t in
+        let t' = beta_reduce e.used_ident e.target in
         if alpha_compare e.used_ident t' typ then []
         else raise Invalid_tactic
-    | DefineTac (id, term, typ) , t ->
+    | DefineTac (id, term, typ) , _ ->
         begin match in_context_opt id e.context with
           | Some _ -> raise Invalid_tactic
           | None ->
@@ -76,24 +97,24 @@ let apply_base_tactic : env -> base_tactic -> env list
               [ { context = (id , typ') :: e.context
               ; definitions = (id , term) :: e.definitions
               ; used_ident = id :: e.used_ident
-              ; target = t }
+              ; target = e.target }
               ]
             else raise Type_error
         end
-    | UnfoldTac id , t ->
+    | UnfoldTac id , _ ->
         let term = match in_definitions_opt id e.definitions
           with
             | Some term' -> term'
             | None -> raise Invalid_tactic
         in
-        let rewritten_target = substitute e.used_ident id term t in
+        let rewritten_target = substitute e.used_ident id term e.target in
         [ { context = e.context
           ; definitions = e.definitions
           ; used_ident = e.used_ident
           ; target = rewritten_target }
         ]
-    | ReduceTac , t ->
-        let reduced_goal = beta_reduce e.used_ident t in
+    | ReduceTac , _ ->
+        let reduced_goal = beta_reduce e.used_ident e.target in
         [ { context = e.context
           ; definitions = e.definitions
           ; used_ident = e.used_ident
