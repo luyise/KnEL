@@ -7,35 +7,35 @@
 // Puisqu'on ne devrait jamais avoir à considérer le type de Ord,
 // on ne le donne pas.
 
-Ord : _
+Ord : _;
 
 // Les univers sont tous plongés dans Type_∞,
 // distinguer Type_∞ de _ ou Ord permet d'éviter d'avoir
 // au même niveau Ord et ses éléments, et donc de faire de
 // l'autoréférence avec le constructeur OrdSup défini plus bas.
 
-Type_∞ : _
-Type : Ord → Type_∞
+Type_∞ : _;
+Type : Ord → Type_∞;
 
 // Ord vient avec un unique constructeur ; OrdSup.
 // Intuitivement, OrdSup prend une (petite) famille d'éléments
 // de Ord et renvoie le plus petit élément de Ord qui les majore tous strictements.
 
-OrdSup : Π (A : Type_∞), (A → Ord) → Ord
+OrdSup : Π (A : Type_∞), (A → Ord) → Ord;
 
 // On défini un ordre sur Ord afin de préciser cette idée.
 
-OrdLe : Ord → Ord → Type_∞
+OrdLe : Ord → Ord → Type_∞;
 OrdLe_sup_sup :
   Π (A B : Type_∞) (f : A → Ord) (g : B → Ord),
     (Π (x : A), Σ (y : B), OrdLe (f x) (g y))
-    → OrdLe (sup A f) (sup B g)
+    → OrdLe (sup A f) (sup B g);
 
 // On définit à partir de OrdLe un ordre strict sur Ord,
 // on montrera plus tard qu'il se comporte comme attendu :
 // Notamment il est bien fondé.
 
-OrdLt : Ord → Ord → Type_∞
+OrdLt : Ord → Ord → Type_∞;
 
 [β_red]
-OrdLt α (sup B g) = Σ (b : B), (OrdLe α (g b))
+OrdLt α (sup B g) = Σ (b : B), (OrdLe α (g b));

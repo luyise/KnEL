@@ -26,7 +26,7 @@ let apply_base_tactic : env -> base_tactic -> env list
                 ]
               end
         end
-    | ApplyTac f_term , typ -> begin
+    | ApplyTac f_term , _ -> begin
         match (beta_reduce e.used_ident 
           (compute_type_of_term e.context e.used_ident f_term)).desc
           with
