@@ -41,7 +41,7 @@ let pp_ident clr fmt ident =
   Format.fprintf fmt "%s%s%s" pref ident suff
 
 let rec pp_expr_inner above fmt (exp : expr) =
-  match exp with
+  match exp.desc with
     | EConst id -> Format.fprintf fmt "%a"
         (pp_ident CLR_cst)
         (match id with
@@ -74,7 +74,7 @@ let rec pp_expr_inner above fmt (exp : expr) =
         (pp_ident CLR_par) (if needs_par above SApp then "(" else "")
         (pp_list (pp_expr_inner SApp)) expL
         (pp_ident CLR_par) (if needs_par above SApp then ")" else "")
-    | EPi (("_", e), EConst "Void") ->
+    | EPi (("_", e), {desc = EConst "Void"; _ }) ->
       Format.fprintf fmt "%a%a%a%a" (* "(%a %a)" *)
       (pp_ident CLR_par) (if needs_par above SNeg then "(" else "")
       (pp_ident CLR_cst) "¬" 
