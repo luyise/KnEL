@@ -5,9 +5,11 @@ open Substitution
   et beta-réduit un terme passé en paramètre *)
 
 let rec beta_reduce : ident list -> expr -> expr
-= fun idl exp ->
-  match exp with
-    | EConst c -> EConst c
+= fun idl exp -> 
+  let desc =
+  match exp.desc with
+    | EConst c ->
+        EConst c
     | EVar x -> EVar x
     | ELam ((y , typ) , term_of_y) ->
         ELam ((y , beta_reduce idl typ) , beta_reduce (y :: idl) term_of_y)
@@ -41,3 +43,6 @@ let rec beta_reduce : ident list -> expr -> expr
         ESigma ((y , beta_reduce idl typ) , beta_reduce (y :: idl) term_of_y)
     | ETaggedExpr (exp1 , typ) ->
         ETaggedExpr (beta_reduce idl exp1 , beta_reduce idl typ)
+  in
+    { desc = desc
+    ; loc = exp.location }

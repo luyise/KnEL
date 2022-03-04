@@ -5,7 +5,7 @@ open Renaming
 
 let rec get_varlib : ident list -> expr -> ident list
 = fun varlie term ->
-  match term with
+  match term.desc with
     | EConst _ -> []
     | EVar x ->
         if List.mem x varlie then []
@@ -40,11 +40,12 @@ let rec get_varlib : ident list -> expr -> ident list
 
 let rec substitute_inner : ident list -> ident list -> ident -> expr -> expr -> expr
 = fun idl varlib x term exp ->
-  match exp with
-    | EConst _ -> exp
+  let desc = 
+  match exp.desc with
+    | EConst _ -> exp.desc
 
-    | EVar y when y = x -> term
-    | EVar _ -> exp
+    | EVar y when y = x -> term.desc
+    | EVar _ -> exp.desc
 
     | ELam ((y , typ) , term_of_y) when y = x ->
         if List.mem x varlib then begin
@@ -139,6 +140,9 @@ let rec substitute_inner : ident list -> ident list -> ident -> expr -> expr -> 
         let exp1' = substitute_inner idl varlib x term exp1 in
         let typ' = substitute_inner idl varlib x term typ in
         ETaggedExpr (exp1' , typ')
+  in
+  { desc = desc
+  ; loc = exp.loc }
 
 (* même que la précédente, mais dump les variables libres de term dans idl avant de calculer la substitution *)
 

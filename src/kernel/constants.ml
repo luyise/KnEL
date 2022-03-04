@@ -1,5 +1,5 @@
 open Ast
 
-let constants : (ident * expr) list =
+let constants : context =
 [
 ]

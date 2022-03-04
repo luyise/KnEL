@@ -2,7 +2,7 @@
 exception Not_strictly_positive
 
 let rec check_strictly_positive : ident -> ident list -> expr -> bool
-= fun name idl exp -> match exp with
+= fun name idl exp -> match exp.desc with
   | EConst _ -> true
   | EVar _ -> true
   | ELam _ -> false
@@ -27,7 +27,7 @@ let rec check_strictly_positive : ident -> ident list -> expr -> bool
 exception Invalid_constructor_shape
 
 let rec check_head : ident -> expr -> bool
-= fun id exp -> match exp with
+= fun id exp -> match exp.desc with
   | EConst _ -> false
   | EVar id' when id' = id -> true
   | EVar _ -> false

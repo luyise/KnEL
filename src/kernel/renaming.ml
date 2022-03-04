@@ -28,7 +28,8 @@ exception Ident_colision
 let rec rename : ident list -> ident -> ident -> expr -> expr
 = fun idl x y exp ->
   if (List.mem y idl) then raise Ident_colision
-  else begin match exp with
+  else let desc = 
+  match exp.desc with
     | EConst z when z = x -> raise Cannot_rename_a_constant
     | EConst _ -> exp
 
@@ -90,4 +91,7 @@ let rec rename : ident list -> ident -> ident -> expr -> expr
         
     | ETaggedExpr (term , typ) ->
         ETaggedExpr (rename idl x y term , rename idl x y typ)
-  end
+  in
+  { desc = desc
+  ; loc = exp.loc
+  }
