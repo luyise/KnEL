@@ -2,25 +2,25 @@ open Ast
 
 exception PPrinter_internal_error
 
-let rec unfold_app l = function
+let rec unfold_app l e = match e.desc with
   | EApp (e1, e2) -> unfold_app (e2::l) e1
-  | expr -> expr :: l
+  | _ -> e :: l
 
-let rec unfold_pi b l = function
+let rec unfold_pi b l e = match e.desc with
   | EPi ((id, typ), exp) when b = (id = "_") -> unfold_pi b ((id,typ)::l) exp
-  | exp -> ("_", exp)::l
+  | _ -> ("_", e)::l
 
-let rec unfold_sigma b l = function
+let rec unfold_sigma b l e = match e.desc with
   | ESigma ((id, typ), exp) when b = (id = "_") -> unfold_sigma b ((id,typ)::l) exp
-  | exp -> ("_", exp)::l
+  | _ -> ("_", e)::l
 
-let rec unfold_lam l = function
+let rec unfold_lam l e = match e.desc with
   | ELam (p, exp) -> unfold_lam (p::l) exp
-  | exp -> ("_",exp)::l
+  | _ -> ("_", e)::l
 
-let rec unfold_pair = function
+let rec unfold_pair e = match e.desc with
   | EPair ((e1, e2), _) -> e1::unfold_pair e2
-  | exp -> [exp]
+  | _ -> [e]
 
 let rec fold_pair_list = function
  | [] -> []
