@@ -41,9 +41,14 @@
 let lower_case = ['a'-'z']
 let upper_case = ['A'-'Z']
 let digit = ['0'-'9']
+let grec_lc = "α" | "β" | "γ" | "δ" | "ε" | "ζ" | "η" | "θ" | "ι" | "κ"(* λ *)| "μ" | "ν" | "ξ" | "ο" | "π" | "ρ" | "ς" | "σ" | "τ" | "υ" | "φ" | "χ" | "ψ" | "ω"
+let grec_uc = "Α" | "Β" | "Γ" | "Δ" | "Ε" | "Ζ" | "Η" | "Θ" | "Ι" | "Κ" | "Λ" | "Μ" | "Ν" | "Ξ" | "Ο"  (*Π*)| "Ρ" | "Ϛ"  (*Σ*)| "Τ" | "Υ" | "Φ" | "Χ" | "Ψ" | "Ω"
+
+let special = grec_lc | grec_uc
+
 let integer = digit+
 
-let letter = lower_case | upper_case | '_'
+let letter = lower_case | upper_case | '_' | special
 
 let word_mid = (letter | digit) *
 

@@ -35,10 +35,15 @@ Proof
     Exact Ex;
 QED
 
-Theorem:
-    ∀ x: int, ∃ y: int, (y + x = y + x, x, y)
+Theorem my_α_is_notΩ:
+    ∀ η ω Θρα: Type, η = ω → Θρα = Θρα
 Proof
 Admitted
+
+// Theorem:
+//     ∀ x: int, ∃ y: int, (y + x = y + x, x, y)
+// Proof
+// Admitted
 
 // Basic Tactics :
 //

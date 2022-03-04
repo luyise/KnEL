@@ -75,7 +75,7 @@ type tactic_env =
 
 type tactic_ctxt = (tactic_type * tactic_builder * tactic_env) SMap.t
 
-let rec texpr_of_expr env bindings = function
+let rec texpr_of_expr env bindings expr = match expr.desc with
     | EVar id when SSet.mem id bindings -> TEVar id
     | EVar id when SMap.find_opt id env = None -> TEVar id
     | EVar id when SMap.find_opt id env = Some TExpr -> TEReplace id
@@ -102,19 +102,19 @@ let rec compatible t1 t2 = match t1, t2 with
 let rec checktype_of_tactic (env: tactic_type SMap.t) expected term : (tactic_type * parsed_tactic) =
   match expected with
   | TInt ->
-    TInt, begin match term with
+    TInt, begin match term.desc with
       | EVar ident when SMap.find_opt ident env = Some TInt -> PTacReplace ident
       | EConst i -> let i = try int_of_string i with Failure _ -> raise TacticTypeError in PTacInt i
       | _ -> raise TacticTypeError
     end
   | TIdent ->
-    begin match term with
+    begin match term.desc with
       | EVar ident when SMap.find_opt ident env = Some TIdent -> TIdent, PTacReplace ident
       | EVar ident when SMap.find_opt ident env = None -> TIdent, PTacVar ident
       | _ -> raise TacticTypeError
     end
   | TExpr ->
-    begin match term with
+    begin match term.desc with
       | EVar ident when SMap.find_opt ident env = Some TExpr -> TExpr, PTacReplace ident
       | EVar ident when SMap.find_opt ident env = Some TIdent -> TExpr, PTacExpr (TEReplace ident)
       | EVar ident when SMap.find_opt ident env = None -> TExpr, PTacExpr (TEVar ident)
@@ -122,15 +122,15 @@ let rec checktype_of_tactic (env: tactic_type SMap.t) expected term : (tactic_ty
       | _ -> TExpr, PTacExpr (texpr_of_expr env SSet.empty term)
     end
   | TTac ->
-    begin match term with
+    begin match term.desc with
       | EVar ident when SMap.find_opt ident env = Some TTac -> (TTac, PTacReplace ident)
-      | EApp (EApp (EConst op, pt1), pt2) when op = seq_op ->
+      | EApp ({desc = EApp ({desc = EConst op; _ }, pt1); _ }, pt2) when op = seq_op ->
         let t1, pt1 = checktype_of_tactic env TTac pt1 in
         let t2, pt2 = checktype_of_tactic env TTac pt2 in
         if TTac = t1 && TTac = t2
         then TTac, PTacSeq (pt1, pt2)
         else raise TacticTypeError
-      | EApp (EApp (EConst op, pt1), pt2) when op = or_op ->
+      | EApp ({desc = EApp ({desc = EConst op; _ }, pt1); _ }, pt2) when op = or_op ->
         let t1, pt1 = checktype_of_tactic env TTac pt1 in
         let t2, pt2 = checktype_of_tactic env TTac pt2 in
         if TTac = t1 && TTac = t2
@@ -150,7 +150,7 @@ let rec checktype_of_tactic (env: tactic_type SMap.t) expected term : (tactic_ty
       | _ -> raise TacticTypeError
     end
   | TArrow (t1, t2) ->
-    begin match term with
+    begin match term.desc with
       | EVar ident ->
         begin match SMap.find_opt ident env with
           | Some (TArrow (t3, t4)) -> TArrow (compatible t1 t3, compatible t2 t4), PTacReplace ident
@@ -167,7 +167,7 @@ let rec checktype_of_tactic (env: tactic_type SMap.t) expected term : (tactic_ty
     end
   | TUnknown -> assert false
 
-let rec tactic_type_of_expr = function
+let rec tactic_type_of_expr expr = match expr.desc with
     | EVar "Tac" -> TTac
     | EVar "Int" -> TInt
     | EVar "Ident" -> TIdent
@@ -176,12 +176,12 @@ let rec tactic_type_of_expr = function
     | EPi (("_", t1), t2) -> TArrow (tactic_type_of_expr t1, tactic_type_of_expr t2)
     | _ -> raise TacticTypeError
 
-let rec checktype_of_tactic_builder (env: tactic_type SMap.t) = function
+let rec checktype_of_tactic_builder (env: tactic_type SMap.t) tb = match tb.desc with
     | ELam ((id, tt), tb) ->
       let tt = tactic_type_of_expr tt in
       let (t, tb) = checktype_of_tactic_builder (SMap.add id tt env) tb
       in TArrow (tt, t), Arg (id, tt, tb)
-    | tb ->
+    | _ ->
       let tt, tb = checktype_of_tactic env TTac tb in
       tt, Tactic tb
 
@@ -224,22 +224,24 @@ let rec get_ident env: parsed_tactic -> ident = function
      end
    | _ -> assert false
 
-let rec expr_of_tactic_expr env = function
-  | TEConst id -> EConst id
-  | TEVar id -> EVar id
-  | TELam ((id, e1), e2) -> ELam ((id, expr_of_tactic_expr env e1), expr_of_tactic_expr env e2)
-  | TEApp (e1, e2) -> EApp (expr_of_tactic_expr env e1, expr_of_tactic_expr env e2)
-  | TEPi ((id, e1), e2) -> EPi ((id, expr_of_tactic_expr env e1), expr_of_tactic_expr env e2)
-  | TESigma ((id, e1), e2) -> ESigma ((id, expr_of_tactic_expr env e1), expr_of_tactic_expr env e2)
-  | TEFst e -> EFst (expr_of_tactic_expr env e)
-  | TESnd e -> ESnd (expr_of_tactic_expr env e)
-  | TEPair ((e1, e2), None) -> EPair ((expr_of_tactic_expr env e1, expr_of_tactic_expr env e2), None)
-  | TEPair ((e1, e2), Some e3) -> EPair ((expr_of_tactic_expr env e1, expr_of_tactic_expr env e2), Some (expr_of_tactic_expr env e3))
-  | TETaggedExpr (e1, e2) -> ETaggedExpr (expr_of_tactic_expr env e1, expr_of_tactic_expr env e2)
-  | TEReplace id -> term_of_ptac env (PTacReplace id)
+let rec expr_of_tactic_expr env texpr =
+  let desc = match texpr with
+    | TEConst id -> EConst id
+    | TEVar id -> EVar id 
+    | TELam ((id, e1), e2) -> ELam ((id, expr_of_tactic_expr env e1), expr_of_tactic_expr env e2)
+    | TEApp (e1, e2) -> EApp (expr_of_tactic_expr env e1, expr_of_tactic_expr env e2)
+    | TEPi ((id, e1), e2) -> EPi ((id, expr_of_tactic_expr env e1), expr_of_tactic_expr env e2)
+    | TESigma ((id, e1), e2) -> ESigma ((id, expr_of_tactic_expr env e1), expr_of_tactic_expr env e2)
+    | TEFst e -> EFst (expr_of_tactic_expr env e)
+    | TESnd e -> ESnd (expr_of_tactic_expr env e)
+    | TEPair ((e1, e2), None) -> EPair ((expr_of_tactic_expr env e1, expr_of_tactic_expr env e2), None)
+    | TEPair ((e1, e2), Some e3) -> EPair ((expr_of_tactic_expr env e1, expr_of_tactic_expr env e2), Some (expr_of_tactic_expr env e3))
+    | TETaggedExpr (e1, e2) -> ETaggedExpr (expr_of_tactic_expr env e1, expr_of_tactic_expr env e2)
+    | TEReplace id -> (term_of_ptac env (PTacReplace id)).desc
+  in {desc; loc = Location.none}
 and term_of_ptac env = function
     | PTacExpr e -> expr_of_tactic_expr env e
-    | PTacVar id -> EVar id
+    | PTacVar id -> {desc = EVar id; loc = Location.none}
     | PTacReplace id ->
       begin match SMap.find_opt id env with
         | Some (_, Tactic t, TacEnv env) -> term_of_ptac env t

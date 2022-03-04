@@ -45,8 +45,8 @@ QED
 Theorem generalize_thm:
     ∀ (A B : Type), A → (A → B) → B
 Proof
-    Intro a;
-    Intro b;
+    Intro A;
+    Intro B;
     Intro a;
     Intro f;
     Exact (f a);
