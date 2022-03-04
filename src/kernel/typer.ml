@@ -80,10 +80,10 @@ let rec compute_type_of_term : context -> ident list -> expr -> expr
                 (beta_reduce idl (compute_type_of_term ctx idl typ_a)).desc ,
                 (beta_reduce idl (compute_type_of_term ctx' idl' exp)).desc
               with
-                | EApp ({ desc = EConst "Type" ; loc = Location.none } 
-                    , { desc = EVar x ; loc = Location.none }) , 
-                  EApp ({ desc = EConst "Type" ; loc = Location.none } 
-                    , { desc = EVar y ; loc = Location.none }) 
+                | EApp ({ desc = EConst "Type" ; _ } 
+                    , { desc = EVar x ; _ }) ,
+                  EApp ({ desc = EConst "Type" ; _ }
+                    , { desc = EVar y ; _ })
                   when x = y ->
                     EApp ({ desc = EConst "Type" ; loc = Location.none } 
                     , { desc = EVar x ; loc = Location.none })
@@ -111,7 +111,10 @@ let rec compute_type_of_term : context -> ident list -> expr -> expr
                       (compute_type_of_term ctx' idl' exp)).desc ,
                     beta_reduce idl (compute_type_of_term ctx idl term2)
                   with
-                    | typ_a' , EConst "Type" , exp'
+                    | typ_a' ,
+                      EApp ({ desc = EConst "Type" ; _ } 
+                      , { desc = EVar x ; _ }) ,
+                      exp'
                       when alpha_compare idl typ_a typ_a'
                       && alpha_compare idl
                             exp'
@@ -158,7 +161,13 @@ let rec compute_type_of_term : context -> ident list -> expr -> expr
                   (beta_reduce idl' 
                     (compute_type_of_term ctx' idl' exp)).desc
                 with
-                  | EConst "Type" , EConst "Type" -> EConst "Type"
+                  | EApp ({ desc = EConst "Type" ; _ } 
+                    , { desc = EVar x ; _ }) , 
+                  EApp ({ desc = EConst "Type" ; _ } 
+                    , { desc = EVar y ; _ }) 
+                  when x = y ->
+                    EApp ({ desc = EConst "Type" ; loc = Location.none } 
+                    , { desc = EVar x ; loc = Location.none })
                   | _ -> raise Type_error
         end
     | ETaggedExpr (term , exp) ->
