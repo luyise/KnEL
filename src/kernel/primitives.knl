@@ -15,7 +15,6 @@ Ord : _;
 // l'autoréférence avec le constructeur OrdSup défini plus bas.
 
 Type_∞ : _;
-Type : Ord → Type_∞;
 
 // Ord vient avec un unique constructeur ; OrdSup.
 // Intuitivement, OrdSup prend une (petite) famille d'éléments
@@ -25,7 +24,7 @@ OrdSup : Π (A : Type_∞), (A → Ord) → Ord;
 
 // On défini un ordre sur Ord afin de préciser cette idée.
 
-OrdLe : Ord → Ord → Type_∞;
+OrdLe : Ord → Ord → _;
 OrdLe_sup_sup :
   Π (A B : Type_∞) (f : A → Ord) (g : B → Ord),
     (Π (x : A), Σ (y : B), OrdLe (f x) (g y))
@@ -35,7 +34,18 @@ OrdLe_sup_sup :
 // on montrera plus tard qu'il se comporte comme attendu :
 // Notamment il est bien fondé.
 
-OrdLt : Ord → Ord → Type_∞;
-
-[β_red]
+OrdLt : Ord → Ord → _;
 OrdLt α (sup B g) = Σ (b : B), (OrdLe α (g b));
+
+// On a besoin aussi de void, et de unit.
+
+Void : Type_∞
+Unit : Type_∞
+point : Unit
+
+Void_rec : Π (P : Void → _) (x : Void), P x
+Unit_rec : Π (P : Unit → _) (p : P point),
+  Π (x : Unit), P x
+
+OrdSuc : Ord → Ord
+OrdSuc α = OrdSup (Unit_rec (λ _ → Ord) α)

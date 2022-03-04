@@ -37,12 +37,12 @@ let rec compute_type_of_term : context -> ident list -> expr -> expr
         end
     | ELam ((x , x_typ) , exp_of_x) ->
         begin match in_context_opt x ctx with
-          | Some _ -> 
+          | Some _ ->
               let z = get_unused_ident idl in
               let exp_of_z = rename idl x z exp_of_x in
               (compute_type_of_term ctx idl { desc = ELam ((z , x_typ) , exp_of_z) ; loc = term.loc }).desc
           | None ->
-            let (ctx' , idl') = 
+            let (ctx' , idl') =
               if x = "_" then (ctx , idl) 
               else (((x , x_typ) :: ctx) , (x :: idl)) 
             in
@@ -50,9 +50,8 @@ let rec compute_type_of_term : context -> ident list -> expr -> expr
                 (compute_type_of_term ctx idl x_typ).desc ,
                 compute_type_of_term ctx' idl' exp_of_x
               with
-                | EConst "Type" , typ_of_exp_of_x ->
+                | _ , typ_of_exp_of_x ->
                     EPi ((x , x_typ) , typ_of_exp_of_x)
-                | _ -> raise Type_error
             end
         end
     | EApp (exp1 , exp2) ->
@@ -81,9 +80,13 @@ let rec compute_type_of_term : context -> ident list -> expr -> expr
                 (beta_reduce idl (compute_type_of_term ctx idl typ_a)).desc ,
                 (beta_reduce idl (compute_type_of_term ctx' idl' exp)).desc
               with
-                | EConst "Type" , 
-                  EConst "Type" ->
-                    EConst "Type"
+                | EApp ({ desc = EConst "Type" ; loc = Location.none } 
+                    , { desc = EVar x ; loc = Location.none }) , 
+                  EApp ({ desc = EConst "Type" ; loc = Location.none } 
+                    , { desc = EVar y ; loc = Location.none }) 
+                  when x = y ->
+                    EApp ({ desc = EConst "Type" ; loc = Location.none } 
+                    , { desc = EVar x ; loc = Location.none })
                 | _ -> raise Type_error
         end
     | EPair ((term1 , term2) , Some typ) ->
