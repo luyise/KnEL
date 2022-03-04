@@ -4,7 +4,7 @@
  (name parse)
  (modules tactic location ast parser lexer))
 
-(rule (target constants.ml) (action (run ./cstGenerator.exe)))
+(rule (target constants.ml) (deps (file kernel/primitives.knl)) (action (run ./cstGenerator.exe)))
 
 (executable
 	(libraries parse)

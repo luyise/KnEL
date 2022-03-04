@@ -24,9 +24,9 @@
         (* ("sum_in", SUMIN); *)
         ("Tactic", TACTIC);
         ("Theorem", THEOREM);
-        ("Unit", UNIT);
+        (* ("Unit", UNIT); *)
         ("Variables", VARIABLES);
-        ("Void", VOID);
+        (* ("Void", VOID); *)
     ]
 
     let id_or_kwd =
