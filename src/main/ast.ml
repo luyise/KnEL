@@ -1,7 +1,11 @@
-
 type ident = string
 
 type expr =
+  { desc : expr_desc
+  ; loc : Location.t
+  }
+
+and expr_desc =
     (* Représente une constante, a priori déjà connue *)
   | EConst of ident
     (* Représente une variable, on ne présume pas, 
@@ -40,7 +44,7 @@ type base_tactic =
   (* | ChooseTac of int              Former un terme de type +[ - ] *)
   (* | SumRecTac                     Appliquer le récurseur de +, 
                                     pour introduire un terme du type +[ - ] → t *)
-  | ExactTac of expr             (* Démontre un objectif en invoquant 
+  | ExactTac of expr              (* Démontre un objectif en invoquant 
                                     une variable du contexte *)
   | DefineTac of ident * expr * expr      (* Défini un term à partir des éléments du contexte courant : correspond à un let in. *)
   | UnfoldTac of ident
@@ -65,8 +69,8 @@ type ending_tag =
 type knel_section =
   | HypothesisSection of context
   | ReasoningSection of 
-      (beggining_tag * 
-        ident option * 
+      (beggining_tag *
+        ident option *
         expr *
         tactic list *
       ending_tag)

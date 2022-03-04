@@ -5,7 +5,7 @@ open Renaming
 
 let rec alpha_compare : ident list -> expr -> expr -> bool
 = fun idl exp1 exp2 ->
-  match exp1 , exp2 with
+  match exp1.desc , exp2.desc with
     | EConst c1 , EConst c2 -> c1 = c2
     | EVar x1 , EVar x2 -> x1 = x2
     | ELam ((y1 , typ1) , term_of_y1) , ELam ((y2 , typ2) , term_of_y2) ->
