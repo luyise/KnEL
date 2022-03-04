@@ -1,3 +1,4 @@
+open Parse
 open Ast
 
 let get_unused_ident : (ident list) -> ident

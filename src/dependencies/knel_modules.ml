@@ -1,3 +1,4 @@
+open Parse
 open Ast
 
 exception DependenciesError

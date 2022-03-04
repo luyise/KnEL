@@ -82,6 +82,7 @@ let mk_pair_list il t = List.map (fun i -> (i, t)) il
 %token VOID         (* Void ⊥ *)
 
 %start file
+%start primitives
 
 %nonassoc EXISTS LAMBDA ALL
 %left AMPERAMPER
@@ -98,12 +99,26 @@ let mk_pair_list il t = List.map (fun i -> (i, t)) il
 %nonassoc NEG SND FST
 
 %type <(string * string) list * Tactic.raw_knel_file> file
+%type <(ident * expr) list> primitives
 
 %%
 
 file:
     | list(opening) decl_list { $1, $2 }
 ;
+
+primitives:
+    | separated_list(SEMICOLON, primitives_decl)
+        list(beta_rules) EOF { $1 }
+;
+
+primitives_decl:
+    | IDENT COLON expr { ($1, $3) }
+;
+
+beta_rules:
+    | IDENT { $1 }
+    // | LSBRACKET IDENT RSBRACKET expr { ($2, $4) }
 
 opening:
     | OPEN parent IDENT {

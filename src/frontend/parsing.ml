@@ -1,3 +1,4 @@
+open Parse
 
 let files_to_parse : string list ref = ref []
 

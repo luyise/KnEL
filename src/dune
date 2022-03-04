@@ -1,6 +1,19 @@
 (include_subdirs unqualified)
 
+(library
+ (name parse)
+ (modules tactic location ast parser lexer))
+
+; (rule (target constant.ml) (action (run ./cstGenerator.exe)))
+
+(executable
+	(libraries parse)
+	(name cstGenerator)
+	(modules cstGenerator))
+
 (executable
 	(promote (until-clean))
 	(preprocess (pps ppx_deriving.show))
-	(name main))
+	(libraries parse)
+	(name main)
+	(modules :standard \ tactic location ast parser lexer cstGenerator))

@@ -1,3 +1,4 @@
+open Parse
 open Ast
 open Constants
 open Environment

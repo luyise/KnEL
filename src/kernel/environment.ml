@@ -1,3 +1,4 @@
+open Parse
 open Ast
 
 (* Les définitions sont des identifiants qui pointent vers un lambda term déjà défini,

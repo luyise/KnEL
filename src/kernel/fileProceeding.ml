@@ -1,4 +1,5 @@
 open Alpha_renaming
+open Parse
 open Ast
 open Astprinter
 open Beta_red
