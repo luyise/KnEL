@@ -25,7 +25,7 @@ Ord_rec : Π (P : Ord → _),
   (Π (A : Type_∞) (f : A → Ord), (Π (x : A), P (f x))
   → P (OrdSup A f))
   → Π (α : Ord), P α;
-[β-red]
+[β_red]
 Ord_rec P H (sup A f) = H A f (λ (x : A) → Ord_rec P H (f x));
 
 // On défini un ordre sur Ord afin de préciser cette idée.
@@ -40,9 +40,10 @@ OrdLe_sup_sup :
 // on montrera plus tard qu'il se comporte comme attendu :
 // Notamment il est bien fondé.
 
-OrdLt : Ord → Ord → _;
-OrdLt α = Ord_rec (λ _ → _)
-  (λ (B : Type_∞) (g : A → Ord) → Σ (b : B), (OrdLe α (g b)));
+Definition OrdLt : Ord → Ord → _ :=
+λ α : Ord → Ord_rec (λ _ : Ord → _)
+  (λ (B : Type_∞) (g : A → Ord) → Σ (b : B), (OrdLe α (g b)))
+End;
 
 // On a besoin aussi de void, et de unit.
 
@@ -54,5 +55,6 @@ Void_rec : Π (P : Void → _) (x : Void), P x;
 Unit_rec : Π (P : Unit → _) (p : P point),
   Π (x : Unit), P x;
 
-OrdSuc : Ord → Ord;
-OrdSuc = λ α → OrdSup (Unit_rec (λ _ → Ord) α);
+Definition OrdSuc : Ord → Ord :=
+  λ α : Ord → OrdSup (Unit_rec (λ _ : Ord → Ord) α)
+End;
