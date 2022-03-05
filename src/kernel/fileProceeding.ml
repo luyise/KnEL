@@ -68,6 +68,12 @@ let rec execute_section_list : knel_state -> knel_file -> knel_state
           | _ -> execute_section_list state' file_tail
         end
 
+let print_error_op : knel_state -> unit
+= fun state ->
+  match state.status with
+    | Error str -> Format.printf "%s" str
+    | _ -> ()
+
 (* let execute_instruction_list : ?show:bool -> instruction list -> context -> (ident * expr) list -> unit
 = fun ?(show=true) file ctx defs ->
   let fresh_state = new_knel_state ctx defs in
