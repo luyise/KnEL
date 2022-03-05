@@ -24,7 +24,7 @@ type knel_state =
     (* liste des environnement de preuves en cours d'utilisation *)
   ; environments : env list
     (* option permettant de savoir si on doit renvoyer de l'information à instant donné ou non *)
-  ; prompt_enable : bool
+  ; prompt_enabled : bool
     (* description synthétique de l'état du noyau :
       correspond à l'action en cours d'éxecution, ou à une erreur *)
   ; status : status

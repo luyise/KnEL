@@ -1,11 +1,13 @@
-open Alpha_renaming
 open Parse
+
+open Alpha_renaming
 open Ast
 open Astprinter
 open Beta_red
 open Constants
 open Environment
 open Envprinter
+open InstructionHandler
 open KnelState
 open Knelprinter
 open Typer

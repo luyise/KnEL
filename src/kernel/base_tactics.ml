@@ -11,56 +11,52 @@ exception Invalid_tactic
 
 let apply_base_tactic : env -> base_tactic -> env list
 = fun e tac ->
+  let idl = e.used_ident in
+  let brl = e.beta_rules in
+  let ctx = e.context in
   match tac , e.target.desc with
     | IntroTac id , EPi ((x , typ) , typ_over_typ) ->
-        begin match in_context_opt id e.context with
+        begin match in_context_opt id ctx with
           | Some _ -> raise Invalid_tactic
           | None ->
               if id = "_" then raise Invalid_tactic
               else begin
-                let typ_over_typ' = rename e.used_ident x id typ_over_typ in
-                [ { context = (id , typ) :: e.context
+                let typ_over_typ' = rename idl x id typ_over_typ in
+                [ { context = (id , typ) :: ctx
                   ; definitions = e.definitions
-                  ; used_ident = id :: e.used_ident
+                  ; beta_rules = brl
+                  ; used_ident = id :: idl
                   ; target = typ_over_typ' }
                 ]
               end
         end
     | ApplyTac f_term , _ -> begin
-        match (beta_reduce e.used_ident 
-          (compute_type_of_term e.context e.used_ident f_term)).desc
+        match (beta_reduce idl brl
+          (compute_type_of_term ctx brl idl f_term)).desc
           with
           | EPi ((x , s) , typ')
-            when alpha_compare e.used_ident
-              (beta_reduce e.used_ident e.target) 
-              (beta_reduce e.used_ident typ')
+            when alpha_compare idl
+              (beta_reduce idl brl e.target) 
+              (beta_reduce idl brl typ')
               && not (List.mem x (get_varlib [] typ')) -> 
-              [ { context = e.context
-                ; definitions = e.definitions
-                ; used_ident = e.used_ident
-                ; target = s }
-              ]
+              [ { e with target = s } ]
           | _ -> raise Invalid_tactic
         end
     | SigmaRecTac , EPi ((id , { desc = ESigma ((x , typ) , typ_over_typ) ; _ }) , exp_of_p) ->
-        let typ' = beta_reduce e.used_ident typ in
-        let typ_over_typ' = beta_reduce e.used_ident typ_over_typ in
-        let typ_of_exp_of_p = beta_reduce e.used_ident (compute_type_of_term e.context e.used_ident exp_of_p) in
-        if (alpha_compare e.used_ident 
+        let typ' = beta_reduce idl brl typ in
+        let typ_over_typ' = beta_reduce idl brl typ_over_typ in
+        let typ_of_exp_of_p = beta_reduce idl brl (compute_type_of_term ctx brl idl exp_of_p) in
+        if (alpha_compare idl 
           { desc = EPi (("p", { desc = ESigma ((x , typ') , typ_over_typ') ; loc = Location.none }) , { desc = EConst "Type" ; loc = Location.none }) 
           ; loc = Location.none } typ_of_exp_of_p) then begin
           if id = "_" then begin
-            [ { context = e.context
-            ; definitions = e.definitions
-            ; used_ident = e.used_ident
-            ; target = { desc = EPi (("_" , typ) , { desc = EPi (("_" , typ_over_typ), exp_of_p) ; loc = Location.none }) ; loc = Location.none }
+            [ { e with 
+                target = { desc = EPi (("_" , typ) , { desc = EPi (("_" , typ_over_typ), exp_of_p) ; loc = Location.none }) ; loc = Location.none }
             } ]
           end else begin
-            let y = get_unused_ident (x :: e.used_ident) in
-            [ { context = e.context
-              ; definitions = e.definitions
-              ; used_ident = e.used_ident
-              ; target = 
+            let y = get_unused_ident (x :: idl) in
+            [ { e with
+                target = 
                 { desc = EPi ((x , typ) , 
                   { desc = EPi ((y , typ_over_typ), 
                     { desc = EApp (exp_of_p , 
@@ -84,20 +80,21 @@ let apply_base_tactic : env -> base_tactic -> env list
           end
       end else raise Invalid_tactic
     | ExactTac exp , _ ->
-        let typ = beta_reduce e.used_ident (compute_type_of_term e.context e.used_ident exp) in
-        let t' = beta_reduce e.used_ident e.target in
-        if alpha_compare e.used_ident t' typ then []
+        let typ = beta_reduce idl brl (compute_type_of_term ctx brl idl exp) in
+        let t' = beta_reduce idl brl e.target in
+        if alpha_compare idl t' typ then []
         else raise Invalid_tactic
     | DefineTac (id, term, typ) , _ ->
-        begin match in_context_opt id e.context with
+        begin match in_context_opt id ctx with
           | Some _ -> raise Invalid_tactic
           | None ->
-            let term_typ = beta_reduce e.used_ident (compute_type_of_term e.context e.used_ident term) in
-            let typ' = beta_reduce e.used_ident typ in
-            if alpha_compare e.used_ident term_typ typ' then
-              [ { context = (id , typ') :: e.context
+            let term_typ = beta_reduce idl brl (compute_type_of_term ctx brl idl term) in
+            let typ' = beta_reduce idl brl typ in
+            if alpha_compare idl term_typ typ' then
+              [ { context = (id , typ') :: ctx
               ; definitions = (id , term) :: e.definitions
-              ; used_ident = id :: e.used_ident
+              ; beta_rules = brl
+              ; used_ident = id :: idl
               ; target = e.target }
               ]
             else raise Type_error
@@ -108,18 +105,12 @@ let apply_base_tactic : env -> base_tactic -> env list
             | Some term' -> term'
             | None -> raise Invalid_tactic
         in
-        let rewritten_target = substitute e.used_ident id term e.target in
-        [ { context = e.context
-          ; definitions = e.definitions
-          ; used_ident = e.used_ident
-          ; target = rewritten_target }
+        let rewritten_target = substitute idl id term e.target in
+        [ { e with target = rewritten_target }
         ]
     | ReduceTac , _ ->
-        let reduced_goal = beta_reduce e.used_ident e.target in
-        [ { context = e.context
-          ; definitions = e.definitions
-          ; used_ident = e.used_ident
-          ; target = reduced_goal }
+        let reduced_goal = beta_reduce idl brl e.target in
+        [ { e with target = reduced_goal }
         ]
     | _ -> raise Invalid_tactic
 

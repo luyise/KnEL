@@ -8,6 +8,7 @@ Il devrait toujours y avoir pour chaque définition, un élément du context qui
 type env =
   { context : context
   ; definitions : (ident * expr) list
+  ; beta_rules : beta_rule_type list
   ; used_ident : ident list
   ; target : expr
   }
