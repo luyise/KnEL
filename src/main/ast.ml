@@ -1,3 +1,4 @@
+
 type ident = string
 
 type expr =
@@ -67,6 +68,25 @@ type tactic =
   | SeqTac of tactic * tactic
   | OrTac of tactic * tactic
 
+type tactic_type =
+  | TExpr
+  | TInt
+  | TIdent
+  | TTac
+  | TArrow of tactic_type * tactic_type
+  | TUnknown
+
+type beggining_tag =
+  | Lemma
+  | Theorem
+
+type ending_tag =
+  | Qed
+  | Admitted
+  | Ongoing
+
+type beta_rule_type = ident list -> expr_desc -> expr_desc option
+
 (* le type instruction correspond aux différentes commandes pouvant être donnée par le mode intéractif,
   elle correspondent à une action que doit exécuter le noyau *)
 
@@ -78,7 +98,7 @@ type instruction =
     (* Déclaration d'une liste de varaiables à ajouter au contexte courant *)
   | IHypothesis of context
     (* Demande d'ouverture d'un fichier .knl *)
-  | IOpen of string * string * (exp list)
+  | IOpen of string * string * (expr list)
     (* Demande de retour en arrière *)
   | IBackward
     (* Déclaration du début d'une nouvelle preuve *)
@@ -91,15 +111,6 @@ type instruction =
   | IFullProof of (beggining_tag * (ident option) * expr * (tactic list) * ending_tag)
     (* Introduit une nouvelle règle de β-réduction *)
   | IBetaRuleDecl of beta_rule_type
-
-type beggining_tag =
-  | Lemma
-  | Theorem
-
-type ending_tag =
-  | Qed
-  | Admitted
-  | Ongoing
 
 type knel_section =
   | HypothesisSection of context
@@ -116,7 +127,7 @@ type knel_section =
   | OpenSection of
       (string * string * (expr list))
   | TacDeclSection of
-      (string * Tactic.tactic_type * expr)
+      (string * tactic_type * expr)
       (* nom de la définition, son type, son lambda term *)
   (* | InductiveSection of
       ident (* nom de la famille inductive à définir *)

@@ -24,8 +24,8 @@ Ord_rec : Π (P : Ord → _),
   (Π (A : Type_∞) (f : A → Ord), (Π (x : A), P (f x))
   → P (OrdSup A f))
   → Π (α : Ord), P α;
-[β_red]
-Ord_rec 'P 'H (sup 'A 'f) = (H A f (λ (x : A) → Ord_rec P H (f x)));
+//[β_red]
+//Ord_rec 'P 'H (sup 'A 'f) = (H A f (λ (x : A) → Ord_rec P H (f x)));
 
 // On défini un ordre sur Ord afin de préciser cette idée.
 

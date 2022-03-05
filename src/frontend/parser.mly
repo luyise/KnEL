@@ -318,7 +318,7 @@ expr_bot:
     | UNIT                  { mk_expr $loc (EConst "Unit") }
     | INT                   { mk_expr $loc (EConst $1) }
     | IDENT                 { mk_expr $loc (if $1 = "Type" then EConst "Type" else EVar $1) }
-    | LPAREN expr COLON expr RPAREN    { mk_expr $loc (ETaggedExpr ($2, $4)) }
+  (*  | LPAREN expr COLON expr RPAREN    { mk_expr $loc (ETaggedExpr ($2, $4)) } *)
     | LPAREN expr RPAREN    { $2 }
     | LPAREN expr COMMA expr RPAREN     { mk_expr $loc (EPair (($2, $4), None)) }
     | LPAREN expr COMMA expr COMMA separated_nonempty_list(COMMA, expr) RPAREN
