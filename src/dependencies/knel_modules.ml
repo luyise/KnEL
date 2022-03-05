@@ -61,8 +61,9 @@ let compile_file ?(show=false) f =
       in
       let () = Format.eprintf "compiling %s ...\n" f in
       let (tac_env, knl_file) = Tactic.unraw_file tac_env cnt in
-      let knl_state = KnelState.new_knel_state (List.rev ctxt) (List.rev defs) [] show in
-      let _ = FileProceeding.execute_section_list knl_state knl_file in
+      let knl_state = KnelState.new_knel_state (List.rev ctxt) (List.rev defs) [] false in
+      let out_state = FileProceeding.execute_section_list knl_state knl_file in
+      let () = FileProceeding.print_error_op out_state in
       let new_defs, new_ctxt = ctxt_of_knel_file knl_file in
       update_tree f (DoneStatus (new_defs, new_ctxt, tac_env))
     | DoneStatus _ -> assert false 
