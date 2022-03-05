@@ -3,6 +3,7 @@ open Parse
 open Alpha_renaming
 open Ast
 open Astprinter
+open Base_tactics
 open Beta_red
 open Constants
 open Environment
@@ -11,39 +12,23 @@ open KnelState
 open Knelprinter
 open Typer
 
-(* execute_instruction prend en entrée un knel_state, une instruction,
-  exécute l'instruction en appellant la fonction de gestion associée, 
-  et renvoie le knel_state obtenu après exécution de l'instruction. *)
-
-let execute_instruction : knel_state -> instruction -> knel_state
-= fun state inst ->
-  (* On vérifie si l'instruction donnée est recevable en l'état *)
-  let state = check_valid_instruction state inst in
-  match state.status with 
-    | Error _ -> state 
-    | _ ->
-        begin match inst with
-          | IDefine (name , term , typ)
-            -> execute_IDefine state name term typ
-          | ITacDecl (name , tac_typ , tac_exp)
-            -> execute_ITacDecl state; failwith "TO_DO"
-          | IHypothesis ctx
-            -> execute_IHypothesis state ctx
-          | IOpen (str1 , str2 , varl)
-            -> execute_IOpen state; failwith "TO_DO"
-          | IBackward
-            -> execute_IBackward state; failwith "TO_DO"
-          | IBeginProof (id_op , goal_typ)
-            -> execute_IBeginProof state tag id_op goal_typ
-          | ITactic tac
-            -> execute_ITactic state tac
-          | IDropProof
-            -> execute_IDropProof state
-          | IFullProof (beg_tag , id_op , goal_typ , tacl , end_tag)
-            -> execute_IFullProof state beg_tag id_op goal_typ tacl end_tag
-          | IBetaRuleDecl rule
-            -> execute_IBetaRuleDecl state rule
-        end
+(* Fonctions auxiliaires *)
+(* Ajoute un terme au contexte courant *)
+let append_context : knel_state -> (ident * expr) -> knel_state
+= fun state (id , exp) ->
+  if List.mem id state.used_ident then
+    { state with status = Error (id^" is already used!") }
+  else begin try
+    let typ = compute_type_of_term state.global_context state.beta_rules state.used_ident exp in
+    { state with 
+      global_context = (id , exp) :: state.global_context
+    ; used_ident = id :: state.used_ident }
+  with
+    | Unknown_ident ->
+      { state with status = Error ("Unknown ident when type checking "^id^" declaration") }
+    | Type_error ->
+      { state with status = Error ("Type error occured when type checking "^id) }
+  end
 
 (* Vérification de l'admissibilité d'une commande par le noyau *)
 
@@ -59,7 +44,7 @@ let check_valid_instruction : knel_state -> instruction -> knel_state
     | ITactic _ , AllDone -> { state with status = Error "Cannot apply a tactic while not proving something" }
     | IDropProof , AllDone -> { state with status = Error "Cannot drop a proof, because there is no proof now" }
     | IFullProof _ , InProof -> { state with status = Error "Cannot read a proof while beeing in proof" }
-    | IBetaRuleSecl _ , InProof -> { state with status = Error "Cannot accept a beta-rule declaration while beeing in proof" }
+    | IBetaRuleDecl _ , InProof -> { state with status = Error "Cannot accept a beta-rule declaration while beeing in proof" }
     | _ , _ -> state
 
 (* Gestion de chaque commande par le noyau *)
@@ -70,8 +55,8 @@ let execute_IDefine : knel_state -> ident -> expr -> expr -> knel_state
   if List.mem name state.used_ident then
     { state with status = Error (name^" is already used!") }
   else begin try
-    let typ' = beta_reduce state.used_ident
-      (compute_type_of_term state.global_context state.used_ident term)
+    let typ' = beta_reduce state.used_ident state.beta_rules
+      (compute_type_of_term state.global_context state.beta_rules state.used_ident term)
     in
     if alpha_compare state.used_ident typ' typ then begin
       if state.prompt_enabled then begin
@@ -101,8 +86,11 @@ let execute_ITacDecl : knel_state -> knel_state
 = fun state -> state (* TODO *)
 
 let execute_IHypothesis : knel_state -> context -> knel_state
-= fun state ctx exp ->
-  List.fold_left append_context state ctx
+= fun state ctx ->
+  List.fold_left
+    append_context
+    state
+    ctx
 
 let execute_IOpen : knel_state -> knel_state
 = fun state -> state (* TODO *)
@@ -116,32 +104,39 @@ let execute_IBeginProof :
   -> expr
   -> knel_state
 = fun state id_op goal_typ ->
-  let (goal_id : string) = match id_op with
-    | None -> "unamed_goal"
-    | Some id ->
-        if List.mem id state.used_ident then
-          { state with status = Error (id^" is already used!") }
-        else id
-  in
   begin try
-    let _ = compute_type_of_term state.global_context goal_typ in
+    let (goal_id : string) = match id_op with
+      | None -> "unamed_goal"
+      | Some id ->
+          if List.mem id state.used_ident then
+            raise (Ident_conflict id)
+          else id
+    in
+    let _ = compute_type_of_term
+      state.global_context
+      state.beta_rules
+      state.used_ident
+      goal_typ
+    in
     let fresh_envl =
       [ { context = state.global_context
         ; definitions = state.definitions
+        ; beta_rules = state.beta_rules
         ; used_ident = state.used_ident
         ; target = goal_typ
-      }
-      ]
+        } ]
     in
     { state with
       environments = fresh_envl
     ; status = InProof
     }
   with
+    | Ident_conflict id ->
+      { state with status = Error (id^" is already used!") }
     | Unknown_ident ->
-      { state with status = Error ("Unknown ident when type checking "^goal_id) }
+      { state with status = Error ("Unknown ident when type checking goal") }
     | Type_error ->
-      { state with status = Error ("Type error occured when type checking "^goal_id) }
+      { state with status = Error ("Type error occured when type checking goal") }
   end
 
 let execute_ITactic : knel_state -> tactic -> knel_state
@@ -153,11 +148,11 @@ let execute_ITactic : knel_state -> tactic -> knel_state
         { state with environments = generated_envs @ e_tail }
       with
         | Invalid_tactic -> 
-            { state with status = Error ("Invalid tactic: "^tac) }
+            { state with status = Error ("Invalid tactic") }
         | Unknown_ident ->
-            { state with status = Error ("Unknown ident when executing tactic: "^tac) }
+            { state with status = Error ("Unknown ident when executing tactic") }
         | Type_error ->
-            { state with status = Error ("Type error when executing tacting: "^tac) }
+            { state with status = Error ("Type error when executing tacting") }
       end
 
 let execute_IDropProof : knel_state -> knel_state
@@ -175,20 +170,21 @@ let execute_IDropProof : knel_state -> knel_state
 let execute_IFullProof :
      knel_state
   -> beggining_tag
-  -> ident_option
+  -> ident option
   -> expr
   -> tactic list
   -> ending_tag
   -> knel_state
 = fun state beg_tag id_op goal_typ tacl end_tag ->
   let ready_to_reason_state = execute_IBeginProof state id_op goal_typ in
-  let (goal_id : string) = match id_op with
-    | None -> "unamed_goal"
-    | Some id ->
-        if List.mem id state.used_ident then
-          { state with status = Error (id^" is already used!") }
-        else id
-  in
+  begin try
+    let (goal_id : string) = match id_op with
+      | None -> "unamed_goal"
+      | Some id ->
+          if List.mem id state.used_ident then
+            raise (Ident_conflict id)
+          else id
+    in
   match ready_to_reason_state.status with
     | AllDone -> failwith "KnEL internal error: wasn't supposed to get a AllDone status after starting a proof section"
     | Error _ ->
@@ -208,7 +204,7 @@ let execute_IFullProof :
             ready_to_reason_state
             tacl
         in 
-        begin match final_state.status , status.environments , end_tag with
+        begin match final_state.status , final_state.environments , end_tag with
           | AllDone , _ , _ -> failwith "KnEL internal error: wasn't supposed to get a AllDone status after processed a tactic list"
           | Error _ , _ , _ -> 
               if state.prompt_enabled then begin
@@ -242,7 +238,7 @@ let execute_IFullProof :
                 | Some _ ->
                   { state with
                     global_context = (goal_id , goal_typ) :: state.global_context
-                  ; used_ident = goal_id :: used_ident
+                  ; used_ident = goal_id :: state.used_ident
                   ; definitions = state.definitions
                   ; status = AllDone
                   }
@@ -270,33 +266,51 @@ let execute_IFullProof :
                 | Some _ ->
                   { state with
                     global_context = (goal_id , goal_typ) :: state.global_context
-                  ; used_ident = goal_id :: used_ident
+                  ; used_ident = goal_id :: state.used_ident
                   ; definitions = state.definitions
                   ; status = AllDone
                   }
                 | None -> state
               end
         end
+  with
+    | Ident_conflict id -> { state with status = Error (id^" is already used!") }
+  end
 
 let execute_IBetaRuleDecl : knel_state -> beta_rule_type -> knel_state
 = fun state rule ->
   { state with beta_rules = rule :: state.beta_rules }
 
-(* Fonctions auxiliaires *)
+(* execute_instruction prend en entrée un knel_state, une instruction,
+  exécute l'instruction en appellant la fonction de gestion associée, 
+  et renvoie le knel_state obtenu après exécution de l'instruction. *)
 
-(* Ajoute un terme au contexte courant *)
-let append_context : knel_state -> (ident * expr) -> knel_state
-= fun state (id , exp) ->
-  if List.mem id state.used_ident then
-    { state with status = Error (id^" is already used!") }
-  else begin try
-    let typ = compute_type_of_term state.global_context state.used_ident exp in
-    { state with 
-      global_context = (id , exp) :: state.global_context
-    ; used_ident = id :: state.used_ident }
-  with
-    | Unknown_ident ->
-      { state with status = Error ("Unknown ident when type checking "^id^" declaration") }
-    | Type_error ->
-      { state with status = Error ("Type error occured when type checking "^id) }
-  end
+let execute_instruction : knel_state -> instruction -> knel_state
+= fun state inst ->
+  (* On vérifie si l'instruction donnée est recevable en l'état *)
+  let state = check_valid_instruction state inst in
+  match state.status with 
+    | Error _ -> state 
+    | _ ->
+        begin match inst with
+          | IDefine (name , term , typ)
+            -> execute_IDefine state name term typ
+          | ITacDecl (name , tac_typ , tac_exp)
+            -> let _ = execute_ITacDecl state in failwith "TO_DO"
+          | IHypothesis ctx
+            -> execute_IHypothesis state ctx
+          | IOpen (str1 , str2 , varl)
+            -> let _ = execute_IOpen state in failwith "TO_DO"
+          | IBackward
+            -> let _ = execute_IBackward state in failwith "TO_DO"
+          | IBeginProof (id_op , goal_typ)
+            -> execute_IBeginProof state id_op goal_typ
+          | ITactic tac
+            -> execute_ITactic state tac
+          | IDropProof
+            -> execute_IDropProof state
+          | IFullProof (beg_tag , id_op , goal_typ , tacl , end_tag)
+            -> execute_IFullProof state beg_tag id_op goal_typ tacl end_tag
+          | IBetaRuleDecl rule
+            -> execute_IBetaRuleDecl state rule
+        end

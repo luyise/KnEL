@@ -12,19 +12,24 @@ open KnelState
 open Knelprinter
 open Typer
 
-let execute_section : knel_section -> knel_section -> knel_section
-= function
+let execute_section : knel_state -> knel_section -> knel_state
+= fun state sec -> 
+match sec with
   | HypothesisSection ctx ->
       execute_instruction state (IHypothesis ctx)
   | ReasoningSection (beg_tag , id_op , goal_typ , tacl , end_tag) ->
     begin match end_tag with
       | Ongoing ->
+          let (goal_id : string) = match id_op with
+            | None -> "unamed_goal"
+            | Some id -> id
+          in
           let final_state =
             List.fold_left 
               execute_instruction
               state
               ((IBeginProof (id_op , goal_typ))
-              :: (List.map (fun tac -> ITactic tac)))
+              :: (List.map (fun tac -> ITactic tac) tacl))
           in
           if state.prompt_enabled then begin
             if !Config.html_view then begin

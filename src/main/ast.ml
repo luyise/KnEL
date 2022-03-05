@@ -1,5 +1,6 @@
 
 type ident = string
+exception Ident_conflict of ident
 
 type expr =
   { desc : expr_desc
@@ -94,7 +95,7 @@ type instruction =
     (* Définition d'un λ-terme *)
   | IDefine of (ident * expr * expr)
     (* Déclaration d'une nouvelle tactique *)
-  | ITacDecl
+  | ITacDecl of (string * tactic_type * expr)
     (* Déclaration d'une liste de varaiables à ajouter au contexte courant *)
   | IHypothesis of context
     (* Demande d'ouverture d'un fichier .knl *)
