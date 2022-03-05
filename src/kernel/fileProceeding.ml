@@ -71,7 +71,12 @@ let rec execute_section_list : knel_state -> knel_file -> knel_state
 let print_error_op : knel_state -> unit
 = fun state ->
   match state.status with
-    | Error str -> Format.printf "%s" str
+    | Error str -> 
+        if !Config.html_view then begin
+          Format.printf "%s<br>" str
+        end else begin
+          Format.printf "%s\n" str
+        end
     | _ -> ()
 
 (* let execute_instruction_list : ?show:bool -> instruction list -> context -> (ident * expr) list -> unit
