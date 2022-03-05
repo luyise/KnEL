@@ -21,6 +21,12 @@ Type_∞ : _;
 // de Ord et renvoie le plus petit élément de Ord qui les majore tous strictements.
 
 OrdSup : Π (A : Type_∞), (A → Ord) → Ord;
+Ord_rec : Π (P : Ord → _),
+  (Π (A : Type_∞) (f : A → Ord), (Π (x : A), P (f x))
+  → P (OrdSup A f))
+  → Π (α : Ord), P α;
+[β-red]
+Ord_rec P H (sup A f) = H A f (λ (x : A) → Ord_rec P H (f x));
 
 // On défini un ordre sur Ord afin de préciser cette idée.
 
@@ -35,7 +41,8 @@ OrdLe_sup_sup :
 // Notamment il est bien fondé.
 
 OrdLt : Ord → Ord → _;
-// -merdouille- OrdLt α (sup B g) = Σ (b : B), (OrdLe α (g b));
+OrdLt α = Ord_rec (λ _ → _)
+  (λ (B : Type_∞) (g : A → Ord) → Σ (b : B), (OrdLe α (g b)));
 
 // On a besoin aussi de void, et de unit.
 
@@ -48,4 +55,4 @@ Unit_rec : Π (P : Unit → _) (p : P point),
   Π (x : Unit), P x;
 
 OrdSuc : Ord → Ord;
-// -oupsi- OrdSuc α = OrdSup (Unit_rec (λ _ → Ord) α)
+OrdSuc = λ α → OrdSup (Unit_rec (λ _ → Ord) α);

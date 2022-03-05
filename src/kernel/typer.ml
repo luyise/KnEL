@@ -113,7 +113,7 @@ let rec compute_type_of_term : context -> ident list -> expr -> expr
                   with
                     | typ_a' ,
                       EApp ({ desc = EConst "Type" ; _ } 
-                      , { desc = EVar x ; _ }) ,
+                      , { desc = EVar _ ; _ }) ,
                       exp'
                       when alpha_compare idl typ_a typ_a'
                       && alpha_compare idl
