@@ -50,7 +50,7 @@ let special = grec_lc | grec_uc | other_char
 
 let integer = digit+
 
-let letter = lower_case | upper_case | '_' | special
+let letter = lower_case | upper_case | '_' | '\'' | special
 
 let word_mid = (letter | digit) *
 
