@@ -26,7 +26,9 @@ let context_of_file fname as_name =
   match file_status with
     | ToDoStatus _ -> assert false
     | DoneStatus (_, ctxt, tactics) ->
-      [], List.map (fun (name, c) -> (as_name ^ "." ^name, c)) ctxt, Tactic.map_tac_ctxt (fun name -> as_name ^ "." ^ name) tactics
+      [],
+      List.map (fun (name, c) -> (if as_name = "" then name else (as_name ^ "." ^name)), c) ctxt,
+      Tactic.map_tac_ctxt (fun name -> if as_name = "" then name else (as_name ^ "." ^ name)) tactics
 
 let rec ctxt_of_knel_file = function
     | [] -> [], []
@@ -59,7 +61,8 @@ let compile_file ?(show=false) f =
       in
       let () = Format.eprintf "compiling %s ...\n" f in
       let (tac_env, knl_file) = Tactic.unraw_file tac_env cnt in
-      let () = FileProceeding.execute_file ~show knl_file (List.rev ctxt) (List.rev defs) in
+      let knl_state = KnelState.new_knel_state (List.rev ctxt) (List.rev defs) [] show in
+      let _ = FileProceeding.execute_section_list knl_state knl_file in
       let new_defs, new_ctxt = ctxt_of_knel_file knl_file in
       update_tree f (DoneStatus (new_defs, new_ctxt, tac_env))
     | DoneStatus _ -> assert false 
