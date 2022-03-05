@@ -1,5 +1,4 @@
 // Constantes primitives du langage.
-// Merci de ne pas bidouiller le fichier de façon random ^^
 
 // On défini Ord : une version constructive des ordinaux,
 // qui va nous servir à indexer les Types dans lesquels
@@ -26,7 +25,7 @@ Ord_rec : Π (P : Ord → _),
   → P (OrdSup A f))
   → Π (α : Ord), P α;
 [β_red]
-Ord_rec P H (sup A f) = H A f (λ (x : A) → Ord_rec P H (f x));
+Ord_rec 'P 'H (sup 'A 'f) = (H A f (λ (x : A) → Ord_rec P H (f x)));
 
 // On défini un ordre sur Ord afin de préciser cette idée.
 

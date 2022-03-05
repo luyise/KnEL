@@ -136,11 +136,6 @@ let rec substitute_inner : ident list -> ident list -> ident -> expr -> expr -> 
           let term_of_y' = substitute_inner idl' varlib x term term_of_y in
           ESigma ((y , typ') , term_of_y')
         end
-      (* Correspond à une expression dont le type a été forcé par l'utilisateur *)
-    | ETaggedExpr (exp1 , typ) ->
-        let exp1' = substitute_inner idl varlib x term exp1 in
-        let typ' = substitute_inner idl varlib x term typ in
-        ETaggedExpr (exp1' , typ')
   in
   { desc = desc
   ; loc = exp.loc }

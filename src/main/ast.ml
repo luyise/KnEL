@@ -25,10 +25,20 @@ and expr_desc =
   | ESnd of expr
     (* Type des paires dépendantes *)
   | ESigma of (ident * expr) * expr
-    (* Correspond à une expression dont le type a été forcé par l'utilisateur *)
-  | ETaggedExpr of expr * expr
+    (* Correspond à une abstraction de terme (éventuellement
+      non construit, ou servant à matcher un terme entier),
+      on lui donne un nom et un type supposé, en option *)
+  (* | EAbs of ident * option expr
+    (* Correspond à l'expression t[x/u] correspondant au terme t dans lequel la
+        variable x est remplacée par le terme u *) *)
+  (* | ESub of expr * ident * expr *)
 
 type context = (ident * expr) list
+
+(* Exception levée si une fonction reçoit une expression
+  contenant une abstraction de terme, là où elle s'attendait
+  à avoir un terme complétement défini. *)
+(* exception Incomplete_expr *)
 
 type base_tactic =
   | IntroTac of ident             (* Former un terme de type Π (a : A) (B a) *)
@@ -57,6 +67,31 @@ type tactic =
   | SeqTac of tactic * tactic
   | OrTac of tactic * tactic
 
+(* le type instruction correspond aux différentes commandes pouvant être donnée par le mode intéractif,
+  elle correspondent à une action que doit exécuter le noyau *)
+
+type instruction =
+    (* Définition d'un λ-terme *)
+  | IDefine of (ident * expr * expr)
+    (* Déclaration d'une nouvelle tactique *)
+  | ITacDecl
+    (* Déclaration d'une liste de varaiables à ajouter au contexte courant *)
+  | IHypothesis of context
+    (* Demande d'ouverture d'un fichier .knl *)
+  | IOpen of string * string * (exp list)
+    (* Demande de retour en arrière *)
+  | IBackward
+    (* Déclaration du début d'une nouvelle preuve *)
+  | IBeginProof of (ident option * expr)
+    (* Demande d'utilisation d'une tactique pour faire avancer l'état de la preuve *)
+  | ITactic of tactic
+    (* Demande de jeter la preuve en cours *)
+  | IDropProof
+    (* Demande de vérifier une preuve entière, et de l'ajouter au contexte global *)
+  | IFullProof of (beggining_tag * (ident option) * expr * (tactic list) * ending_tag)
+    (* Introduit une nouvelle règle de β-réduction *)
+  | IBetaRuleDecl of beta_rule_type
+
 type beggining_tag =
   | Lemma
   | Theorem
@@ -76,10 +111,16 @@ type knel_section =
       ending_tag)
   | DefinitionSection of
       (ident * expr * expr)
+  | BetaRuleDeclSection of
+      beta_rule_type
+  | OpenSection of
+      (string * string * (expr list))
+  | TacDeclSection of
+      (string * Tactic.tactic_type * expr)
       (* nom de la définition, son type, son lambda term *)
-  | InductiveSection of
+  (* | InductiveSection of
       ident (* nom de la famille inductive à définir *)
       * expr (* type de la famille inductive à définir *)
-      * context (* famille de constructeurs définis avec la famille de type inductif *)
+      * context famille de constructeurs définis avec la famille de type inductif *)
 
 type knel_file = knel_section list

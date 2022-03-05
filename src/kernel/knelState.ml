@@ -3,16 +3,30 @@ open Ast
 open Environment
 open Typer
 open Base_tactics
+open Beta_red
+open Constants
 
 type status =
   | AllDone
   | InProof
   | Error of string
-  
-type knel_state = 
+
+type knel_state =
+    (* contexte global, commun à tous les environnements de preuves *)
   { global_context : context
+    (* liste des identifiants déjà utilisés, qu'il n'est pas souhaitable d'emprunter pour
+      nommer de nouveaux termes ou variables *)
+  ; used_ident : ident list
+    (* liste de règles de β-réductions, déclarées par l'utilisateur ou natives *)
+  ; beta_rules : beta_rule_type list
+    (* liste de termes définis par l'utilisateur, avec leur λ-terme associé *)
   ; definitions : (ident * expr) list
+    (* liste des environnement de preuves en cours d'utilisation *)
   ; environments : env list
+    (* option permettant de savoir si on doit renvoyer de l'information à instant donné ou non *)
+  ; prompt_enable : bool
+    (* description synthétique de l'état du noyau :
+      correspond à l'action en cours d'éxecution, ou à une erreur *)
   ; status : status
   }
 
@@ -23,8 +37,11 @@ type knel_state =
 let new_knel_state : context -> (ident * expr) list -> knel_state
 = fun ctx def ->
   { global_context = ctx
+  ; used_ident = (List.map fst ctx) @ (List.map fst constants)
+  ; beta_rules = primitive_beta_rules
   ; definitions = def
   ; environments = []
+  ; prompt_enabled = true
   ; status = AllDone }
 
 (* La fonction execute_tac_list applique, sous reserve qu'il n'y ait
@@ -33,7 +50,7 @@ let new_knel_state : context -> (ident * expr) list -> knel_state
 
 let rec execute_tac_list : knel_state -> tactic list -> knel_state
 = fun state tac_list ->
-  match state.status with 
+  match state.status with
     | Error (_) -> state
     | _ -> begin
       match state.environments , tac_list with
@@ -51,21 +68,16 @@ let rec execute_tac_list : knel_state -> tactic list -> knel_state
             let new_env_list = (generated_envs @ e_tail) in
             begin match new_env_list with
               | [] ->
-                  { global_context = state.global_context
-                  ; definitions = state.definitions
-                  ; environments = []
+                  { state with 
+                    environments = []
                   ; status = AllDone }
               | _ -> 
                   execute_tac_list 
-                    { global_context = state.global_context
-                    ; definitions = state.definitions
-                    ; environments = new_env_list
+                    { state with
+                      environments = new_env_list
                     ; status = st }
                     tac_tail
             end
         | [] , _ ->
-            { global_context = state.global_context 
-            ; definitions = state.definitions
-            ; environments = [] 
-            ; status = Error "No goal remaining" }
+            { state with status = Error "No goal remaining" }
     end

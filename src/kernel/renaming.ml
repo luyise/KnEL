@@ -65,7 +65,7 @@ let rec rename : ident list -> ident -> ident -> expr -> expr
         let idl' = if z = "_" then idl else (z :: idl) in
         let term' = rename idl' x y term in
         EPi ((z , typ') , term')
-      
+        
     | EPair ((exp1 , exp2) , typ_op) ->
         let typ_op' =
           match typ_op with
@@ -89,10 +89,5 @@ let rec rename : ident list -> ident -> ident -> expr -> expr
         let idl' = if z = "_" then idl else (z :: idl) in
         let term' = rename idl' x y term in
         ESigma ((z , typ') , term')
-        
-    | ETaggedExpr (term , typ) ->
-        ETaggedExpr (rename idl x y term , rename idl x y typ)
   in
-  { desc = desc
-  ; loc = exp.loc
-  }
+  { exp with desc }

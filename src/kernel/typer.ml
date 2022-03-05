@@ -170,12 +170,6 @@ let rec compute_type_of_term : context -> ident list -> expr -> expr
                     , { desc = EVar x ; loc = Location.none })
                   | _ -> raise Type_error
         end
-    | ETaggedExpr (term , exp) ->
-        if alpha_compare idl 
-          (beta_reduce idl (compute_type_of_term ctx idl term))
-          (beta_reduce idl exp)
-          then exp.desc
-        else raise Type_error
   in
   if !Config.verbose then begin
     Format.eprintf "type of %a is %a\n"
