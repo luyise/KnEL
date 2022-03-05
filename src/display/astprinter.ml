@@ -19,11 +19,11 @@ let ansi_escape_code clr = match clr with
   | CLR_def -> "\x1B[39m"           (* gris, très pâle *)
 
 let html_left_tag clr = match clr with
-  | CLR_elm -> "<font color = \"#f6c266\">"     (* orange, pâle *)
+  | CLR_elm -> "<font color = \"#F6C266\">"     (* orange, pâle *)
   | CLR_par -> "<font color = \"#505050\">"     (* gris, terne *)
   | CLR_cst -> "<font color = \"#F5B7B1\">"     (* ocre, pâle *)
-  | CLR_var -> "<font color = \"#96ab9c\">"     (* vert, pâle *)
-  | CLR_nam -> "<font color = \"#d98880\">"     (* lavande, pâle *)
+  | CLR_var -> "<font color = \"#96AB9C\">"     (* vert, pâle *)
+  | CLR_nam -> "<font color = \"#D98880\">"     (* lavande, pâle *)
   | CLR_def -> "<font color = \"#F2F3F4\">"     (* gris, très pâle *)
 
 let pp_ident clr fmt ident =
@@ -148,8 +148,8 @@ let rec pp_expr_inner above fmt (exp : expr) =
         (pp_ident CLR_cst) "snd"
         (pp_expr_inner SProj) exp1
         (pp_ident CLR_par) (if needs_par above SProj then ")" else "")
-    | ETaggedExpr (exp1 , _) -> Format.fprintf fmt "%a"
-        (pp_expr_inner above) exp1
+    (* | ETaggedExpr (exp1 , _) -> Format.fprintf fmt "%a"
+        (pp_expr_inner above) exp1 *)
 
 let pp_expr = pp_expr_inner STop
 

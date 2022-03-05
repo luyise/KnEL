@@ -32,7 +32,7 @@ type tactic_expr =
   | TEFst of tactic_expr
   | TESnd of tactic_expr
   | TESigma of (ident * tactic_expr) * tactic_expr
-  | TETaggedExpr of tactic_expr * tactic_expr
+  (* | TETaggedExpr of tactic_expr * tactic_expr *)
   | TEReplace of ident
 
 type parsed_tactic =
@@ -44,14 +44,6 @@ type parsed_tactic =
   | PTacOr of parsed_tactic * parsed_tactic
   | PTacApp of parsed_tactic * parsed_tactic
   | PTacBase of tactic_ident
-
-type tactic_type =
-  | TExpr
-  | TInt
-  | TIdent
-  | TTac
-  | TArrow of tactic_type * tactic_type
-  | TUnknown
 
 type tactic_builder =
   | Tactic of parsed_tactic
@@ -90,7 +82,7 @@ let rec texpr_of_expr env bindings expr = match expr.desc with
     | EPair ((e1, e2), Some e3) -> TEPair ((texpr_of_expr env bindings e1, texpr_of_expr env bindings e2), Some (texpr_of_expr env bindings e3))
     | EFst e -> TEFst (texpr_of_expr env bindings e)
     | ESnd e -> TESnd (texpr_of_expr env bindings e)
-    | ETaggedExpr (e1, e2) -> TETaggedExpr (texpr_of_expr env bindings e1, texpr_of_expr env bindings e2)
+    (* | ETaggedExpr (e1, e2) -> TETaggedExpr (texpr_of_expr env bindings e1, texpr_of_expr env bindings e2) *)
 
 let rec compatible t1 t2 = match t1, t2 with
   | TUnknown, _ -> t2
@@ -236,7 +228,7 @@ let rec expr_of_tactic_expr env texpr =
     | TESnd e -> ESnd (expr_of_tactic_expr env e)
     | TEPair ((e1, e2), None) -> EPair ((expr_of_tactic_expr env e1, expr_of_tactic_expr env e2), None)
     | TEPair ((e1, e2), Some e3) -> EPair ((expr_of_tactic_expr env e1, expr_of_tactic_expr env e2), Some (expr_of_tactic_expr env e3))
-    | TETaggedExpr (e1, e2) -> ETaggedExpr (expr_of_tactic_expr env e1, expr_of_tactic_expr env e2)
+    (* | TETaggedExpr (e1, e2) -> ETaggedExpr (expr_of_tactic_expr env e1, expr_of_tactic_expr env e2) *)
     | TEReplace id -> (term_of_ptac env (PTacReplace id)).desc
   in {desc; loc = Location.none}
 and term_of_ptac env = function
@@ -290,7 +282,7 @@ let rec map_texpr (f: string -> string) : tactic_expr -> tactic_expr = function
     | TEReplace id -> TEReplace (f id)
     | TEPair ((e1, e2), None) -> TEPair ((map_texpr f e1, map_texpr f e2), None)
     | TEPair ((e1, e2), Some e3) -> TEPair ((map_texpr f e1, map_texpr f e2), Some (map_texpr f e3))
-    | TETaggedExpr (e1, e2) -> TETaggedExpr (map_texpr f e1, map_texpr f e2)
+    (* | TETaggedExpr (e1, e2) -> TETaggedExpr (map_texpr f e1, map_texpr f e2) *)
 
 let rec map_ptac f = function
     | PTacApp (e1, e2) -> PTacApp (map_ptac f e1, map_ptac f e2)

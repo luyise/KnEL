@@ -2,22 +2,20 @@ open Parse
 open Ast
 open Substitution
 
-type beta_rule_type = ident_list -> expr_desc -> expr_desc option
-
 let lam_red : beta_rule_type
-= function
+= fun idl exp -> match exp with
   | EApp ({ desc = ELam ((x , _) , term_of_x) ; loc = _ } , v) ->
       Some (substitute idl x v term_of_x).desc
   | _ -> None
 
 let fst_red : beta_rule_type
-= function
+= fun idl exp -> match exp with
   | EFst ({ desc = EPair ((left_exp , _) , _) ; loc = _}) ->
       Some left_exp.desc
   | _ -> None
 
-let fst_red : beta_rule_type
-= function
+let snd_red : beta_rule_type
+= fun idl exp -> match exp with
   | ESnd ({ desc = EPair ((_ , right_exp) , _) ; loc = _}) ->
       Some right_exp.desc
   | _ -> None
@@ -68,41 +66,40 @@ let rec beta_reduce_n_inner : ident list -> beta_rule_type list -> int -> expr_d
         | EConst c -> (EConst c , 0)
         | EVar x -> (EVar x , 0)
         | ELam ((y , typ) , term_of_y) ->
-            let typ' , k = beta_reduce_n_inner idl brl n typ in
-            let term_of_y' , j = beta_reduce_n_inner (y :: idl) brl (n-k) term_of_y in
-            (ELam ((y , typ') , term_of_y') , k + j)
+            let typ' , k = beta_reduce_n_inner idl brl n typ.desc in
+            let term_of_y' , j = beta_reduce_n_inner (y :: idl) brl (n-k) term_of_y.desc in
+            (ELam ((y , { desc = typ' ; loc = typ.loc }) , { desc = term_of_y' ; loc = term_of_y.loc }) , k + j)
         | EApp (u , v) ->
-            let u' , k = beta_reduce_n_inner idl brl n u in
-            let v' , j = beta_reduce_n_inner idl brl (n-k) v in
-            (EApp (u' , v') , k + j)
+            let u' , k = beta_reduce_n_inner idl brl n u.desc in
+            let v' , j = beta_reduce_n_inner idl brl (n-k) v.desc in
+            (EApp ({ desc = u' ; loc = u.loc } , { desc = v' ; loc = v.loc }) , k + j)
         | EPi ((y , typ) , term_of_y) ->
-            let typ' , k = beta_reduce_n_inner idl brl n typ in
-            let term_of_y' , j = beta_reduce_n_inner (y :: idl) brl (n-k) term_of_y in
-            (EPi ((y , typ') , term_of_y') , k + j)
+            let typ' , k = beta_reduce_n_inner idl brl n typ.desc in
+            let term_of_y' , j = beta_reduce_n_inner (y :: idl) brl (n-k) term_of_y.desc in
+            (EPi ((y , { desc = typ' ; loc = typ.loc }) , { desc = term_of_y' ; loc = term_of_y.loc }) , k + j)
         | EPair ((exp1 , exp2) , Some typ) ->
-            let exp1' , k = beta_reduce_n_inner idl brl n exp1 in
-            let exp2' , j = beta_reduce_n_inner idl brl (n-k) exp2 in
-            let typ' , i = beta_reduce_n_inner idl brl (n-k-j) typ in
-            (EPair ((exp1' , exp2') , Some typ') , k + j + i)
+            let exp1' , k = beta_reduce_n_inner idl brl n exp1.desc in
+            let exp2' , j = beta_reduce_n_inner idl brl (n-k) exp2.desc in
+            let typ' , i = beta_reduce_n_inner idl brl (n-k-j) typ.desc in
+            (EPair (({ desc = exp1' ; loc = exp1.loc } , { desc = exp2' ; loc = exp2.loc }) , Some { desc = typ' ; loc = typ.loc }) , k + j + i)
         | EPair ((exp1 , exp2) , None) ->
-            let exp1' , k = beta_reduce_n_inner idl brl n exp1 in
-            let exp2' , j = beta_reduce_n_inner idl brl (n-k) exp2 in
-            (EPair ((exp1' , exp2') , None) , k + j + i)
+            let exp1' , k = beta_reduce_n_inner idl brl n exp1.desc in
+            let exp2' , j = beta_reduce_n_inner idl brl (n-k) exp2.desc in
+            (EPair (({ desc = exp1' ; loc = exp1.loc } , { desc = exp2' ; loc = exp2.loc }) , None) , k + j)
         | EFst exp1 ->
-            let exp1' , k = beta_reduce_n_inner idl brl n exp1 in
-            (EFst exp1' , k)
+            let exp1' , k = beta_reduce_n_inner idl brl n exp1.desc in
+            (EFst { desc = exp1' ; loc = exp1.loc } , k)
         | ESnd exp1 ->
-            let exp1' , k = beta_reduce_n_inner idl brl n exp1 in
-            (EFst exp1' , k)
+            let exp1' , k = beta_reduce_n_inner idl brl n exp1.desc in
+            (EFst { desc = exp1' ; loc = exp1.loc } , k)
         | ESigma ((y , typ) , term_of_y) ->
-            let typ' , k = beta_reduce_n_inner idl brl n typ in
-            let term_of_y' , j = beta_reduce_n_inner (y :: idl) brl (n-k) term_of_y in
-            (ESigma ((y , typ') , term_of_y') , k + j)
-        | EAbs (_ , _) -> (exp , 0)
+            let typ' , k = beta_reduce_n_inner idl brl n typ.desc in
+            let term_of_y' , j = beta_reduce_n_inner (y :: idl) brl (n-k) term_of_y.desc in
+            (ESigma ((y , { desc = typ' ; loc = typ.loc }) , { desc = term_of_y' ; loc = term_of_y.loc }) , k + j)
       end
 
 let beta_reduce_n_desc : ident list -> beta_rule_type list -> int -> expr_desc -> expr_desc
-= fun idl brl n exp -> fst (beta_reduce_n idl brl n exp)
+= fun idl brl n exp -> fst (beta_reduce_n_inner idl brl n exp)
 
 let beta_reduce_n : ident list -> beta_rule_type list -> int -> expr -> expr
 = fun idl brl n exp ->
@@ -110,10 +107,10 @@ let beta_reduce_n : ident list -> beta_rule_type list -> int -> expr -> expr
 
 let rec beta_reduce_decl : ident list -> beta_rule_type list -> expr_desc -> expr_desc
 = fun idl brl exp ->
-  let exp' , n = beta_reduce_n idl brl 100 exp.desc in
+  let exp' , n = beta_reduce_n_inner idl brl 100 exp in
   if n < 100 then exp'
   else beta_reduce_decl idl brl exp'
   
-let beta_reduce : ident list -> beta_rule_type liste -> expr -> expr
+let beta_reduce : ident list -> beta_rule_type list -> expr -> expr
 = fun idl brl exp ->
   { exp with desc = beta_reduce_decl idl brl exp.desc }

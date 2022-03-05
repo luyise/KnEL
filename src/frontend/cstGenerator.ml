@@ -12,9 +12,9 @@ let rec pp_expr fmt e = match e.desc with
   | ELam ((id, p1), p2) ->
     Format.fprintf fmt "mk_loc (ELam ((\"%s\", %a), %a))"
       id pp_expr p1 pp_expr p2
-  | ETaggedExpr (p1, p2) ->
+  (* | ETaggedExpr (p1, p2) ->
     Format.fprintf fmt "mk_loc (ETaggedExpr (%a, %a))"
-      pp_expr p1 pp_expr p2
+      pp_expr p1 pp_expr p2 *)
   | EPair ((p1, p2), None) ->
     Format.fprintf fmt "mk_loc (EPair ((%a, %a), None))"
       pp_expr p1 pp_expr p2

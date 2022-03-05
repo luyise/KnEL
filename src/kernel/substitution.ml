@@ -30,8 +30,8 @@ let rec get_varlib : ident list -> expr -> ident list
     | ESigma ((x , typ) , typ_over_typ) ->
         if x = "_" then (get_varlib varlie typ) @ (get_varlib varlie typ_over_typ)
         else (get_varlib varlie typ) @ (get_varlib (x :: varlie) typ_over_typ)
-    | ETaggedExpr (exp , typ) ->
-        (get_varlib varlie typ) @ (get_varlib varlie exp)
+    (* | ETaggedExpr (exp , typ) ->
+        (get_varlib varlie typ) @ (get_varlib varlie exp) *)
     
 
 (* substitute idl varlib x term expr renvoie l'expression expr' dans laquelle les occurences libres de la variable

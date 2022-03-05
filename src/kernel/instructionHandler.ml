@@ -158,6 +158,7 @@ let execute_ITactic : knel_state -> tactic -> knel_state
             { state with status = Error ("Unknown ident when executing tactic: "^tac) }
         | Type_error ->
             { state with status = Error ("Type error when executing tacting: "^tac) }
+      end
 
 let execute_IDropProof : knel_state -> knel_state
 = fun state ->
@@ -221,9 +222,9 @@ let execute_IFullProof :
               state
           | InProof _ , _ , Ongoing ->
               if state.prompt_enabled then begin
-                if !Config.html_view then begin
+                if !Config.html_view then
                   Format.printf "proof aborted<br>"
-                end else begin
+                else
                   Format.printf "proof aborted\n"
               end;
               state
@@ -235,6 +236,7 @@ let execute_IFullProof :
                 end else begin
                   Format.printf "%s succesfully achieved\n"
                     goal_id
+                end
               end;
               begin match id_op with
                 | Some _ ->
@@ -259,9 +261,9 @@ let execute_IFullProof :
               { state with status = Error "Cannot close the proof" }
           | InProof _ , _ , Admitted ->
               if state.prompt_enabled then begin
-                if !Config.html_view then begin
+                if !Config.html_view then
                   Format.printf "<p style=\"color:#922B21\">/!\\ A goal has been admitted</p>\n"
-                end else begin
+                else
                   Format.printf "\x1B[38;5;124m/!\\ A goal has been admitted\x1B[39m\n"
               end;
               begin match id_op with
