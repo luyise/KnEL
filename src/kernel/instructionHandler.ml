@@ -188,13 +188,12 @@ let execute_IFullProof :
   match ready_to_reason_state.status with
     | AllDone -> failwith "KnEL internal error: wasn't supposed to get a AllDone status after starting a proof section"
     | Error _ ->
-        if state.prompt_enabled then begin
-          if !Config.html_view then
-            Format.printf "an error occured while beggining the proof %s!<br>"
-              goal_id
-          else
-            Format.printf "an error occured while beggining the proof %s!\n"
-              goal_id
+        begin if !Config.html_view then
+          Format.printf "an error occured while beggining the proof %s!<br>"
+            goal_id
+        else
+          Format.printf "an error occured while beggining the proof %s!\n"
+            goal_id
         end;
         { state with prompt_enabled = false }
     | InProof ->
@@ -206,14 +205,13 @@ let execute_IFullProof :
         in 
         begin match final_state.status , final_state.environments , end_tag with
           | AllDone , _ , _ -> failwith "KnEL internal error: wasn't supposed to get a AllDone status after processed a tactic list"
-          | Error _ , _ , _ -> 
-              if state.prompt_enabled then begin
-                if !Config.html_view then
-                  Format.printf "an error occured while checking the proof of %s!<br>"
-                    goal_id
-                else
-                  Format.printf "an error occured while checking the proof of %s!\n"
-                    goal_id
+          | Error _ , _ , _ ->
+              begin if !Config.html_view then
+                Format.printf "an error occured while checking the proof of %s!<br>"
+                  goal_id
+              else
+                Format.printf "an error occured while checking the proof of %s!\n"
+                  goal_id
               end;
               state
           | InProof _ , _ , Ongoing ->
@@ -245,8 +243,7 @@ let execute_IFullProof :
                 | None -> state
               end
           | InProof _ , _ , Qed ->
-              if state.prompt_enabled then begin
-                if !Config.html_view then begin
+              begin if !Config.html_view then begin
                   Format.printf "<p style=\"color:#922B21\">while working on %s, the reasonment was not finished, but you wrote QED</p>\n"
                     goal_id
                 end else begin
@@ -256,8 +253,7 @@ let execute_IFullProof :
               end;
               { state with status = Error "Cannot close the proof" }
           | InProof _ , _ , Admitted ->
-              if state.prompt_enabled then begin
-                if !Config.html_view then
+              begin  if !Config.html_view then
                   Format.printf "<p style=\"color:#922B21\">/!\\ A goal has been admitted</p>\n"
                 else
                   Format.printf "\x1B[38;5;124m/!\\ A goal has been admitted\x1B[39m\n"

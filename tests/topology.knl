@@ -25,11 +25,11 @@ Proof
   Intro V;
   Unfold Eq;
   Reduce;
-  Define Ineq1 [LeCap2 U V] [Le (Cap U V) V];
-  Define Ineq2 [LeCap1 U V] [Le (Cap U V) U];
-  Define Ineq3 [InfCap V U (Cap U V) Ineq1 Ineq2] [Le (Cap U V) (Cap V U)];
-  Define Ineq4 [LeCap2 V U] [Le (Cap V U) U];
-  Define Ineq5 [LeCap1 V U] [Le (Cap V U) V];
-  Define Ineq6 [InfCap U V (Cap V U) Ineq4 Ineq5] [Le (Cap V U) (Cap U V)];
-  //Exact [(Ineq3 , Ineq6) in (λ (_ : (Le (Cap U V) (Cap V U))) → (Le (Cap V U) (Cap U V)))];
+  Define Ineq1 (LeCap2 U V) (Le (Cap U V) V);
+  Define Ineq2 (LeCap1 U V) (Le (Cap U V) U);
+  Define Ineq3 (InfCap V U (Cap U V) Ineq1 Ineq2) (Le (Cap U V) (Cap V U));
+  Define Ineq4 (LeCap2 V U) (Le (Cap V U) U);
+  Define Ineq5 (LeCap1 V U) (Le (Cap V U) V);
+  Define Ineq6 (InfCap U V (Cap V U) Ineq4 Ineq5) (Le (Cap V U) (Cap U V));
+  //Exact ((Ineq3 , Ineq6) in (λ (_ : (Le (Cap U V) (Cap V U))) → (Le (Cap V U) (Cap U V))));
 Ongoing
