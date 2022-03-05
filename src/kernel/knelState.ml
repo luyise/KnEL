@@ -31,17 +31,19 @@ type knel_state =
   }
 
 (* La fontion new_knel_state : unit -> knel_state 
-  crée un knel state tout neuf, de contexte vide,
+  crée un knel state tout neuf, de contexte donné en argument,
+  avec les définitions données en argument, les règles de bétas réductions en argument (en plus des règles natives)
+  et le mode d'affichage spécifié par un booléen,
   sans objectifs courant *)
 
-let new_knel_state : context -> (ident * expr) list -> knel_state
-= fun ctx def ->
+let new_knel_state : context -> (ident * expr) list -> beta_rule_type list -> bool -> knel_state
+= fun ctx defs brl prompting ->
   { global_context = ctx
   ; used_ident = (List.map fst ctx) @ (List.map fst constants)
-  ; beta_rules = primitive_beta_rules
-  ; definitions = def
+  ; beta_rules = brl @ primitive_beta_rules
+  ; definitions = defs
   ; environments = []
-  ; prompt_enabled = true
+  ; prompt_enabled = prompting
   ; status = AllDone }
 
 (* La fonction execute_tac_list applique, sous reserve qu'il n'y ait
