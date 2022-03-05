@@ -85,12 +85,16 @@ let execute_IDefine : knel_state -> ident -> expr -> expr -> knel_state
 let execute_ITacDecl : knel_state -> knel_state
 = fun state -> state (* TODO *)
 
-let execute_IHypothesis : knel_state -> context -> knel_state
+let rec execute_IHypothesis : knel_state -> context -> knel_state
 = fun state ctx ->
-  List.fold_left
-    append_context
-    state
-    ctx
+  match ctx with
+    | [] -> state
+    | id_and_expr :: ctx_tail ->
+        let state' = append_context state id_and_expr in 
+        begin match state'.status with
+          | Error _ -> state'
+          | _ -> execute_IHypothesis state' ctx_tail
+        end
 
 let execute_IOpen : knel_state -> knel_state
 = fun state -> state (* TODO *)
