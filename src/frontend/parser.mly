@@ -99,7 +99,7 @@ let mk_pair_list il t = List.map (fun i -> (i, t)) il
 %nonassoc NEG SND FST
 
 %type <(string * string) list * Tactic.raw_knel_file> file
-%type <(ident * expr) list * (ident * expr) list * Tactic.raw_knel_file> primitives
+%type <(ident * expr) list * (ident * expr * expr) list * Tactic.raw_knel_file> primitives
 
 %%
 
@@ -122,7 +122,7 @@ primitives_decl:
 ;
 
 beta_rules:
-    | LSBRACKET IDENT RSBRACKET expr { ($2, $4) }
+    | LSBRACKET IDENT RSBRACKET expr_in EQ expr_in { ($2, $4, $6) }
 ;
 
 opening:
