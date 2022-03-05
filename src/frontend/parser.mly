@@ -99,7 +99,7 @@ let mk_pair_list il t = List.map (fun i -> (i, t)) il
 %nonassoc NEG SND FST
 
 %type <(string * string) list * Tactic.raw_knel_file> file
-%type <(ident * expr) list * (ident * expr) list> primitives
+%type <(ident * expr) list * (ident * expr) list * Tactic.raw_knel_file> primitives
 
 %%
 
@@ -108,9 +108,13 @@ file:
 ;
 
 primitives:
-    | EOF { ([], []) }
-    | primitives_decl SEMICOLON primitives { $1::fst $3, snd $3 }
-    | beta_rules SEMICOLON primitives { fst $3, $1::snd $3 }
+    | EOF { ([], [], []) }
+    | primitives_decl SEMICOLON primitives
+        { let a, b, c = $3 in $1::a, b, c }
+    | beta_rules SEMICOLON primitives
+        { let a, b, c = $3 in a, $1::b, c }
+    | definition SEMICOLON primitives
+        { let a, b, c = $3 in a, b, $1::c }
 ;
 
 primitives_decl:

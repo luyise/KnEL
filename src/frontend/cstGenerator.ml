@@ -46,7 +46,7 @@ let rec pp_list fmt = function
 
 let fdesc = open_in "kernel/primitives.knl" in
 let lex = Lexing.from_channel fdesc in
-let (cst, beta_red) = Parser.primitives Lexer.next_token lex in
+let (cst, beta_red, defs) = Parser.primitives Lexer.next_token lex in
 let () = close_in fdesc in
 (*let () = assert (beta_red = []) in *)
 let fdesc = open_out "constants.ml" in
