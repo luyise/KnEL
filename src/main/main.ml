@@ -23,7 +23,9 @@ let check_file_name filename =
   if not (Filename.check_suffix filename ".knl")
     then raise (Arg.Bad ("file \""^filename^"\" is not a .knl file"))
 
-let main () = List.iter (Knel_modules.main_file FileProceeding.execute_section_list FileProceeding.print_error_op) !Parsing.files_to_parse
+let main () =
+  List.iter check_file_name !Parsing.files_to_parse;
+  List.iter (Knel_modules.main_file FileProceeding.execute_section_list FileProceeding.print_error_op) !Parsing.files_to_parse
  
 let () = main ()
 

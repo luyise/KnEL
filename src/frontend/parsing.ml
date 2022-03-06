@@ -71,7 +71,7 @@ let get_file_ast fdir_name =
   let fdesc = open_in fdir_name in
   let lexbuf = Lexing.from_channel fdesc in
   if !Config.html_view
-  then Printf.printf "<p style=\"color:#3498DB\">parsing %s ...\n</p>" fdir_name
+  then Printf.printf "<font style=\"color:#3498DB\">parsing %s ...\n</font><br>" fdir_name
   else Printf.printf "\x1B[38;5;39mparsing %s ...\n\x1B[39m" fdir_name;
   let ast = Parser.file Lexer.next_token lexbuf in
   changeVarToCstFile fdir_name ast
