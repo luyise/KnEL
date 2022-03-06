@@ -7,6 +7,17 @@ type expr =
   ; loc : Location.t
   }
 
+type exp_loc =
+  | PType
+  | PFunSource
+  | PFunNonDepTarget
+  | PFunDepTarget
+  | PSigFst
+  | PSigNonDepSnd
+  | PSigDepSnd
+
+type exp_path = exp_loc list
+
 and expr_desc =
     (* Représente une constante, a priori déjà connue *)
   | EConst of ident
@@ -18,29 +29,17 @@ and expr_desc =
   | ELam of (ident * expr) * expr
     (* Aplication d'une expression à une autre *)
   | EApp of expr * expr
-    (* Type des applications dépendantes *)
-  | EPi of (ident * expr) * expr
+    (* Type des applications dépendantes, le exp_path option correspond à la location d'un argument implicite éventuel *)
+  | EPi of (ident * expr) * expr * exp_path option
     (* Paire dépendante : le deuxième argument peut avoir un type dépendant du premier *)
   | EPair of (expr * expr) * (expr option)
     (* Les deux éliminateurs pour une paire *)
   | EFst of expr
   | ESnd of expr
     (* Type des paires dépendantes *)
-  | ESigma of (ident * expr) * expr
-    (* Correspond à une abstraction de terme (éventuellement
-      non construit, ou servant à matcher un terme entier),
-      on lui donne un nom et un type supposé, en option *)
-  (* | EAbs of ident * option expr
-    (* Correspond à l'expression t[x/u] correspondant au terme t dans lequel la
-        variable x est remplacée par le terme u *) *)
-  (* | ESub of expr * ident * expr *)
+  | ESigma of (ident * expr) * expr * exp_path option
 
 type context = (ident * expr) list
-
-(* Exception levée si une fonction reçoit une expression
-  contenant une abstraction de terme, là où elle s'attendait
-  à avoir un terme complétement défini. *)
-(* exception Incomplete_expr *)
 
 type base_tactic =
   | IntroTac of ident             (* Former un terme de type Π (a : A) (B a) *)
