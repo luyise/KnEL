@@ -104,11 +104,11 @@ type instruction =
     (* Déclaration du début d'une nouvelle preuve *)
   | IBeginProof of (ident option * expr)
     (* Demande d'utilisation d'une tactique pour faire avancer l'état de la preuve *)
-  | ITactic of tactic
+  | ITactic of expr
     (* Demande de jeter la preuve en cours *)
   | IDropProof
     (* Demande de vérifier une preuve entière, et de l'ajouter au contexte global *)
-  | IFullProof of (beggining_tag * (ident option) * expr * (tactic list) * ending_tag)
+  | IFullProof of (beggining_tag * (ident option) * expr * (expr list) * ending_tag)
     (* Introduit une nouvelle règle de β-réduction *)
   | IBetaRuleDecl of beta_rule_type
 
@@ -118,7 +118,7 @@ type knel_section =
       (beggining_tag *
         ident option *
         expr *
-        tactic list *
+        expr list *
       ending_tag)
   | DefinitionSection of
       (ident * expr * expr)

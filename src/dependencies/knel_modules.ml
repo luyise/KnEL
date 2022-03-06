@@ -7,8 +7,8 @@ exception WasAlreadyCompiledButShouldNot
 module SMap = Map.Make(String)
 
 type file_status =
-  | ToDoStatus of Tactic.raw_knel_file
-  | DoneStatus of ((ident * expr * expr) list * context * Tactic.tactic_ctxt)
+  | ToDoStatus of knel_file
+  | DoneStatus of KnelState.knel_state
 
 let build_module_map : (file_status * (string * string) list) SMap.t ref = ref SMap.empty
 
@@ -25,10 +25,10 @@ let context_of_file fname as_name =
   let (file_status, _) = SMap.find fname !build_module_map in
   match file_status with
     | ToDoStatus _ -> assert false
-    | DoneStatus (_, ctxt, tactics) ->
+    | DoneStatus state ->
       [],
-      List.map (fun (name, c) -> (if as_name = "" then name else (as_name ^ "." ^name)), c) ctxt,
-      Tactic.map_tac_ctxt (fun name -> if as_name = "" then name else (as_name ^ "." ^ name)) tactics
+      List.map (fun (name, c) -> (if as_name = "" then name else (as_name ^ "." ^name)), c) state.global_context,
+      Tactic.map_tac_ctxt (fun name -> if as_name = "" then name else (as_name ^ "." ^ name)) state.tactic_ctxt
 
 let rec ctxt_of_knel_file = function
     | [] -> [], []
@@ -42,6 +42,7 @@ let rec ctxt_of_knel_file = function
     | DefinitionSection (i, e1, e2)::tl ->
       let (defs_tl, ctxt) = ctxt_of_knel_file tl in
         ((i, e1, e2) :: defs_tl, ctxt)
+    | _::tl -> ctxt_of_knel_file tl
 
 let update_tree f data =
   let deps = SMap.find f !build_module_map in
@@ -50,7 +51,7 @@ let update_tree f data =
 let compile_file ?(show=false) f =
   let (content, deps) = SMap.find f !build_module_map
   in match content with
-    | ToDoStatus cnt ->
+    | ToDoStatus knl_file ->
       let (defs, ctxt, tac_env) =
         List.fold_right
           (fun (dep, as_name) (defs_l, ctxt_l, tac_l) -> 
@@ -60,12 +61,11 @@ let compile_file ?(show=false) f =
           ([], [], Tactic.base_tactic_ctxt)
       in
       let () = Format.printf "\x1B[38;5;39mcompiling %s ...\n\x1B[39m" f in
-      let (tac_env, knl_file) = Tactic.unraw_file tac_env cnt in
-      let knl_state = KnelState.new_knel_state (List.rev ctxt) (List.rev defs) [] show in
+(*      let (tac_env, knl_file) = Tactic.unraw_file tac_env knl_file in*)
+      let knl_state = KnelState.new_knel_state (List.rev ctxt) (List.rev defs) [] tac_env show in
       let out_state = FileProceeding.execute_section_list knl_state knl_file in
       let () = FileProceeding.print_error_op out_state in
-      let new_defs, new_ctxt = ctxt_of_knel_file knl_file in
-      update_tree f (DoneStatus (new_defs, new_ctxt, tac_env))
+      update_tree f (DoneStatus out_state)
     | DoneStatus _ -> assert false 
   
 

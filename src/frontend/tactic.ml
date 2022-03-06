@@ -308,7 +308,11 @@ let tac_ctxt_merge : tactic_ctxt -> tactic_ctxt -> tactic_ctxt =
         | Some e1, Some e2 -> assert (e1 = e2); Some e1
         | Some e, None | None, Some e -> Some e)
 
-let unraw_section tac_env (tl: knel_file) (rs: raw_knel_section) = match rs with
+let tac_of_expr tac_env e =
+    let ptac = snd (checktype_of_tactic (SMap.map (fun (x, _, _) -> x) tac_env) TTac e) in
+    compute_tactic [] tac_env ptac
+
+(* let unraw_section tac_env (tl: knel_file) (rs: raw_knel_section) = match rs with
     | RawHypothesisSection ctxt ->
       HypothesisSection ctxt :: tl
     | RawDefinitionSection (i, e1, e2) ->
@@ -322,4 +326,4 @@ let unraw_section tac_env (tl: knel_file) (rs: raw_knel_section) = match rs with
 let unraw_file (tac_env: tactic_ctxt) (l: raw_knel_file) : (tactic_ctxt * Ast.knel_file) =
   let tac_env = ref tac_env in
   let l = List.fold_left (unraw_section tac_env) [] l in
-  (!tac_env, List.rev l)
+  (!tac_env, List.rev l) *)

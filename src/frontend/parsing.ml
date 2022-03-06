@@ -37,19 +37,19 @@ let rec changeVarToCst expr =
   in { desc; loc = expr.loc }
 
 let changeVarToCstFileSection = function
-  | RawHypothesisSection l ->
-    RawHypothesisSection (List.map (fun (n, e) -> (check_if_allowed ~loc:e.loc n, changeVarToCst e)) l)
-  | RawDefinitionSection (id, e1, e2) ->
-    RawDefinitionSection (check_if_allowed ~loc:e1.loc id, changeVarToCst e1, changeVarToCst e2)
-  | RawReasoningSection (bt, idop, e, el, et) ->
-    RawReasoningSection 
+  | HypothesisSection l ->
+    HypothesisSection (List.map (fun (n, e) -> (check_if_allowed ~loc:e.loc n, changeVarToCst e)) l)
+  | DefinitionSection (id, e1, e2) ->
+    DefinitionSection (check_if_allowed ~loc:e1.loc id, changeVarToCst e1, changeVarToCst e2)
+  | ReasoningSection (bt, idop, e, el, et) ->
+    ReasoningSection 
       (bt,
        fopt (check_if_allowed ~loc:e.loc) idop,
        changeVarToCst e,
        List.map changeVarToCst el,
        et)
-  | RawTacticDeclSection (id, expr) -> 
-    RawTacticDeclSection (check_if_allowed ~loc:expr.loc id, changeVarToCst expr)
+  | TacDeclSection (id, tt, expr) -> 
+    TacDeclSection (check_if_allowed ~loc:expr.loc id, tt, changeVarToCst expr)
 
 let changeVarToCstFile = List.map changeVarToCstFileSection
 

@@ -105,8 +105,8 @@ let mk_pair_list il t = List.map (fun (i, loc) -> (i, { t with loc = merge_loc l
 %left DIV
 %nonassoc NEG SND FST
 
-%type <(string * string) list * Tactic.raw_knel_file> file
-%type <(ident * expr) list * (ident * expr * expr) list * Tactic.raw_knel_file> primitives
+%type <(string * string) list * knel_file> file
+%type <(ident * expr) list * (ident * expr * expr) list * knel_file> primitives
 
 %%
 
@@ -163,7 +163,7 @@ decl_list:
 ;
 
 hypothesis_intro:
-    | VARIABLES EQ LBRACKET var_def_list { RawHypothesisSection $4 }
+    | VARIABLES EQ LBRACKET var_def_list { HypothesisSection $4 }
 ;
 
 var_def_list:
@@ -178,7 +178,7 @@ var_def:
 
 tactic_decl:
     | TACTIC IDENT binding_list_ne EQ expr END
-        { RawTacticDeclSection ($2, mk_lam $3 $5) }
+        { TacDeclSection ($2, TTac, mk_lam $3 $5) }
 ;
 
 // tac_arg_list_ne:
@@ -208,7 +208,7 @@ definition:
                 add_loc (EPi (("_", typ), target_type)), add_loc (ELam ((id, typ), target_expr)))
             $3 ($5, $7)
         in
-        RawDefinitionSection ($2, typ, expr) }
+        DefinitionSection ($2, typ, expr) }
 ;
 (*
 inductive:
@@ -220,7 +220,7 @@ induc_bloc:
 ;
 *)
 theorem:
-    | thm_keyword IDENT? COLON expr PROOF proof { RawReasoningSection ($1, $2, $4, fst $6, snd $6) }
+    | thm_keyword IDENT? COLON expr PROOF proof { ReasoningSection ($1, $2, $4, fst $6, snd $6) }
 ;
 
 thm_keyword:

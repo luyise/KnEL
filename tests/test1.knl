@@ -8,7 +8,7 @@ Definition id (x y : Type_∞) : Type_∞ := x
 End
 
 Theorem my_first_Theorem:
-    ¬¬¬A → ¬A
+    ∀ (A : Type_∞), ¬¬¬A → ¬A
 Proof
     Intro NNN_a;
     Intro a;
