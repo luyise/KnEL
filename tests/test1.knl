@@ -4,7 +4,7 @@ open num.test_num as Num
 open <-tests2.test4
 open Lib
 
-Definition id (x y: Type) : Type := x
+Definition id (x y : Type_∞) : Type_∞ := x
 End
 
 Theorem my_first_Theorem:
@@ -18,7 +18,7 @@ Proof
 QED
 
 Theorem:
-    ∀ (X: Type) (P Q R: X → Type), 
+    ∀ (X: Type) (P Q R: X → Type_∞), 
         (∀ x : X, P x → Q x) →
         (∀ x : X, Q x → R x) → 
         (∃ x : X, P x) → ∃ x : X, R x
