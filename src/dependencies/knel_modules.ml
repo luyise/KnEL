@@ -106,12 +106,13 @@ let get_content state fdir as_name args =
         | None -> assert false
   in
   let () = build_module_map := SMap.add fdir out_state !build_module_map in
+  let rename = if as_name = "" then (fun x -> x) else (fun x -> as_name ^ "." ^ x) in
   match out_state.status with
     | AllDone ->
       { state with
-        global_context = state.global_context @ out_state.global_context
+        global_context = (List.map (fun (i, e) -> (rename i, e)) state.global_context) @ out_state.global_context
       ; used_ident = out_state.used_ident @ state.used_ident
-      ; tactic_ctxt = Tactic.tac_ctxt_merge out_state.tactic_ctxt state.tactic_ctxt
+      ; tactic_ctxt = Tactic.tac_ctxt_merge (Tactic.map_tac_ctxt rename out_state.tactic_ctxt) state.tactic_ctxt
       ; beta_rules = out_state.beta_rules @ state.beta_rules
       ; definitions = out_state.definitions @ state.definitions
       ; environments = out_state.environments @ state.environments
