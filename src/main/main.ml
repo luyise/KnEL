@@ -1,9 +1,6 @@
 open Parse
 open Lexing
 
-(* open NomDuFichier : ouvre un nom du fichier, de façon publique *)
-(* NomDuFichier.definition_interne : utilise localement la donnée d'un autre fichier *)
-
 let report filename (b, e) =
   let l = b.pos_lnum in
   let cb = b.pos_cnum - b.pos_bol + 1 in
@@ -15,8 +12,10 @@ let set_file f = Parsing.files_to_parse := f :: !Parsing.files_to_parse
 let () = Config.parse_arguments set_file
 
 (* Style de l'affichage html *)
-let _ = if !Config.html_view then
-  Format.printf "<font face=\"Ubuntu; FreeSans\">";;
+let _ = if !Config.html_view then begin
+  Format.printf "<html>";
+  Format.printf "<body style=\"font-family:Ubuntu Mono; FreeSans;\">"
+end;;
 
 let () = if !Config.shutdown then exit 0
 
@@ -49,11 +48,11 @@ let main () =
         | [] -> assert false
   done;
   Knel_modules.main_file main_file
-
-(* let _ = FileProceeding.execute_file Code_random.myFile *)
  
 let () = main ()
 
 (* gestion du style html *)
-let _ = if !Config.html_view then
-  Format.printf "</font>";;
+let _ = if !Config.html_view then begin
+  Format.printf "</body>";
+  Format.printf"</html>"
+end;;

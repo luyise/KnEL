@@ -9,13 +9,13 @@ let lam_red : beta_rule_type
   | _ -> None
 
 let fst_red : beta_rule_type
-= fun idl exp -> match exp with
+= fun _ exp -> match exp with
   | EFst ({ desc = EPair ((left_exp , _) , _) ; loc = _}) ->
       Some left_exp.desc
   | _ -> None
 
 let snd_red : beta_rule_type
-= fun idl exp -> match exp with
+= fun _ exp -> match exp with
   | ESnd ({ desc = EPair ((_ , right_exp) , _) ; loc = _}) ->
       Some right_exp.desc
   | _ -> None
@@ -60,7 +60,7 @@ let rec beta_reduce_n_inner : ident list -> beta_rule_type list -> int -> expr_d
     | Some exp' ->
         let final_exp , nb_of_red =
           beta_reduce_n_inner idl brl (n-1) exp'
-        in (exp' , nb_of_red + 1)
+        in (final_exp , nb_of_red + 1)
     | None ->
       begin match exp with
         | EConst c -> (EConst c , 0)

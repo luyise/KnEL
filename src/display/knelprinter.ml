@@ -19,8 +19,6 @@ let pp_knel_state fmt (state : knel_state) =
   then begin
     Format.fprintf fmt "<br><b style=\"color:#af601a\">Status: %a</b>"
       pp_status state.status;
-    (* Format.fprintf fmt "<h3>Global context:</h3>\n%a"
-      pp_context state.global_context; *)
     match state.environments with
       | [] -> ()
       | e :: e_tail ->
@@ -31,12 +29,10 @@ let pp_knel_state fmt (state : knel_state) =
     Format.fprintf fmt "\n";
     Format.fprintf fmt "\x1B[1m\x1B[38;5;130mStatus:\x1B[24m\x1B[22m %a\n\n"
       pp_status state.status;
-    (* Format.fprintf fmt "\x1B[38;5;130mGlobal context:\x1B[39m \n%a"
-      pp_context state.global_context; *)
     match state.environments with
       | [] -> ()
       | e :: e_tail ->
           pp_env fmt e;
-          Format.fprintf fmt "%d Other goals remaining\n"  
+          Format.fprintf fmt "\x1B[38;5;130m%d Other goals remaining\x1B[39m\n"  
             (List.length e_tail)
   end

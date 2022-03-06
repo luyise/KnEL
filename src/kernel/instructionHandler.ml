@@ -2,14 +2,10 @@ open Parse
 
 open Alpha_renaming
 open Ast
-open Astprinter
 open Base_tactics
 open Beta_red
-open Constants
 open Environment
-open Envprinter
 open KnelState
-open Knelprinter
 open Typer
 
 (* Fonctions auxiliaires *)
@@ -19,7 +15,7 @@ let append_context : knel_state -> (ident * expr) -> knel_state
   if List.mem id state.used_ident then
     { state with status = Error (id^" is already used!") }
   else begin try
-    let typ = compute_type_of_term state.global_context state.beta_rules state.used_ident exp in
+    let _ = compute_type_of_term state.global_context state.beta_rules state.used_ident exp in
     { state with
       global_context = (id , exp) :: state.global_context
     ; used_ident = id :: state.used_ident }
@@ -109,12 +105,10 @@ let execute_IBeginProof :
   -> knel_state
 = fun state id_op goal_typ ->
   begin try
-    let (goal_id : string) = match id_op with
-      | None -> "unamed_goal"
-      | Some id ->
-          if List.mem id state.used_ident then
-            raise (Ident_conflict id)
-          else id
+    let _ = match id_op with
+      | Some id when List.mem id state.used_ident ->
+          raise (Ident_conflict id)
+      | _ -> ()
     in
     let _ = compute_type_of_term
       state.global_context
@@ -158,6 +152,7 @@ let execute_ITactic : knel_state -> tactic -> knel_state
         | Type_error ->
             { state with status = Error ("Type error when executing tacting") }
       end
+    | [] -> { state with status = Error ("Cannot execute a tactic, because there is no more goal") }
 
 let execute_IDropProof : knel_state -> knel_state
 = fun state ->
@@ -179,7 +174,7 @@ let execute_IFullProof :
   -> tactic list
   -> ending_tag
   -> knel_state
-= fun state beg_tag id_op goal_typ tacl end_tag ->
+= fun state _ id_op goal_typ tacl end_tag ->
   let ready_to_reason_state = execute_IBeginProof state id_op goal_typ in
   begin try
     let (goal_id : string) = match id_op with
@@ -218,7 +213,7 @@ let execute_IFullProof :
                   goal_id
               end;
               state
-          | InProof _ , _ , Ongoing ->
+          | InProof , _ , Ongoing ->
               if state.prompt_enabled then begin
                 if !Config.html_view then
                   Format.printf "proof aborted<br>"
@@ -226,7 +221,7 @@ let execute_IFullProof :
                   Format.printf "proof aborted\n"
               end;
               state
-          | InProof _ , [] , Qed ->
+          | InProof , [] , Qed ->
               if state.prompt_enabled then begin
                 if !Config.html_view then begin
                   Format.printf "%s succesfully achieved<br>"
@@ -246,9 +241,9 @@ let execute_IFullProof :
                   }
                 | None -> state
               end
-          | InProof _ , _ , Qed ->
+          | InProof , _ , Qed ->
               begin if !Config.html_view then begin
-                  Format.printf "<p style=\"color:#922B21\">while working on %s, the reasonment was not finished, but you wrote QED</p>\<br>"
+                  Format.printf "<p style=\"color:#922B21\">while working on %s, the reasonment was not finished, but you wrote QED</p><br>"
                     goal_id
                 end else begin
                   Format.printf "\x1B[38;5;124mwhile working on %s, the reasonment was not finished, but you wrote QED, last state before the keyword: \x1B[39m\n"
@@ -256,7 +251,7 @@ let execute_IFullProof :
                 end
               end;
               { state with status = Error "Cannot close the proof" }
-          | InProof _ , _ , Admitted ->
+          | InProof , _ , Admitted ->
               begin  if !Config.html_view then
                   Format.printf "<p style=\"color:#922B21\">/!\\ A goal has been admitted</p>\n"
                 else
@@ -295,7 +290,7 @@ let execute_instruction : knel_state -> instruction -> knel_state
         begin match inst with
           | IDefine (name , typ , term)
             -> execute_IDefine state name term typ
-          | ITacDecl (name , tac_typ , tac_exp)
+          | ITacDecl (_ , _ , _)
             -> let _ = execute_ITacDecl state in failwith "TO_DO"
           | IHypothesis ctx
             -> execute_IHypothesis state ctx
