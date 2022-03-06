@@ -35,7 +35,7 @@ let rec compute_type_of_term : context -> beta_rule_type list -> ident list -> e
     | EFst term1 ->
         compute_type_EFst term1 ctx brl idl
     | ESnd term1 ->
-        compute_type_ESnd term term2 ctx brl idl
+        compute_type_ESnd term term1 ctx brl idl
     | ESigma ((id , typ_a) , exp) ->
         compute_type_ESigma term id typ_a exp ctx brl idl
   in
@@ -66,12 +66,12 @@ and compute_type_EVar : ident -> context -> expr_desc
       | _ -> raise Unknown_ident
 
 and compute_type_ELam :
-     ident
-  -> expr
+     expr
+  -> ident
   -> expr 
   -> expr
   -> context
-  -> bete_rule_type list
+  -> beta_rule_type list
   -> ident list
   -> expr_desc
 = fun term x x_typ exp_of_x ctx brl idl ->
@@ -136,14 +136,14 @@ and compute_type_EPi :
             when x = y ->
               EApp ({ desc = EConst "Type" ; loc = Location.none } 
               , { desc = EVar x ; loc = Location.none })
-          | EVar "Type_∞",  (* A modifier... *)
-            EVar "Type_∞"
-            -> EVar "Type_∞"
-          | EVar "Type_∞",  (* A modifier... *)
+          | EConst "Type_∞",  (* A modifier... *)
+            EConst "Type_∞"
+            -> EConst "Type_∞"
+          | EConst "Type_∞",  (* A modifier... *)
             EVar "_"
             -> EVar "_"
           | EVar "_",  (* A modifier... *)
-            EVar "Type_∞"
+            EConst "Type_∞"
             -> EVar "_"
           | EVar "_",  (* A modifier... *)
             EVar "_"
@@ -211,7 +211,7 @@ and compute_type_EFst : expr -> context -> beta_rule_type list -> ident list -> 
     | _ -> raise Type_error
 
 and compute_type_ESnd : expr -> expr -> context -> beta_rule_type list -> ident list -> expr_desc
-= fun term term2 ctx brl idl ->
+= fun term term1 ctx brl idl ->
   match (compute_type_of_term ctx brl idl term1).desc with
     | ESigma ((id , _) , exp) -> (substitute idl id { desc = EFst term1 ; loc = term.loc } exp).desc
     | _ -> raise Type_error
@@ -248,14 +248,14 @@ and compute_type_ESigma :
             when x = y ->
               EApp ({ desc = EConst "Type" ; loc = Location.none } 
               , { desc = EVar x ; loc = Location.none })
-            | EVar "Type_∞",  (* A modifier... *)
-              EVar "Type_∞"
-              -> EVar "Type_∞"
-            | EVar "Type_∞",  (* A modifier... *)
+            | EConst "Type_∞",  (* A modifier... *)
+              EConst "Type_∞"
+              -> EConst "Type_∞"
+            | EConst "Type_∞",  (* A modifier... *)
               EVar "_"
               -> EVar "_"
             | EVar "_",  (* A modifier... *)
-              EVar "Type_∞"
+              EConst "Type_∞"
               -> EVar "_"
             | EVar "_",  (* A modifier... *)
               EVar "_"

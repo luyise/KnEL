@@ -2,11 +2,6 @@
 type ident = string
 exception Ident_conflict of ident
 
-type expr =
-  { desc : expr_desc
-  ; loc : Location.t
-  }
-
 type exp_loc =
   | PType
   | PFunSource
@@ -17,6 +12,11 @@ type exp_loc =
   | PSigDepSnd
 
 type exp_path = exp_loc list
+
+type expr =
+  { desc : expr_desc
+  ; loc : Location.t
+  }
 
 and expr_desc =
     (* Représente une constante, a priori déjà connue *)
@@ -30,14 +30,14 @@ and expr_desc =
     (* Aplication d'une expression à une autre *)
   | EApp of expr * expr
     (* Type des applications dépendantes, le exp_path option correspond à la location d'un argument implicite éventuel *)
-  | EPi of (ident * expr) * expr * exp_path option
+  | EPi of (ident * expr) * expr
     (* Paire dépendante : le deuxième argument peut avoir un type dépendant du premier *)
   | EPair of (expr * expr) * (expr option)
     (* Les deux éliminateurs pour une paire *)
   | EFst of expr
   | ESnd of expr
     (* Type des paires dépendantes *)
-  | ESigma of (ident * expr) * expr * exp_path option
+  | ESigma of (ident * expr) * expr
 
 type context = (ident * expr) list
 
