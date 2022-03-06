@@ -105,13 +105,13 @@ let mk_pair_list il t = List.map (fun (i, loc) -> (i, { t with loc = merge_loc l
 %left DIV
 %nonassoc NEG SND FST
 
-%type <(string * string) list * Tactic.raw_knel_file> file
-%type <(ident * expr) list * (ident * expr * expr) list * Tactic.raw_knel_file> primitives
+%type <knel_file> file
+%type <(ident * expr) list * (ident * expr * expr) list * knel_file> primitives
 
 %%
 
 file:
-    | list(opening) decl_list { $1, $2 }
+    | decl_list { $1 }
 ;
 
 primitives:
@@ -134,18 +134,23 @@ beta_rules:
 
 opening:
     | OPEN parent IDENT {
-        (List.fold_left
-            (fun name _ -> "../"^name)
-            (String.map (fun c -> if c = '.' then '/' else c) $3)
-            $2,
-        List.hd (List.rev (String.split_on_char '.' $3)))
+        OpenSection (
+            List.fold_left
+                (fun name _ -> "../"^name)
+                (String.map (fun c -> if c = '.' then '/' else c) $3)
+                $2,
+            List.hd (List.rev (String.split_on_char '.' $3)),
+            [])
     }
     | OPEN parent IDENT AS IDENT {
-        (List.fold_left
-            (fun name _ -> "../"^name)
-            (String.map (fun c -> if c = '.' then '/' else c) $3)
-            $2,
-        $5)
+        OpenSection (
+            (List.fold_left
+                (fun name _ -> "../"^name)
+                (String.map (fun c -> if c = '.' then '/' else c) $3)
+                $2,
+            $5,
+            [])
+        )
     }
 ;
 
@@ -160,10 +165,11 @@ decl_list:
     | theorem decl_list     { $1::$2 }
     | tactic_decl decl_list { $1::$2 }
     | hypothesis_intro decl_list { $1::$2 }
+    | opening decl_list     { $1::$2 }
 ;
 
 hypothesis_intro:
-    | VARIABLES EQ LBRACKET var_def_list { RawHypothesisSection $4 }
+    | VARIABLES EQ LBRACKET var_def_list { HypothesisSection $4 }
 ;
 
 var_def_list:
@@ -178,7 +184,7 @@ var_def:
 
 tactic_decl:
     | TACTIC IDENT binding_list_ne EQ expr END
-        { RawTacticDeclSection ($2, mk_lam $3 $5) }
+        { TacDeclSection ($2, mk_lam $3 $5) }
 ;
 
 // tac_arg_list_ne:
@@ -208,7 +214,7 @@ definition:
                 add_loc (EPi (("_", typ), target_type, None)), add_loc (ELam ((id, typ), target_expr , None)))
             $3 ($5, $7)
         in
-        RawDefinitionSection ($2, typ, expr) }
+        DefinitionSection ($2, typ, expr) }
 ;
 (*
 inductive:
@@ -220,7 +226,7 @@ induc_bloc:
 ;
 *)
 theorem:
-    | thm_keyword IDENT? COLON expr PROOF proof { RawReasoningSection ($1, $2, $4, fst $6, snd $6) }
+    | thm_keyword IDENT? COLON expr PROOF proof { ReasoningSection ($1, $2, $4, fst $6, snd $6) }
 ;
 
 thm_keyword:

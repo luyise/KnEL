@@ -17,6 +17,8 @@ type knel_state =
     (* liste des identifiants déjà utilisés, qu'il n'est pas souhaitable d'emprunter pour
       nommer de nouveaux termes ou variables *)
   ; used_ident : ident list
+    (* environnement de tactique *)
+  ; tactic_ctxt : Tactic.tactic_ctxt
     (* liste de règles de β-réductions, déclarées par l'utilisateur ou natives *)
   ; beta_rules : beta_rule_type list
     (* liste de termes définis par l'utilisateur, avec leur λ-terme associé *)
@@ -36,10 +38,11 @@ type knel_state =
   et le mode d'affichage spécifié par un booléen,
   sans objectifs courant *)
 
-let new_knel_state : context -> (ident * expr) list -> beta_rule_type list -> bool -> knel_state
-= fun ctx defs brl prompting ->
+let new_knel_state : context -> (ident * expr) list -> beta_rule_type list -> Tactic.tactic_ctxt -> bool -> knel_state
+= fun ctx defs brl tacEnv prompting ->
   { global_context = ctx
   ; used_ident = (List.map fst ctx) @ (List.map fst constants)
+  ; tactic_ctxt = tacEnv
   ; beta_rules = brl @ primitive_beta_rules
   ; definitions = defs
   ; environments = []

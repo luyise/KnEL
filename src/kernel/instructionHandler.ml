@@ -78,8 +78,11 @@ let execute_IDefine : knel_state -> ident -> expr -> expr -> knel_state
   end
 
 (* Défini une nouvelle tactique *)
-let execute_ITacDecl : knel_state -> knel_state
-= fun state -> state (* TODO *)
+let execute_ITacDecl : knel_state -> ident -> expr -> knel_state
+= fun state id expr -> 
+  { state with
+    tactic_ctxt = Tactic.tactic_creator state.tactic_ctxt id expr
+  }
 
 let rec execute_IHypothesis : knel_state -> context -> knel_state
 = fun state ctx ->
@@ -92,8 +95,9 @@ let rec execute_IHypothesis : knel_state -> context -> knel_state
           | _ -> execute_IHypothesis state' ctx_tail
         end
 
-let execute_IOpen : knel_state -> knel_state
-= fun state -> state (* TODO *)
+let execute_IOpen : knel_state -> ident -> ident -> expr list -> knel_state
+= fun state fdir as_name args -> 
+  Knel_modules.get_content state fdir as_name args
 
 let execute_IBackward : knel_state -> knel_state
 = fun state -> state (* TODO *)
@@ -137,12 +141,12 @@ let execute_IBeginProof :
       { state with status = Error ("Type error occured when type checking goal") }
   end
 
-let execute_ITactic : knel_state -> tactic -> knel_state
+let execute_ITactic : knel_state -> expr -> knel_state
 = fun state tac ->
   match state.environments with
     | e :: e_tail ->
       begin try
-        let generated_envs = apply_tactic e tac in
+        let generated_envs = apply_tactic e (Tactic.tac_of_expr state.tactic_ctxt tac) in
         { state with environments = generated_envs @ e_tail }
       with
         | Invalid_tactic -> 
@@ -171,7 +175,7 @@ let execute_IFullProof :
   -> beggining_tag
   -> ident option
   -> expr
-  -> tactic list
+  -> expr list
   -> ending_tag
   -> knel_state
 = fun state _ id_op goal_typ tacl end_tag ->
@@ -292,12 +296,12 @@ let execute_instruction : knel_state -> instruction -> knel_state
         begin match inst with
           | IDefine (name , typ , term)
             -> execute_IDefine state name term typ
-          | ITacDecl (_ , _ , _)
-            -> let _ = execute_ITacDecl state in failwith "TO_DO"
+          | ITacDecl (id , expr)
+            -> execute_ITacDecl state id expr
           | IHypothesis ctx
             -> execute_IHypothesis state ctx
-          | IOpen (_ , _ , _)
-            -> let _ = execute_IOpen state in failwith "TO_DO"
+          | IOpen (fdir , as_name , args)
+            -> execute_IOpen state fdir as_name args
           | IBackward
             -> let _ = execute_IBackward state in failwith "TO_DO"
           | IBeginProof (id_op , goal_typ)
