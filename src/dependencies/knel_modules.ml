@@ -59,7 +59,7 @@ let compile_file ?(show=false) f =
           deps
           ([], [], Tactic.base_tactic_ctxt)
       in
-      let () = Format.eprintf "compiling %s ...\n" f in
+      let () = Format.printf "\x1B[38;5;39mcompiling %s ...\n\x1B[39m" f in
       let (tac_env, knl_file) = Tactic.unraw_file tac_env cnt in
       let knl_state = KnelState.new_knel_state (List.rev ctxt) (List.rev defs) [] show in
       let out_state = FileProceeding.execute_section_list knl_state knl_file in
