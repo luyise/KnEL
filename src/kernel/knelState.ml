@@ -38,7 +38,7 @@ type knel_state =
 
 let new_knel_state : context -> (ident * expr) list -> beta_rule_type list -> bool -> knel_state
 = fun ctx defs brl prompting ->
-  { global_context = ctx @ [ ("Type_∞" , { desc = EVar "_" ; loc = Location.none }) ]
+  { global_context = ctx
   ; used_ident = (List.map fst ctx) @ (List.map fst constants)
   ; beta_rules = brl @ primitive_beta_rules
   ; definitions = defs
