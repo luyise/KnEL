@@ -4,10 +4,10 @@ open Astprinter_utilities
 
 type coloration =
   | CLR_elm   (* couleur des éléments, tels que →, Π, λ, Σ, , ...*)
-  | CLR_par   (* couleur des parenthèses *)
+  | CLR_par   (* couleur des parenthèses : {, }, (, ) *)
   | CLR_cst   (* couleur des constantes, telles que Type, ⊥, Unit... *)
   | CLR_var   (* couleur des variables liées *)
-  | CLR_nam  (* couleur des noms définis par l'utilisateurs : noms de théorèmes, définition, hypothèses etc *)
+  | CLR_nam   (* couleur des noms définis par l'utilisateurs : noms de théorèmes, définition, hypothèses etc *)
   | CLR_def   (* couleur par défaut *)
 
 let ansi_escape_code clr = match clr with
