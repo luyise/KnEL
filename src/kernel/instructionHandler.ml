@@ -194,7 +194,9 @@ let execute_IFullProof :
           Format.printf "an error occured while beggining the proof %s!\n"
             goal_id
         end;
-        { state with prompt_enabled = false }
+        { state with
+          status = Error "Something went wrong when beggining a proof"
+        ; prompt_enabled = false }
     | InProof ->
         let final_state =
           List.fold_left
@@ -284,8 +286,8 @@ let execute_instruction : knel_state -> instruction -> knel_state
 = fun state inst ->
   (* On vérifie si l'instruction donnée est recevable en l'état *)
   let state = check_valid_instruction state inst in
-  match state.status with 
-    | Error _ -> state 
+  match state.status with
+    | Error _ -> state
     | _ ->
         begin match inst with
           | IDefine (name , typ , term)
