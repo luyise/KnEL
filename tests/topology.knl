@@ -1,19 +1,19 @@
 Variables = {
-  A : Type;
-  Le : A → A → Type;
-  Join : Π (I : Type), Π (U : I → A), A;
+  A : Type_∞;
+  Le : A → A → Type_∞;
+  Join : Π (I : Type_∞), Π (U : I → A), A;
   Cap : Π (U : A), Π (V : A), A;
-  LeJoin : Π (I : Type), Π (U : I → A),
-    Π (i : I),  Le (U i) (Join U);
+  LeJoin : Π (I : Type_∞), Π (U : I → A),
+    Π (i : I),  Le (U i) (Join I U);
   LeCap1 : Π (U : A), Π (V : A), Le (Cap U V) U;
   LeCap2 : Π (U : A), Π (V : A), Le (Cap U V) V;
-  SupJoin : Π (I : Type), Π (W : A),
-    (Π (i : I), Le (U i) W) → Le (Join U) W;
+  SupJoin : Π (I : Type_∞), Π (U : I → A), Π (W : A),
+    (Π (i : I), Le (U i) W) → Le (Join I U) W;
   InfCap : Π (U : A), Π (V : A), Π (W : A),
     Le W U → Le W V → Le W (Cap U V)
 }
 
-Definition Eq : A → A → Type :=
+Definition Eq : A → A → Type_∞ :=
   λ (U : A) → λ (V : A) →
     ((Le U V) × (Le V U))
 End

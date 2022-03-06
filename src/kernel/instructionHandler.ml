@@ -20,7 +20,7 @@ let append_context : knel_state -> (ident * expr) -> knel_state
     { state with status = Error (id^" is already used!") }
   else begin try
     let typ = compute_type_of_term state.global_context state.beta_rules state.used_ident exp in
-    { state with 
+    { state with
       global_context = (id , exp) :: state.global_context
     ; used_ident = id :: state.used_ident }
   with
@@ -248,7 +248,7 @@ let execute_IFullProof :
               end
           | InProof _ , _ , Qed ->
               begin if !Config.html_view then begin
-                  Format.printf "<p style=\"color:#922B21\">while working on %s, the reasonment was not finished, but you wrote QED</p>\n"
+                  Format.printf "<p style=\"color:#922B21\">while working on %s, the reasonment was not finished, but you wrote QED</p>\<br>"
                     goal_id
                 end else begin
                   Format.printf "\x1B[38;5;124mwhile working on %s, the reasonment was not finished, but you wrote QED, last state before the keyword: \x1B[39m\n"
@@ -293,13 +293,13 @@ let execute_instruction : knel_state -> instruction -> knel_state
     | Error _ -> state 
     | _ ->
         begin match inst with
-          | IDefine (name , term , typ)
+          | IDefine (name , typ , term)
             -> execute_IDefine state name term typ
           | ITacDecl (name , tac_typ , tac_exp)
             -> let _ = execute_ITacDecl state in failwith "TO_DO"
           | IHypothesis ctx
             -> execute_IHypothesis state ctx
-          | IOpen (str1 , str2 , varl)
+          | IOpen (_ , _ , _)
             -> let _ = execute_IOpen state in failwith "TO_DO"
           | IBackward
             -> let _ = execute_IBackward state in failwith "TO_DO"

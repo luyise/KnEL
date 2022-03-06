@@ -87,6 +87,18 @@ let rec compute_type_of_term : context -> beta_rule_type list -> ident list -> e
                   when x = y ->
                     EApp ({ desc = EConst "Type" ; loc = Location.none } 
                     , { desc = EVar x ; loc = Location.none })
+                | EVar "Type_∞",  (* A modifier... *)
+                  EVar "Type_∞"
+                  -> EVar "Type_∞"
+                | EVar "Type_∞",  (* A modifier... *)
+                  EVar "_"
+                  -> EVar "_"
+                | EVar "_",  (* A modifier... *)
+                  EVar "Type_∞"
+                  -> EVar "_"
+                | EVar "_",  (* A modifier... *)
+                  EVar "_"
+                  -> EVar "_"
                 | _ -> raise Type_error
         end
     | EPair ((term1 , term2) , Some typ) ->
@@ -162,12 +174,24 @@ let rec compute_type_of_term : context -> beta_rule_type list -> ident list -> e
                     (compute_type_of_term ctx' brl idl' exp)).desc
                 with
                   | EApp ({ desc = EConst "Type" ; _ } 
-                    , { desc = EVar x ; _ }) , 
-                  EApp ({ desc = EConst "Type" ; _ } 
-                    , { desc = EVar y ; _ }) 
+                    , { desc = EVar x ; _ }) ,
+                  EApp ({ desc = EConst "Type" ; _ }
+                    , { desc = EVar y ; _ })
                   when x = y ->
                     EApp ({ desc = EConst "Type" ; loc = Location.none } 
                     , { desc = EVar x ; loc = Location.none })
+                  | EVar "Type_∞",  (* A modifier... *)
+                    EVar "Type_∞"
+                    -> EVar "Type_∞"
+                  | EVar "Type_∞",  (* A modifier... *)
+                    EVar "_"
+                    -> EVar "_"
+                  | EVar "_",  (* A modifier... *)
+                    EVar "Type_∞"
+                    -> EVar "_"
+                  | EVar "_",  (* A modifier... *)
+                    EVar "_"
+                    -> EVar "_"
                   | _ -> raise Type_error
         end
   in

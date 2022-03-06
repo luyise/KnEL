@@ -13,7 +13,7 @@ open Knelprinter
 open Typer
 
 let execute_section : knel_state -> knel_section -> knel_state
-= fun state sec -> 
+= fun state sec ->
 match sec with
   | HypothesisSection ctx ->
       execute_instruction state (IHypothesis ctx)
@@ -73,9 +73,9 @@ let print_error_op : knel_state -> unit
   match state.status with
     | Error str -> 
         if !Config.html_view then begin
-          Format.printf "%s<br>" str
+          Format.printf "<p style=\"color:#922B21\">%s</p><br>" str
         end else begin
-          Format.printf "%s\n" str
+          Format.printf "\x1B[38;5;124m%s\x1B[38;5;39m\n" str
         end
     | _ -> ()
 
