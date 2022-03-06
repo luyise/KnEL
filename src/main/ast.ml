@@ -1,9 +1,9 @@
 
 type ident = string
 exception Ident_conflict of ident
+exception Unable_to_infer_implicit_argument
 
 type expr_loc =
-  | PType
   | PFunSource
   | PFunNonDepTarget
   | PFunDepTarget
@@ -26,18 +26,18 @@ and expr_desc =
   | EVar of ident
     (* Lambda abstraction, dont l'expression à droite possède a priori un "type" 
     dépendant du paramètre EVar *)
-  | ELam of (ident * expr) * expr
+  | ELam of (ident * expr) * expr * (expr_path option)
     (* Aplication d'une expression à une autre *)
   | EApp of expr * expr
     (* Type des applications dépendantes, le exp_path option correspond à la location d'un argument implicite éventuel *)
-  | EPi of (ident * expr) * expr
+  | EPi of (ident * expr) * expr * (expr_path option)
     (* Paire dépendante : le deuxième argument peut avoir un type dépendant du premier *)
   | EPair of (expr * expr) * (expr option)
     (* Les deux éliminateurs pour une paire *)
   | EFst of expr
   | ESnd of expr
     (* Type des paires dépendantes *)
-  | ESigma of (ident * expr) * expr
+  | ESigma of (ident * expr) * expr * (expr_path option)
 
 type context = (ident * expr) list
 

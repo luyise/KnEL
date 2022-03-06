@@ -74,10 +74,10 @@ let rec texpr_of_expr env bindings expr = match expr.desc with
     | EVar id when SMap.find_opt id env = Some TIdent -> TEReplace id
     | EVar _ -> assert false
     | EConst id -> TEConst id
-    | ELam ((id, e1), e2) -> TELam ((id, texpr_of_expr env bindings e1), texpr_of_expr env (SSet.add id bindings) e2)
+    | ELam ((id, e1), e2, _) -> TELam ((id, texpr_of_expr env bindings e1), texpr_of_expr env (SSet.add id bindings) e2)
     | EApp (e1, e2) -> TEApp (texpr_of_expr env bindings e1, texpr_of_expr env bindings e2)
-    | EPi ((id, e1), e2) -> TEPi ((id, texpr_of_expr env bindings e1), texpr_of_expr env (SSet.add id bindings) e2)
-    | ESigma ((id, e1), e2) -> TESigma ((id, texpr_of_expr env bindings e1), texpr_of_expr env (SSet.add id bindings) e2)
+    | EPi ((id, e1), e2 , _) -> TEPi ((id, texpr_of_expr env bindings e1), texpr_of_expr env (SSet.add id bindings) e2)
+    | ESigma ((id, e1), e2 , _) -> TESigma ((id, texpr_of_expr env bindings e1), texpr_of_expr env (SSet.add id bindings) e2)
     | EPair ((e1, e2), None) -> TEPair ((texpr_of_expr env bindings e1, texpr_of_expr env bindings e2), None)
     | EPair ((e1, e2), Some e3) -> TEPair ((texpr_of_expr env bindings e1, texpr_of_expr env bindings e2), Some (texpr_of_expr env bindings e3))
     | EFst e -> TEFst (texpr_of_expr env bindings e)
@@ -165,11 +165,11 @@ let rec tactic_type_of_expr expr = match expr.desc with
     | EVar "Ident" -> TIdent
     | EVar "Expr" -> TExpr
     | EVar t -> print_endline ("\tUnknown type "^t^"\n\n\n"); raise TacticTypeError
-    | EPi (("_", t1), t2) -> TArrow (tactic_type_of_expr t1, tactic_type_of_expr t2)
+    | EPi (("_", t1), t2 , _) -> TArrow (tactic_type_of_expr t1, tactic_type_of_expr t2)
     | _ -> raise TacticTypeError
 
 let rec checktype_of_tactic_builder (env: tactic_type SMap.t) tb = match tb.desc with
-    | ELam ((id, tt), tb) ->
+    | ELam ((id, tt), tb, _) ->
       let tt = tactic_type_of_expr tt in
       let (t, tb) = checktype_of_tactic_builder (SMap.add id tt env) tb
       in TArrow (tt, t), Arg (id, tt, tb)
@@ -220,10 +220,10 @@ let rec expr_of_tactic_expr env texpr =
   let desc = match texpr with
     | TEConst id -> EConst id
     | TEVar id -> EVar id 
-    | TELam ((id, e1), e2) -> ELam ((id, expr_of_tactic_expr env e1), expr_of_tactic_expr env e2)
+    | TELam ((id, e1), e2) -> ELam ((id, expr_of_tactic_expr env e1), expr_of_tactic_expr env e2, None)
     | TEApp (e1, e2) -> EApp (expr_of_tactic_expr env e1, expr_of_tactic_expr env e2)
-    | TEPi ((id, e1), e2) -> EPi ((id, expr_of_tactic_expr env e1), expr_of_tactic_expr env e2)
-    | TESigma ((id, e1), e2) -> ESigma ((id, expr_of_tactic_expr env e1), expr_of_tactic_expr env e2)
+    | TEPi ((id, e1), e2) -> EPi ((id, expr_of_tactic_expr env e1), expr_of_tactic_expr env e2 , None)
+    | TESigma ((id, e1), e2) -> ESigma ((id, expr_of_tactic_expr env e1), expr_of_tactic_expr env e2 , None)
     | TEFst e -> EFst (expr_of_tactic_expr env e)
     | TESnd e -> ESnd (expr_of_tactic_expr env e)
     | TEPair ((e1, e2), None) -> EPair ((expr_of_tactic_expr env e1, expr_of_tactic_expr env e2), None)

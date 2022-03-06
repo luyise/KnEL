@@ -9,7 +9,7 @@ let rec alpha_compare : ident list -> expr -> expr -> bool
   match exp1.desc , exp2.desc with
     | EConst c1 , EConst c2 -> c1 = c2
     | EVar x1 , EVar x2 -> x1 = x2
-    | ELam ((y1 , typ1) , term_of_y1) , ELam ((y2 , typ2) , term_of_y2) ->
+    | ELam ((y1 , typ1) , term_of_y1 , _) , ELam ((y2 , typ2) , term_of_y2 , _) ->
         if y1 = y2 then
           alpha_compare idl typ1 typ2
           && alpha_compare (y1 :: idl) term_of_y1 term_of_y2
@@ -21,7 +21,7 @@ let rec alpha_compare : ident list -> expr -> expr -> bool
         end
     | EApp (u1 , v1) , EApp (u2 , v2) -> 
         alpha_compare idl u1 u2 && alpha_compare idl v1 v2
-    | EPi ((y1 , typ1) , term_of_y1) , EPi ((y2 , typ2) , term_of_y2) ->
+    | EPi ((y1 , typ1) , term_of_y1 , _) , EPi ((y2 , typ2) , term_of_y2 , _) ->
         if y1 = y2 then
           alpha_compare idl typ1 typ2
           && alpha_compare (y1 :: idl) term_of_y1 term_of_y2
@@ -35,7 +35,7 @@ let rec alpha_compare : ident list -> expr -> expr -> bool
         alpha_compare idl u1 u2 && alpha_compare idl v1 v2
     | EFst u1 , EFst u2 -> alpha_compare idl u1 u2
     | ESnd u1 , ESnd u2 -> alpha_compare idl u1 u2
-    | ESigma ((y1 , typ1) , term_of_y1) , ESigma ((y2 , typ2) , term_of_y2) ->
+    | ESigma ((y1 , typ1) , term_of_y1 , _) , ESigma ((y2 , typ2) , term_of_y2 , _) ->
         if y1 = y2 then
           alpha_compare idl typ1 typ2
           && alpha_compare (y1 :: idl) term_of_y1 term_of_y2

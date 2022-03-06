@@ -11,12 +11,12 @@ let rec get_varlib : ident list -> expr -> ident list
     | EVar x ->
         if List.mem x varlie then []
         else [ x ]
-    | ELam ((x , typ) , term_of_x) ->
+    | ELam ((x , typ) , term_of_x , _) ->
         if x = "_" then (get_varlib varlie typ) @ (get_varlib varlie term_of_x)
         else (get_varlib varlie typ) @ (get_varlib (x :: varlie) term_of_x)
     | EApp (exp1 , exp2) ->
         (get_varlib varlie exp1) @ (get_varlib varlie exp2)
-    | EPi ((x , typ) , typ_over_typ) ->
+    | EPi ((x , typ) , typ_over_typ , _) ->
         if x = "_" then (get_varlib varlie typ) @ (get_varlib varlie typ_over_typ)
         else (get_varlib varlie typ) @ (get_varlib (x :: varlie) typ_over_typ)
     | EPair ((exp1 , exp2) , Some typ) ->
@@ -27,7 +27,7 @@ let rec get_varlib : ident list -> expr -> ident list
         (get_varlib varlie exp)
     | ESnd exp ->
         (get_varlib varlie exp)
-    | ESigma ((x , typ) , typ_over_typ) ->
+    | ESigma ((x , typ) , typ_over_typ , _) ->
         if x = "_" then (get_varlib varlie typ) @ (get_varlib varlie typ_over_typ)
         else (get_varlib varlie typ) @ (get_varlib (x :: varlie) typ_over_typ)
     (* | ETaggedExpr (exp , typ) ->
@@ -48,55 +48,55 @@ let rec substitute_inner : ident list -> ident list -> ident -> expr -> expr -> 
     | EVar y when y = x -> term.desc
     | EVar _ -> exp.desc
 
-    | ELam ((y , typ) , term_of_y) when y = x ->
+    | ELam ((y , typ) , term_of_y , path_op) when y = x ->
         if List.mem x varlib then begin
           let z = get_unused_ident (x :: idl) in
           let term_of_z = rename idl x z term_of_y in
           let typ' = substitute_inner (z :: idl) varlib x term typ in
-          ELam ((z , typ') , term_of_z)
+          ELam ((z , typ') , term_of_z , path_op)
         end else begin
           let typ' = substitute_inner (x :: idl) varlib x term typ in
-          ELam ((x , typ') , term_of_y)
+          ELam ((x , typ') , term_of_y , path_op)
         end
-    | ELam ((y , typ) , term_of_y) ->
+    | ELam ((y , typ) , term_of_y , path_op) ->
         if List.mem y varlib then begin
           let z = get_unused_ident (y :: idl) in
           let term_of_z = rename idl y z term_of_y in
           let typ' = substitute_inner (z :: idl) varlib x term typ in
           let term_of_z' = substitute_inner (z :: idl) varlib x term term_of_z in
-          ELam ((z , typ') , term_of_z')
+          ELam ((z , typ') , term_of_z' , path_op)
         end else begin
           let idl' = if y = "_" then idl else (y :: idl) in
           let typ' = substitute_inner idl' varlib x term typ in
           let term_of_y' = substitute_inner idl' varlib x term term_of_y in
-          ELam ((y , typ') , term_of_y')
+          ELam ((y , typ') , term_of_y' , path_op)
         end
 
     | EApp (exp1 , exp2) ->
         EApp (substitute_inner idl varlib x term exp1 , substitute_inner idl varlib x term exp2)
 
-    | EPi ((y , typ) , term_of_y) when y = x ->
+    | EPi ((y , typ) , term_of_y , path_op) when y = x ->
         if List.mem x varlib then begin
           let z = get_unused_ident (x :: idl) in
           let term_of_z = rename idl x z term_of_y in
           let typ' = substitute_inner (z :: idl) varlib x term typ in
-          EPi ((z , typ') , term_of_z)
+          EPi ((z , typ') , term_of_z , path_op)
         end else begin
           let typ' = substitute_inner (x :: idl) varlib x term typ in
-          EPi ((x , typ') , term_of_y)
+          EPi ((x , typ') , term_of_y , path_op)
         end
-    | EPi ((y , typ) , term_of_y) ->
+    | EPi ((y , typ) , term_of_y , path_op) ->
         if List.mem y varlib then begin
           let z = get_unused_ident (y :: idl) in
           let term_of_z = rename idl y z term_of_y in
           let typ' = substitute_inner (z :: idl) varlib x term typ in
           let term_of_z' = substitute_inner (z :: idl) varlib x term term_of_z in
-          EPi ((z , typ') , term_of_z')
+          EPi ((z , typ') , term_of_z' , path_op)
         end else begin
           let idl' = if y = "_" then idl else (y :: idl) in
           let typ' = substitute_inner idl' varlib x term typ in
           let term_of_y' = substitute_inner idl' varlib x term term_of_y in
-          EPi ((y , typ') , term_of_y')
+          EPi ((y , typ') , term_of_y' , path_op)
         end
 
     | EPair ((exp1 , exp2) , Some typ) ->
@@ -113,28 +113,28 @@ let rec substitute_inner : ident list -> ident list -> ident -> expr -> expr -> 
     | EFst exp1 -> EFst (substitute_inner idl varlib x term exp1)
     | ESnd exp1 -> ESnd (substitute_inner idl varlib x term exp1)
 
-    | ESigma ((y , typ) , term_of_y) when y = x ->
+    | ESigma ((y , typ) , term_of_y , path_op) when y = x ->
         if List.mem x varlib then begin
           let z = get_unused_ident (x :: idl) in
           let term_of_z = rename idl x z term_of_y in
           let typ' = substitute_inner (z :: idl) varlib x term typ in
-          ESigma ((z , typ') , term_of_z)
+          ESigma ((z , typ') , term_of_z , path_op)
         end else begin
           let typ' = substitute_inner (x :: idl) varlib x term typ in
-          ESigma ((x , typ') , term_of_y)
+          ESigma ((x , typ') , term_of_y , path_op)
         end
-    | ESigma ((y , typ) , term_of_y) ->
+    | ESigma ((y , typ) , term_of_y , path_op) ->
         if List.mem y varlib then begin
           let z = get_unused_ident (y :: idl) in
           let term_of_z = rename idl y z term_of_y in
           let typ' = substitute_inner (z :: idl) varlib x term typ in
           let term_of_z' = substitute_inner (z :: idl) varlib x term term_of_z in
-          ESigma ((z , typ') , term_of_z')
+          ESigma ((z , typ') , term_of_z' , path_op)
         end else begin
           let idl' = if y = "_" then idl else (y :: idl) in
           let typ' = substitute_inner idl' varlib x term typ in
           let term_of_y' = substitute_inner idl' varlib x term term_of_y in
-          ESigma ((y , typ') , term_of_y')
+          ESigma ((y , typ') , term_of_y' , path_op)
         end
   in
   { desc = desc

@@ -37,34 +37,34 @@ let rec rename : ident list -> ident -> ident -> expr -> expr
     | EVar z when z = x -> EVar y
     | EVar _ -> exp.desc
 
-    | ELam ((z , _) , _) when z = x -> exp.desc
-    | ELam ((z , typ) , term) when z = y ->
+    | ELam ((z , _) , _ , _) when z = x -> exp.desc
+    | ELam ((z , typ) , term , path_op) when z = y ->
         let z' = get_unused_ident idl in
         let typ' = rename idl x y typ in
         let idl' = z' :: idl in
         let term' = rename idl' x y term in
-        ELam ((z' , typ') , term')
-    | ELam ((z , typ) , term) ->
+        ELam ((z' , typ') , term' , path_op)
+    | ELam ((z , typ) , term , path_op) ->
         let typ' = rename idl x y typ in
         let idl' = if z = "_" then idl else (z :: idl) in
         let term' = rename idl' x y term in
-        ELam ((z , typ') , term')
+        ELam ((z , typ') , term' , path_op)
 
     | EApp (exp1 , exp2) ->
         EApp (rename idl x y exp1 , rename idl x y exp2)
 
-    | EPi ((z , _) , _) when z = x -> exp.desc
-    | EPi ((z , typ) , term) when z = y ->
+    | EPi ((z , _) , _ , _) when z = x -> exp.desc
+    | EPi ((z , typ) , term , path_op) when z = y ->
         let z' = get_unused_ident idl in
         let typ' = rename idl x y typ in
         let idl' = z' :: idl in
         let term' = rename idl' x y term in
-        EPi ((z' , typ') , term')
-    | EPi ((z , typ) , term) ->
+        EPi ((z' , typ') , term' , path_op)
+    | EPi ((z , typ) , term , path_op) ->
         let typ' = rename idl x y typ in
         let idl' = if z = "_" then idl else (z :: idl) in
         let term' = rename idl' x y term in
-        EPi ((z , typ') , term')
+        EPi ((z , typ') , term' , path_op)
         
     | EPair ((exp1 , exp2) , typ_op) ->
         let typ_op' =
@@ -77,17 +77,17 @@ let rec rename : ident list -> ident -> ident -> expr -> expr
     | EFst term -> EFst (rename idl x y term)
     | ESnd term -> ESnd (rename idl x y term)
 
-    | ESigma ((z , _) , _) when z = x -> exp.desc
-    | ESigma ((z , typ) , term) when z = y ->
+    | ESigma ((z , _) , _ , _) when z = x -> exp.desc
+    | ESigma ((z , typ) , term , path_op) when z = y ->
         let z' = get_unused_ident idl in
         let typ' = rename idl x y typ in
         let idl' = z' :: idl in
         let term' = rename idl' x y term in
-        ESigma ((z' , typ') , term')
-    | ESigma ((z , typ) , term) ->
+        ESigma ((z' , typ') , term' , path_op)
+    | ESigma ((z , typ) , term , path_op) ->
         let typ' = rename idl x y typ in
         let idl' = if z = "_" then idl else (z :: idl) in
         let term' = rename idl' x y term in
-        ESigma ((z , typ') , term')
+        ESigma ((z , typ') , term' , path_op)
   in
   { exp with desc }
