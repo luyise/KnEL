@@ -15,7 +15,7 @@ let apply_base_tactic : env -> base_tactic -> env list
   let brl = e.beta_rules in
   let ctx = e.context in
   match tac , e.target.desc with
-    | IntroTac id , EPi ((x , typ) , typ_over_typ) ->
+    | IntroTac id , EPi ((x , typ) , typ_over_typ , _) ->
         begin match in_context_opt id ctx with
           | Some _ -> raise Invalid_tactic
           | None ->
@@ -34,24 +34,24 @@ let apply_base_tactic : env -> base_tactic -> env list
         match (beta_reduce idl brl
           (compute_type_of_term ctx brl idl f_term)).desc
           with
-          | EPi ((x , s) , typ')
+          | EPi ((x , s) , typ' , _)
             when alpha_compare idl
-              (beta_reduce idl brl e.target) 
+              (beta_reduce idl brl e.target)
               (beta_reduce idl brl typ')
               && not (List.mem x (get_varlib [] typ')) -> 
               [ { e with target = s } ]
           | _ -> raise Invalid_tactic
         end
-    | SigmaRecTac , EPi ((id , { desc = ESigma ((x , typ) , typ_over_typ) ; _ }) , exp_of_p) ->
+    | SigmaRecTac , EPi ((id , { desc = ESigma ((x , typ) , typ_over_typ , None) ; _ }) , exp_of_p , _) ->
         let typ' = beta_reduce idl brl typ in
         let typ_over_typ' = beta_reduce idl brl typ_over_typ in
         let typ_of_exp_of_p = beta_reduce idl brl (compute_type_of_term ctx brl idl exp_of_p) in
         if (alpha_compare idl 
-          { desc = EPi (("p", { desc = ESigma ((x , typ') , typ_over_typ') ; loc = Location.none }) , { desc = EConst "Type" ; loc = Location.none }) 
+          { desc = EPi (("p", { desc = ESigma ((x , typ') , typ_over_typ' , None) ; loc = Location.none }) , { desc = EConst "Type" ; loc = Location.none } , None) 
           ; loc = Location.none } typ_of_exp_of_p) then begin
           if id = "_" then begin
             [ { e with 
-                target = { desc = EPi (("_" , typ) , { desc = EPi (("_" , typ_over_typ), exp_of_p) ; loc = Location.none }) ; loc = Location.none }
+                target = { desc = EPi (("_" , typ) , { desc = EPi (("_" , typ_over_typ), exp_of_p , None) ; loc = Location.none } , None) ; loc = Location.none }
             } ]
           end else begin
             let y = get_unused_ident (x :: idl) in
@@ -65,15 +65,15 @@ let apply_base_tactic : env -> base_tactic -> env list
                             { desc = EVar y ; loc = Location.none }
                           ) ,
                           Some
-                            { desc = ESigma ((x , typ) , typ_over_typ)
+                            { desc = ESigma ((x , typ) , typ_over_typ , None)
                             ; loc = Location.none
                             })
                       ; loc = Location.none
                       })
                     ; loc = Location.none
-                    })
+                    } , None )
                   ; loc = Location.none 
-                  })
+                  } , None )
                 ; loc = Location.none
                 }
             } ]

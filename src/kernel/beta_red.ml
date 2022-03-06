@@ -4,7 +4,7 @@ open Substitution
 
 let lam_red : beta_rule_type
 = fun idl exp -> match exp with
-  | EApp ({ desc = ELam ((x , _) , term_of_x) ; loc = _ } , v) ->
+  | EApp ({ desc = ELam ((x , _) , term_of_x , None) ; loc = _ } , v) ->
       Some (substitute idl x v term_of_x).desc
   | _ -> None
 
@@ -65,18 +65,21 @@ let rec beta_reduce_n_inner : ident list -> beta_rule_type list -> int -> expr_d
       begin match exp with
         | EConst c -> (EConst c , 0)
         | EVar x -> (EVar x , 0)
-        | ELam ((y , typ) , term_of_y) ->
+        | ELam ((y , typ) , term_of_y , path_op) ->
             let typ' , k = beta_reduce_n_inner idl brl n typ.desc in
             let term_of_y' , j = beta_reduce_n_inner (y :: idl) brl (n-k) term_of_y.desc in
-            (ELam ((y , { desc = typ' ; loc = typ.loc }) , { desc = term_of_y' ; loc = term_of_y.loc }) , k + j)
+            (ELam ((y , { desc = typ' ; loc = typ.loc }) , { desc = term_of_y' ; loc = term_of_y.loc } , path_op) , k + j)
         | EApp (u , v) ->
             let u' , k = beta_reduce_n_inner idl brl n u.desc in
             let v' , j = beta_reduce_n_inner idl brl (n-k) v.desc in
             (EApp ({ desc = u' ; loc = u.loc } , { desc = v' ; loc = v.loc }) , k + j)
-        | EPi ((y , typ) , term_of_y) ->
+        | EPi ((y , typ) , term_of_y , None) ->
             let typ' , k = beta_reduce_n_inner idl brl n typ.desc in
             let term_of_y' , j = beta_reduce_n_inner (y :: idl) brl (n-k) term_of_y.desc in
-            (EPi ((y , { desc = typ' ; loc = typ.loc }) , { desc = term_of_y' ; loc = term_of_y.loc }) , k + j)
+            (EPi ((y , { desc = typ' ; loc = typ.loc }) , { desc = term_of_y' ; loc = term_of_y.loc } , None) , k + j)
+        | EPi ((y , typ) , term_of_y , Some path) ->
+            let typ' , k = beta_reduce_n_inner idl brl n typ.desc in
+            (EPi ((y , { desc = typ' ; loc = typ.loc }) , term_of_y , Some path) , k)
         | EPair ((exp1 , exp2) , Some typ) ->
             let exp1' , k = beta_reduce_n_inner idl brl n exp1.desc in
             let exp2' , j = beta_reduce_n_inner idl brl (n-k) exp2.desc in
@@ -92,10 +95,13 @@ let rec beta_reduce_n_inner : ident list -> beta_rule_type list -> int -> expr_d
         | ESnd exp1 ->
             let exp1' , k = beta_reduce_n_inner idl brl n exp1.desc in
             (EFst { desc = exp1' ; loc = exp1.loc } , k)
-        | ESigma ((y , typ) , term_of_y) ->
+        | ESigma ((y , typ) , term_of_y , None) ->
             let typ' , k = beta_reduce_n_inner idl brl n typ.desc in
             let term_of_y' , j = beta_reduce_n_inner (y :: idl) brl (n-k) term_of_y.desc in
-            (ESigma ((y , { desc = typ' ; loc = typ.loc }) , { desc = term_of_y' ; loc = term_of_y.loc }) , k + j)
+            (ESigma ((y , { desc = typ' ; loc = typ.loc }) , { desc = term_of_y' ; loc = term_of_y.loc } , None) , k + j)
+        | ESigma ((y , typ) , term_of_y , Some path) ->
+            let typ' , k = beta_reduce_n_inner idl brl n typ.desc in
+            (ESigma ((y , { desc = typ' ; loc = typ.loc }) , term_of_y , Some path) , k)
       end
 
 let beta_reduce_n_desc : ident list -> beta_rule_type list -> int -> expr_desc -> expr_desc

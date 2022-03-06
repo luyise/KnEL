@@ -24,11 +24,11 @@ let check_if_allowed ~loc id = if SSet.mem id cstSet then assert false else id
 let rec changeVarToCst expr =
   let desc = match expr.desc with
   | EVar n when SSet.mem n cstSet -> EConst n
-  | EPi ((id, _), _) | ESigma ((id, _), _) | ELam ((id, _), _)
+  | EPi ((id, _), _, _) | ESigma ((id, _), _, _) | ELam ((id, _), _, _)
     when SSet.mem id cstSet -> assert false
-  | EPi ((id, e1), e2) -> EPi ((id, changeVarToCst e1), changeVarToCst e2)
-  | ELam ((id, e1), e2) -> ELam ((id, changeVarToCst e1), changeVarToCst e2)
-  | ESigma ((id, e1), e2) -> ESigma ((id, changeVarToCst e1), changeVarToCst e2)
+  | EPi ((id, e1), e2, _) -> EPi ((id, changeVarToCst e1), changeVarToCst e2, None)
+  | ELam ((id, e1), e2, _) -> ELam ((id, changeVarToCst e1), changeVarToCst e2, None)
+  | ESigma ((id, e1), e2, _) -> ESigma ((id, changeVarToCst e1), changeVarToCst e2, None)
   | EPair ((e1, e2), e3) -> EPair ((changeVarToCst e1, changeVarToCst e2), fopt changeVarToCst e3)
   | EFst e -> EFst (changeVarToCst e)
   | ESnd e -> ESnd (changeVarToCst e)

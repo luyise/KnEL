@@ -3,14 +3,14 @@ open Ast
 
 let rec pp_expr fmt e = match e.desc with
   | EVar n -> Format.fprintf fmt "mk_loc (EVar \"%s\")" n
-  | EPi ((id, p1), p2) ->
-    Format.fprintf fmt "mk_loc (EPi ((\"%s\", %a), %a))"
+  | EPi ((id, p1), p2 , _) ->
+    Format.fprintf fmt "mk_loc (EPi ((\"%s\", %a), %a, None))"
       id pp_expr p1 pp_expr p2
-  | ESigma ((id, p1), p2) ->
-    Format.fprintf fmt "mk_loc (ESigma ((\"%s\", %a), %a))"
+  | ESigma ((id, p1), p2 , _) ->
+    Format.fprintf fmt "mk_loc (ESigma ((\"%s\", %a), %a, None))"
       id pp_expr p1 pp_expr p2
-  | ELam ((id, p1), p2) ->
-    Format.fprintf fmt "mk_loc (ELam ((\"%s\", %a), %a))"
+  | ELam ((id, p1), p2 , _) ->
+    Format.fprintf fmt "mk_loc (ELam ((\"%s\", %a), %a, None))"
       id pp_expr p1 pp_expr p2
   (* | ETaggedExpr (p1, p2) ->
     Format.fprintf fmt "mk_loc (ETaggedExpr (%a, %a))"
@@ -33,7 +33,7 @@ let rec pp_expr fmt e = match e.desc with
   | EConst id ->
     Format.fprintf fmt "mk_loc (EConst \"%s\")" id
 
-let rec pp_cst fmt (id, e) =
+let pp_cst fmt (id, e) =
   Format.fprintf fmt "(\"%s\", %a)" id pp_expr e
 
 let rec pp_list pp_item fmt = function
@@ -47,14 +47,14 @@ let rec pp_in_expr fmt e = match e.desc with
   | EVar n when String.starts_with ~prefix:"'" n ->
     Format.fprintf fmt "_%s" (String.sub n 1 (String.length n - 1))
   | EVar n -> Format.fprintf fmt "{desc = EVar \"%s\"; _ }" n
-  | EPi ((id, p1), p2) ->
-    Format.fprintf fmt "{ desc = EPi ((\"%s\", %a), %a); _ }"
+  | EPi ((id, p1), p2 , _) ->
+    Format.fprintf fmt "{ desc = EPi ((\"%s\", %a), %a, None); _ }"
       id pp_in_expr p1 pp_in_expr p2
-  | ESigma ((id, p1), p2) ->
-    Format.fprintf fmt "{ desc = ESigma ((\"%s\", %a), %a); _ }"
+  | ESigma ((id, p1), p2 , _) ->
+    Format.fprintf fmt "{ desc = ESigma ((\"%s\", %a), %a, None); _ }"
       id pp_in_expr p1 pp_in_expr p2
-  | ELam ((id, p1), p2) ->
-    Format.fprintf fmt "{ desc = ELam ((\"%s\", %a), %a); _ }"
+  | ELam ((id, p1), p2 , _) ->
+    Format.fprintf fmt "{ desc = ELam ((\"%s\", %a), %a, None); _ }"
       id pp_in_expr p1 pp_in_expr p2
   (* | ETaggedExpr (p1, p2) ->
     Format.fprintf fmt "{ desc = ETaggedExpr (%a, %a); _ }"
@@ -81,14 +81,14 @@ let rec pp_out_expr fmt e = match e.desc with
   | EVar n when String.starts_with ~prefix:"'" n ->
     Format.fprintf fmt "_%s" (String.sub n 1 (String.length n - 1))
   | EVar n -> Format.fprintf fmt "mk_loc (EVar \"%s\")" n
-  | EPi ((id, p1), p2) ->
-    Format.fprintf fmt "mk_loc (EPi ((\"%s\", %a), %a))"
+  | EPi ((id, p1), p2 , _) ->
+    Format.fprintf fmt "mk_loc (EPi ((\"%s\", %a), %a, None))"
       id pp_out_expr p1 pp_out_expr p2
-  | ESigma ((id, p1), p2) ->
-    Format.fprintf fmt "mk_loc (ESigma ((\"%s\", %a), %a))"
+  | ESigma ((id, p1), p2 , _) ->
+    Format.fprintf fmt "mk_loc (ESigma ((\"%s\", %a), %a, None))"
       id pp_out_expr p1 pp_out_expr p2
-  | ELam ((id, p1), p2) ->
-    Format.fprintf fmt "mk_loc (ELam ((\"%s\", %a), %a))"
+  | ELam ((id, p1), p2 , _) ->
+    Format.fprintf fmt "mk_loc (ELam ((\"%s\", %a), %a, None))"
       id pp_out_expr p1 pp_out_expr p2
   (* | ETaggedExpr (p1, p2) ->
     Format.fprintf fmt "mk_loc (ETaggedExpr (%a, %a))"
@@ -118,7 +118,7 @@ let pp_bred fmt (_, a, b) =
 
 let fdesc = open_in "kernel/primitives.knl" in
 let lex = Lexing.from_channel fdesc in
-let (cst, beta_red, defs) = Parser.primitives Lexer.next_token lex in
+let (cst, beta_red, _defs) = Parser.primitives Lexer.next_token lex in
 let () = close_in fdesc in
 (*let () = assert (beta_red = []) in *)
 let fdesc = open_out "constants.ml" in

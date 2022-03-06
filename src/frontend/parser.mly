@@ -21,9 +21,9 @@ let mk_expr p e = { desc = e; loc = loc_of_pos p }
 let add_loc e = { desc = e; loc = Location.none }
 let ch_loc p e = {desc = e.desc; loc = loc_of_pos p}
 
-let mk_sigma = List.fold_right (fun p e -> add_loc (ESigma (p, e)))
-let mk_lam = List.fold_right (fun p e -> add_loc (ELam (p, e)))
-let mk_pi = List.fold_right (fun p e -> add_loc (EPi (p, e)))
+let mk_sigma = List.fold_right (fun p e -> add_loc (ESigma (p, e , None)))
+let mk_lam = List.fold_right (fun p e -> add_loc (ELam (p, e , None)))
+let mk_pi = List.fold_right (fun p e -> add_loc (EPi (p, e , None)))
 
 let mk_pair_list il t = List.map (fun (i, loc) -> (i, { t with loc = merge_loc loc t.loc })) il
 
@@ -205,7 +205,7 @@ definition:
     | DEFINITION IDENT binding_list COLON expr DEF expr END {
         let typ, expr = List.fold_right
             (fun (id, typ) (target_type, target_expr) ->
-                add_loc (EPi (("_", typ), target_type)), add_loc (ELam ((id, typ), target_expr)))
+                add_loc (EPi (("_", typ), target_type, None)), add_loc (ELam ((id, typ), target_expr , None)))
             $3 ($5, $7)
         in
         RawDefinitionSection ($2, typ, expr) }
@@ -286,9 +286,9 @@ expr:
         { ch_loc $loc (mk_lam $2 $4) }
     | expr_in               { $1 }
     | expr binop_expr expr  { mk_expr $loc (EApp (add_loc (EApp(add_loc (EConst $2), $1)), $3)) }
-    | expr PROD expr        { mk_expr $loc (ESigma (("_", $1), $3)) }
-    | expr ARROW expr       { mk_expr $loc (EPi (("_", $1), $3)) }
-    | NEG expr              { mk_expr $loc (EPi (("_", $2), add_loc (EConst "Void"))) }
+    | expr PROD expr        { mk_expr $loc (ESigma (("_", $1), $3 , None)) }
+    | expr ARROW expr       { mk_expr $loc (EPi (("_", $1), $3 , None)) }
+    | NEG expr              { mk_expr $loc (EPi (("_", $2), add_loc (EConst "Void") , None)) }
     | FST expr              { mk_expr $loc (EFst $2) }
     | SND expr              { mk_expr $loc (ESnd $2) }
 ;
@@ -310,8 +310,8 @@ expr_no_arrow:
     | expr_no_arrow COMMA expr_no_arrow       { mk_expr $loc (EPair (($1, $3), None)) }
     | expr_no_arrow binop_expr expr_no_arrow
         { mk_expr $loc (EApp (add_loc (EApp (add_loc (EConst $2), $1)), $3)) }
-    | expr_no_arrow PROD expr_no_arrow        { mk_expr $loc (ESigma (("_", $1), $3)) }
-    | NEG expr_no_arrow              { mk_expr $loc (EPi (("_", $2), add_loc (EConst "Void"))) }
+    | expr_no_arrow PROD expr_no_arrow        { mk_expr $loc (ESigma (("_", $1), $3 , None)) }
+    | NEG expr_no_arrow              { mk_expr $loc (EPi (("_", $2), add_loc (EConst "Void") , None)) }
     | FST expr_no_arrow              { mk_expr $loc (EFst $2) }
     | SND expr_no_arrow              { mk_expr $loc (ESnd $2) }
 ;
