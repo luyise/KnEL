@@ -1,12 +1,12 @@
 open <-Lib
 
 Variables = {
-    num : Type;
+    num : Type_∞;
     zero : num;
     Succ : num -> num;
     add : num -> num -> num;
-    num_ind : ∀ P : num -> Type, P zero × (∀n : num, P n → P (Succ n)) → ∀n : num, P n;
-    ge : num -> num -> Type;
+    num_ind : ∀ P : num -> Type_∞, P zero × (∀n : num, P n → P (Succ n)) → ∀n : num, P n;
+    ge : num -> num -> Type_∞;
     ge_refl : ∀ x : num, ge x x;
     ge_trans : ∀ x y z : num, ge x y → ge y z → ge x z;
     ge_succ : ∀ x : num, ge x (Succ x);

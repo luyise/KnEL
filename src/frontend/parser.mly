@@ -2,6 +2,7 @@
 
 open Ast
 open Tactic
+open Location
 
 let loc_of_pos (ps, pe) = {
     Location.loc_start = ps;
@@ -9,6 +10,12 @@ let loc_of_pos (ps, pe) = {
     Location.loc_ghost = false;
 }
 
+
+let merge_loc p1 p2 = {
+    Location.loc_start = p1.loc_start;
+    Location.loc_end = p2.loc_end;
+    Location.loc_ghost = p1.loc_ghost && p2.loc_ghost;
+}
 
 let mk_expr p e = { desc = e; loc = loc_of_pos p }
 let add_loc e = { desc = e; loc = Location.none }
@@ -18,7 +25,7 @@ let mk_sigma = List.fold_right (fun p e -> add_loc (ESigma (p, e)))
 let mk_lam = List.fold_right (fun p e -> add_loc (ELam (p, e)))
 let mk_pi = List.fold_right (fun p e -> add_loc (EPi (p, e)))
 
-let mk_pair_list il t = List.map (fun i -> (i, t)) il
+let mk_pair_list il t = List.map (fun (i, loc) -> (i, { t with loc = merge_loc loc t.loc })) il
 
 
 %}
@@ -265,11 +272,11 @@ proof_end:
 // ;
 
 expr:
-    | ALL nonempty_list(IDENT) COLON expr COMMA expr %prec ALL 
+    | ALL nonempty_list(id_loc) COLON expr COMMA expr %prec ALL 
         { ch_loc $loc (mk_pi (mk_pair_list $2 $4) $6) }
-    | EXISTS nonempty_list(IDENT) COLON expr COMMA expr %prec EXISTS
+    | EXISTS nonempty_list(id_loc) COLON expr COMMA expr %prec EXISTS
         { ch_loc $loc (mk_sigma (mk_pair_list $2 $4) $6) }
-    | LAMBDA nonempty_list(IDENT) COLON expr_no_arrow ARROW expr %prec LAMBDA
+    | LAMBDA nonempty_list(id_loc) COLON expr_no_arrow ARROW expr %prec LAMBDA
         { ch_loc $loc (mk_lam (mk_pair_list $2 $4) $6) }
     | ALL binding_list_ne COMMA expr %prec ALL 
         { ch_loc $loc (mk_pi $2 $4) }
@@ -287,11 +294,11 @@ expr:
 ;
 
 expr_no_arrow:
-    | ALL nonempty_list(IDENT) COLON expr DOT expr_no_arrow %prec ALL 
+    | ALL nonempty_list(id_loc) COLON expr DOT expr_no_arrow %prec ALL 
         { ch_loc $loc (mk_pi (mk_pair_list $2 $4) $6) }
-    | EXISTS nonempty_list(IDENT) COLON expr DOT expr_no_arrow %prec EXISTS
+    | EXISTS nonempty_list(id_loc) COLON expr DOT expr_no_arrow %prec EXISTS
         { ch_loc $loc (mk_sigma (mk_pair_list $2 $4) $6) }
-    | LAMBDA nonempty_list(IDENT) COLON expr_no_arrow ARROW expr_no_arrow %prec LAMBDA
+    | LAMBDA nonempty_list(id_loc) COLON expr_no_arrow ARROW expr_no_arrow %prec LAMBDA
         { ch_loc $loc (mk_lam (mk_pair_list $2 $4) $6) }
     | ALL binding_list_ne DOT expr_no_arrow %prec ALL 
         { ch_loc $loc (mk_pi $2 $4) }
@@ -334,15 +341,18 @@ expr_bot:
 ;
 
 binding_list_ne:
-    | LPAREN nonempty_list(IDENT) COLON expr RPAREN binding_list
+    | LPAREN nonempty_list(id_loc) COLON expr RPAREN binding_list
         { mk_pair_list $2 $4 @ $6 }
 ;
 
 binding_list:
-    | LPAREN nonempty_list(IDENT) COLON expr RPAREN binding_list
+    | LPAREN nonempty_list(id_loc) COLON expr RPAREN binding_list
         { mk_pair_list $2 $4 @ $6 }
     | (* EMPTY *) { [] }
 ;
+
+%inline id_loc:
+    | IDENT     { ($1, loc_of_pos $loc) }
 
 %inline binop_expr:
     | PLUS      { "+" }
