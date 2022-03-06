@@ -2,7 +2,7 @@
 type ident = string
 exception Ident_conflict of ident
 
-type exp_loc =
+type expr_loc =
   | PType
   | PFunSource
   | PFunNonDepTarget
@@ -11,7 +11,7 @@ type exp_loc =
   | PSigNonDepSnd
   | PSigDepSnd
 
-type exp_path = exp_loc list
+type expr_path = expr_loc list
 
 type expr =
   { desc : expr_desc

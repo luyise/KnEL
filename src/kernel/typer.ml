@@ -30,7 +30,7 @@ let rec compute_type_of_term : context -> beta_rule_type list -> ident list -> e
         compute_type_EPi term id typ_a exp ctx brl idl
     | EPair ((term1 , term2) , Some typ) ->
         compute_type_EPair_Some term term1 term2 typ ctx brl idl
-    | EPair _ -> 
+    | EPair _ ->
         raise Unable_to_infer_type
     | EFst term1 ->
         compute_type_EFst term1 ctx brl idl
@@ -177,13 +177,11 @@ and compute_type_EPair_Some :
             in
             match
               beta_reduce idl brl (compute_type_of_term ctx brl idl term1) ,
-              (beta_reduce idl' brl
-                (compute_type_of_term ctx' brl idl' exp)).desc ,
+              (compute_type_of_term ctx' brl idl' exp) ,
               beta_reduce idl brl (compute_type_of_term ctx brl idl term2)
             with
               | typ_a' ,
-                EApp ({ desc = EConst "Type" ; _ } 
-                , { desc = EVar _ ; _ }) ,
+                _ ,
                 exp'
                 when alpha_compare idl typ_a typ_a'
                 && alpha_compare idl

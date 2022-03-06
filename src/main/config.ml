@@ -8,7 +8,7 @@ let options = [
   "--stop",       Arg.Set shutdown,     "stop the program";
   "--html-view",  Arg.Set html_view,  "display html as output";
   "-v",           Arg.Set verbose,    "enable verbose mode";
-  "-d",           Arg.Unit set_debug_mode, "enable debug the comoiler mode";
+  "-d",           Arg.Unit set_debug_mode, "enable debug the compiler mode";
 ]
 
 let usage = "usage : main.exe file.knl"
