@@ -68,7 +68,7 @@ let print_error_op : knel_state -> unit
         if !Config.html_view then begin
           Format.printf "<p style=\"color:#922B21\">%s</p><br>" str
         end else begin
-          Format.printf "\x1B[38;5;124m%s\x1B[38;5;39m\n" str
+          Format.printf "\x1B[38;5;124m%s\x1B[39m\n" str
         end
     | _ -> ()
 
