@@ -1,11 +1,14 @@
 open Parse
 open Ast
+open KnelState
 
 exception DependenciesError
 exception WasAlreadyCompiledButShouldNot
 
 module SMap = Map.Make(String)
 
+let build_module_map : knel_state SMap.t ref = ref SMap.empty
+(*
 type file_status =
   | ToDoStatus of knel_file
   | DoneStatus of KnelState.knel_state
@@ -48,7 +51,7 @@ let update_tree f data =
   let deps = SMap.find f !build_module_map in
   build_module_map := SMap.add f (data, snd deps) !build_module_map
 
-let compile_file ?(show=false) f =
+(* let compile_file ?(show=false) f =
   let (content, deps) = SMap.find f !build_module_map
   in match content with
     | ToDoStatus knl_file ->
@@ -79,4 +82,38 @@ let main_file fname_str =
   let deps_map = SMap.map (fun (_, d) -> List.map fst d) (SMap.filter (fun x _ -> x <> fname_str) !build_module_map) in
   let file_list = topological_sort_of_files_inner deps_map in
   List.iter compile_file file_list;
-  compile_file ~show:true fname_str
+  compile_file ~show:true fname_str *)
+*)
+let file_handler = ref None 
+
+let main_file proceeding fname =
+  let ast = Parsing.get_file_ast fname in
+  let knl_state = KnelState.new_knel_state [] [] [] Tactic.base_tactic_ctxt false in
+  let () = file_handler := Some proceeding in
+  build_module_map := SMap.add fname (proceeding knl_state ast) !build_module_map
+
+let get_content state fdir as_name args =
+  assert (args = []);
+  let out_state =
+    if SMap.mem fdir !build_module_map
+    then
+      SMap.find fdir !build_module_map
+    else
+      let ast = Parsing.get_file_ast fdir in
+      let knl_state = KnelState.new_knel_state [] [] [] Tactic.base_tactic_ctxt false in
+      match !file_handler with
+        | Some f -> f knl_state ast
+        | None -> assert false
+  in
+  let () = build_module_map := SMap.add fdir out_state !build_module_map in
+  match out_state.status with
+    | AllDone ->
+      { state with
+        global_context = state.global_context @ out_state.global_context
+      ; used_ident = out_state.used_ident @ state.used_ident
+      ; tactic_ctxt = Tactic.tac_ctxt_merge out_state.tactic_ctxt state.tactic_ctxt
+      ; beta_rules = out_state.beta_rules @ state.beta_rules
+      ; definitions = out_state.definitions @ state.definitions
+      ; environments = out_state.environments @ state.environments
+      }
+    | _ -> { state with status = Error "Open file failed" }

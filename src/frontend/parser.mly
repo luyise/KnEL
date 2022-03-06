@@ -105,13 +105,13 @@ let mk_pair_list il t = List.map (fun (i, loc) -> (i, { t with loc = merge_loc l
 %left DIV
 %nonassoc NEG SND FST
 
-%type <(string * string) list * knel_file> file
+%type <knel_file> file
 %type <(ident * expr) list * (ident * expr * expr) list * knel_file> primitives
 
 %%
 
 file:
-    | list(opening) decl_list { $1, $2 }
+    | decl_list { $1 }
 ;
 
 primitives:
@@ -134,18 +134,23 @@ beta_rules:
 
 opening:
     | OPEN parent IDENT {
-        (List.fold_left
-            (fun name _ -> "../"^name)
-            (String.map (fun c -> if c = '.' then '/' else c) $3)
-            $2,
-        List.hd (List.rev (String.split_on_char '.' $3)))
+        OpenSection (
+            List.fold_left
+                (fun name _ -> "../"^name)
+                (String.map (fun c -> if c = '.' then '/' else c) $3)
+                $2,
+            List.hd (List.rev (String.split_on_char '.' $3)),
+            [])
     }
     | OPEN parent IDENT AS IDENT {
-        (List.fold_left
-            (fun name _ -> "../"^name)
-            (String.map (fun c -> if c = '.' then '/' else c) $3)
-            $2,
-        $5)
+        OpenSection (
+            (List.fold_left
+                (fun name _ -> "../"^name)
+                (String.map (fun c -> if c = '.' then '/' else c) $3)
+                $2,
+            $5,
+            [])
+        )
     }
 ;
 
@@ -160,6 +165,7 @@ decl_list:
     | theorem decl_list     { $1::$2 }
     | tactic_decl decl_list { $1::$2 }
     | hypothesis_intro decl_list { $1::$2 }
+    | opening decl_list     { $1::$2 }
 ;
 
 hypothesis_intro:

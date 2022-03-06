@@ -95,8 +95,9 @@ let rec execute_IHypothesis : knel_state -> context -> knel_state
           | _ -> execute_IHypothesis state' ctx_tail
         end
 
-let execute_IOpen : knel_state -> knel_state
-= fun state -> state (* TODO *)
+let execute_IOpen : knel_state -> ident -> ident -> expr list -> knel_state
+= fun state fdir as_name args -> 
+  Knel_modules.get_content state fdir as_name args
 
 let execute_IBackward : knel_state -> knel_state
 = fun state -> state (* TODO *)
@@ -299,8 +300,8 @@ let execute_instruction : knel_state -> instruction -> knel_state
             -> execute_ITacDecl state id expr
           | IHypothesis ctx
             -> execute_IHypothesis state ctx
-          | IOpen (_ , _ , _)
-            -> let _ = execute_IOpen state in failwith "TO_DO"
+          | IOpen (fdir , as_name , args)
+            -> execute_IOpen state fdir as_name args
           | IBackward
             -> let _ = execute_IBackward state in failwith "TO_DO"
           | IBeginProof (id_op , goal_typ)
