@@ -48,8 +48,8 @@ let changeVarToCstFileSection fdir = function
        changeVarToCst e,
        List.map changeVarToCst el,
        et)
-  | TacDeclSection (id, tt, expr) -> 
-    TacDeclSection (check_if_allowed ~loc:expr.loc id, tt, changeVarToCst expr)
+  | TacDeclSection (id, expr) -> 
+    TacDeclSection (check_if_allowed ~loc:expr.loc id, changeVarToCst expr)
   | BetaRuleDeclSection brt -> BetaRuleDeclSection brt
   | OpenSection (fname, as_name, el) ->
     OpenSection (Filename.dirname fdir^"/" ^ fname ^".knl", as_name, List.map changeVarToCst el)

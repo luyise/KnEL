@@ -86,11 +86,13 @@ let main_file fname_str =
 *)
 let file_handler = ref None 
 
-let main_file proceeding fname =
+let main_file proceeding print_error_op fname =
   let ast = Parsing.get_file_ast fname in
-  let knl_state = KnelState.new_knel_state [] [] [] Tactic.base_tactic_ctxt false in
+  let knl_state = KnelState.new_knel_state [] [] [] Tactic.base_tactic_ctxt true in
   let () = file_handler := Some proceeding in
-  build_module_map := SMap.add fname (proceeding knl_state ast) !build_module_map
+  let out_state = proceeding knl_state ast in
+  let () = print_error_op out_state in
+  build_module_map := SMap.add fname out_state !build_module_map
 
 let get_content state fdir as_name args =
   assert (args = []);

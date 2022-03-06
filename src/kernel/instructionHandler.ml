@@ -296,7 +296,7 @@ let execute_instruction : knel_state -> instruction -> knel_state
         begin match inst with
           | IDefine (name , typ , term)
             -> execute_IDefine state name term typ
-          | ITacDecl (id , _ , expr)
+          | ITacDecl (id , expr)
             -> execute_ITacDecl state id expr
           | IHypothesis ctx
             -> execute_IHypothesis state ctx

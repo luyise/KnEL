@@ -184,7 +184,7 @@ var_def:
 
 tactic_decl:
     | TACTIC IDENT binding_list_ne EQ expr END
-        { TacDeclSection ($2, TTac, mk_lam $3 $5) }
+        { TacDeclSection ($2, mk_lam $3 $5) }
 ;
 
 // tac_arg_list_ne:

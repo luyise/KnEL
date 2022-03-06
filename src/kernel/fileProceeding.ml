@@ -47,8 +47,8 @@ match sec with
       execute_instruction state (IBetaRuleDecl rule)
   | OpenSection (str1 , str2 , expl) ->
       execute_instruction state (IOpen (str1 , str2 , expl))
-  | TacDeclSection (name , tac_term , tac_typ) ->
-      execute_instruction state (ITacDecl (name , tac_term , tac_typ))
+  | TacDeclSection (name , tac_term) ->
+      execute_instruction state (ITacDecl (name , tac_term))
 
 let rec execute_section_list : knel_state -> knel_file -> knel_state
 = fun state file -> 

@@ -94,7 +94,7 @@ type instruction =
     (* Définition d'un λ-terme *)
   | IDefine of (ident * expr * expr)
     (* Déclaration d'une nouvelle tactique *)
-  | ITacDecl of (string * tactic_type * expr)
+  | ITacDecl of (string * expr)
     (* Déclaration d'une liste de varaiables à ajouter au contexte courant *)
   | IHypothesis of context
     (* Demande d'ouverture d'un fichier .knl *)
@@ -127,7 +127,7 @@ type knel_section =
   | OpenSection of
       (string * string * (expr list))
   | TacDeclSection of
-      (string * tactic_type * expr)
+      (string * expr)
       (* nom de la définition, son type, son lambda term *)
   (* | InductiveSection of
       ident (* nom de la famille inductive à définir *)
