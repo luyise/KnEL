@@ -74,4 +74,5 @@ let get_file_ast fdir_name =
   then Printf.printf "<font style=\"color:#3498DB\">parsing %s ...\n</font><br>" fdir_name
   else Printf.printf "\x1B[38;5;39mparsing %s ...\n\x1B[39m" fdir_name;
   let ast = Parser.file Lexer.next_token lexbuf in
+  close_in fdesc;
   changeVarToCstFile fdir_name ast

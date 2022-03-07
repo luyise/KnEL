@@ -18,6 +18,8 @@ Definition Eq : A → A → Type_∞ :=
     ((Le U V) × (Le V U))
 End
 
+open topology
+
 Lemma Cap_exchange :
   Π (U : A), Π (V : A), Eq (Cap U V) (Cap V U)
 Proof
