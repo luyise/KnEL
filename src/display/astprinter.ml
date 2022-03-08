@@ -53,18 +53,18 @@ let rec pp_expr_inner above fmt (exp : expr) =
         (pp_ident CLR_var) id
     | ELam (_, _, _) ->
       let (hd, tl) = match unfold_lam [] exp with
-        | (_, hd)::tl -> (hd, List.rev tl)
+        | (_, (hd, _))::tl -> (hd, List.rev tl)
         | _ -> raise PPrinter_internal_error
       in Format.fprintf fmt "%a%a %a %a %a%a" (* "(λ (%a : %a) → %a)" *)
         (pp_ident CLR_par) (if needs_par above SLam then "(" else "")
         (pp_ident CLR_elm) "λ"
-        (pp_list (fun fmt (idl, exp) ->
+        (pp_list (fun fmt (idl, (exp, b)) ->
           Format.fprintf fmt "%a%a %a %a%a"
-            (pp_ident CLR_par) "("
+            (pp_ident CLR_par) (if b then "(" else "{")
             (pp_list (pp_ident CLR_var)) idl
             (pp_ident CLR_elm) ":"
             (pp_expr_inner STypeBind) exp
-            (pp_ident CLR_par) ")"
+            (pp_ident CLR_par) (if b then ")" else "}")
         )) (fold_pair_list tl)
         (pp_ident CLR_elm) "→"
         (pp_expr_inner SLam) hd
@@ -85,24 +85,24 @@ let rec pp_expr_inner above fmt (exp : expr) =
         Format.fprintf fmt "%a%a%a" (* "(%a → %a)" *)
           (pp_ident CLR_par) (if needs_par above SArrow then "(" else "")
           (pp_list_sep
-            (fun fmt (_, expr) -> pp_expr_inner SArrow fmt expr)
+            (fun fmt (_, (expr, _)) -> pp_expr_inner SArrow fmt expr)
             (fun fmt () -> pp_ident CLR_elm fmt " → ")) (List.rev (unfold_pi true [] exp))
           (pp_ident CLR_par) (if needs_par above SArrow then ")" else "")
-    | EPi (_, _ , _) ->
+    | EPi (_, _ , t) ->
         let (exp, tl) = match unfold_pi false [] exp with
-          | (_,exp)::tl -> exp, List.rev tl
+          | (_,(exp, _))::tl -> exp, List.rev tl
           | _ -> raise PPrinter_internal_error
         in
           Format.fprintf fmt "%a%a %a%a %a%a" (* "(Π (%a : %a), %a)"*)
           (pp_ident CLR_par) (if needs_par above SPi then "(" else "")
           (pp_ident CLR_elm) "Π"
-          (pp_list (fun fmt (idl, exp1) ->
+          (pp_list (fun fmt (idl, (exp1, b)) ->
             Format.fprintf fmt "%a%a %a %a%a"
-            (pp_ident CLR_par) "("
+            (pp_ident CLR_par) (if b then "(" else "{")
             (pp_list (pp_ident CLR_var)) idl
             (pp_ident CLR_elm) ":"
             (pp_expr_inner STypeBind) exp1
-            (pp_ident CLR_par) ")"
+            (pp_ident CLR_par) (if b then ")" else "}")
           )) (fold_pair_list tl)
           (pp_ident CLR_elm) ","
           (pp_expr_inner SPi) exp
@@ -111,24 +111,24 @@ let rec pp_expr_inner above fmt (exp : expr) =
         Format.fprintf fmt "%a%a%a" (* "(%a × %a)" *)
           (pp_ident CLR_par) (if needs_par above SProd then "(" else "")
           (pp_list_sep
-            (fun fmt (_, expr) -> pp_expr_inner SProd fmt expr)
+            (fun fmt (_, (expr, _)) -> pp_expr_inner SProd fmt expr)
             (fun fmt () -> pp_ident CLR_elm fmt " × ")) (List.rev (unfold_sigma true [] exp))
           (pp_ident CLR_par) (if needs_par above SProd then ")" else "")
     | ESigma (_, _ , _) ->
         let (exp, tl) = match unfold_sigma false [] exp with
-          | (_,exp)::tl -> exp, List.rev tl
+          | (_, (exp, _))::tl -> exp, List.rev tl
           | _ -> raise PPrinter_internal_error
         in
           Format.fprintf fmt "%a%a %a%a %a%a" (* "(Π (%a : %a), %a)"*)
           (pp_ident CLR_par) (if needs_par above SSigma then "(" else "")
           (pp_ident CLR_elm) "Σ"
-          (pp_list (fun fmt (idl, exp1) ->
+          (pp_list (fun fmt (idl, (exp1, b)) ->
             Format.fprintf fmt "%a%a %a %a%a"
-            (pp_ident CLR_par) "("
+            (pp_ident CLR_par) (if b then "(" else "{")
             (pp_list (pp_ident CLR_var)) idl
             (pp_ident CLR_elm) ":"
             (pp_expr_inner STypeBind) exp1
-            (pp_ident CLR_par) ")"
+            (pp_ident CLR_par) (if b then ")" else "}")
           )) (fold_pair_list tl)
           (pp_ident CLR_elm) ","
           (pp_expr_inner SSigma) exp

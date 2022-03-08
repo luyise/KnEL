@@ -8,16 +8,16 @@ let rec unfold_app l e = match e.desc with
   | _ -> e :: l
 
 let rec unfold_pi b l e = match e.desc with
-  | EPi ((id, typ), exp , _) when b = (id = "_") -> unfold_pi b ((id,typ)::l) exp
-  | _ -> ("_", e)::l
+  | EPi ((id, typ), exp , o) when b = (id = "_") -> unfold_pi b ((id,(typ, o = None))::l) exp
+  | _ -> ("_", (e, true))::l
 
 let rec unfold_sigma b l e = match e.desc with
-  | ESigma ((id, typ), exp , _) when b = (id = "_") -> unfold_sigma b ((id,typ)::l) exp
-  | _ -> ("_", e)::l
+  | ESigma ((id, typ), exp , o) when b = (id = "_") -> unfold_sigma b ((id,(typ, o = None))::l) exp
+  | _ -> ("_", (e, true))::l
 
 let rec unfold_lam l e = match e.desc with
-  | ELam (p, exp, _) -> unfold_lam (p::l) exp
-  | _ -> ("_", e)::l
+  | ELam ((id, typ), exp, o) -> unfold_lam ((id, (typ, o = None))::l) exp
+  | _ -> ("_", (e, true))::l
 
 let rec unfold_pair e = match e.desc with
   | EPair ((e1, e2), _) -> e1::unfold_pair e2

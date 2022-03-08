@@ -26,9 +26,9 @@ let rec changeVarToCst expr =
   | EVar n when SSet.mem n cstSet -> EConst n
   | EPi ((id, _), _, _) | ESigma ((id, _), _, _) | ELam ((id, _), _, _)
     when SSet.mem id cstSet -> assert false
-  | EPi ((id, e1), e2, _) -> EPi ((id, changeVarToCst e1), changeVarToCst e2, None)
-  | ELam ((id, e1), e2, _) -> ELam ((id, changeVarToCst e1), changeVarToCst e2, None)
-  | ESigma ((id, e1), e2, _) -> ESigma ((id, changeVarToCst e1), changeVarToCst e2, None)
+  | EPi ((id, e1), e2, p) -> EPi ((id, changeVarToCst e1), changeVarToCst e2, p)
+  | ELam ((id, e1), e2, p) -> ELam ((id, changeVarToCst e1), changeVarToCst e2, p)
+  | ESigma ((id, e1), e2, p) -> ESigma ((id, changeVarToCst e1), changeVarToCst e2, p)
   | EPair ((e1, e2), e3) -> EPair ((changeVarToCst e1, changeVarToCst e2), fopt changeVarToCst e3)
   | EFst e -> EFst (changeVarToCst e)
   | ESnd e -> ESnd (changeVarToCst e)
