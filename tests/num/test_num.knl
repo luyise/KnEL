@@ -1,6 +1,6 @@
 open <-Lib
 
-Variables = {
+Hypothesis = {
     num : Type_∞;
     zero : num;
     Succ : num -> num;

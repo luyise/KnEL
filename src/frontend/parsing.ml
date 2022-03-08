@@ -75,4 +75,5 @@ let get_file_ast fdir_name =
   else Printf.printf "\x1B[38;5;39mparsing %s ...\n\x1B[39m" fdir_name;
   let ast = Parser.file Lexer.next_token lexbuf in
   close_in fdesc;
-  changeVarToCstFile fdir_name ast
+  List.map (fun (id, e) -> (id, changeVarToCst e)) (fst ast),
+  changeVarToCstFile fdir_name (snd ast)

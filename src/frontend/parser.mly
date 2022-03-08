@@ -1,7 +1,6 @@
 %{
 
 open Ast
-open Tactic
 open Location
 
 let loc_of_pos (ps, pe) = {
@@ -21,11 +20,61 @@ let mk_expr p e = { desc = e; loc = loc_of_pos p }
 let add_loc e = { desc = e; loc = Location.none }
 let ch_loc p e = {desc = e.desc; loc = loc_of_pos p}
 
-let mk_sigma = List.fold_right (fun p e -> add_loc (ESigma (p, e , None)))
-let mk_lam = List.fold_right (fun p e -> add_loc (ELam (p, e , None)))
-let mk_pi = List.fold_right (fun p e -> add_loc (EPi (p, e , None)))
+let rec find_loc_inner id e = match e.desc with
+    | EVar id2 when id = id2 -> Some []
+    | EPi ((id1, e1), { desc = EApp (e2, { desc = EVar id2; _ }); _ }, None) when id1 = id2 -> begin
+        match find_loc_inner id e1 with
+            | Some p -> Some (PFunSource::p)
+            | None ->
+            begin match find_loc_inner id e2 with
+                | Some p -> Some (PFunDepTarget::p)
+                | None -> None
+        end end
+    | ESigma ((id1, e1), { desc = EApp (e2, { desc = EVar id2; _ }); _ }, None) when id1 = id2 -> begin
+        match find_loc_inner id e1 with
+            | Some p -> Some (PSigFst::p)
+            | None ->
+            begin match find_loc_inner id e2 with
+                | Some p -> Some (PSigDepSnd::p)
+                | None -> None
+        end end 
+    | EPi ((_, e1), e2, None) -> begin
+        match find_loc_inner id e1 with
+            | Some p -> Some (PFunSource::p)
+            | None ->
+            begin match find_loc_inner id e2 with
+                | Some p -> Some (PFunNonDepTarget::p)
+                | None -> None
+        end end
+    | ESigma ((_, e1), e2, None) -> begin
+        match find_loc_inner id e1 with
+            | Some p -> Some (PSigFst::p)
+            | None ->
+            begin match find_loc_inner id e2 with
+                | Some p -> Some (PSigNonDepSnd::p)
+                | None -> None
+        end end 
+    | _ -> None
 
-let mk_pair_list il t = List.map (fun (i, loc) -> (i, { t with loc = merge_loc loc t.loc })) il
+let find_loc b id e2 =
+    let rec go_to_inner e = match e.desc with
+            | EPi    ((_, e1), _, None) | ELam   ((_, e1), _, None)
+            | ESigma ((_, e1), _, None) -> find_loc_inner id e1
+            | EPi    (_, e1, Some _) | ELam   (_, e1, Some _)
+            | ESigma (_, e1, Some _) -> find_loc_inner id e1
+    in if b
+    then None
+    else match go_to_inner e2 with
+        | Some p -> Some p
+        | None -> assert false
+
+let mk_sigma = List.fold_right (fun (b, p) e -> add_loc (ESigma (p, e , find_loc b (fst p) e)))
+let mk_lam   = List.fold_right (fun (b, p) e -> add_loc (ELam   (p, e , find_loc b (fst p) e)))
+let mk_pi    = List.fold_right (fun (b, p) e -> add_loc (EPi    (p, e , find_loc b (fst p) e)))
+
+let mk_pair_list : ('a * Location.t) list -> ('b * expr) -> ('b * ('a * expr)) list =
+    fun il (b, t) ->
+      List.map (fun (i, loc) -> (b, (i, { t with loc = merge_loc loc t.loc }))) il
 
 
 %}
@@ -50,6 +99,7 @@ let mk_pair_list il t = List.map (fun (i, loc) -> (i, { t with loc = merge_loc l
 %token FST          (* fst *)
 %token GREATER      (* > *)
 %token GREATEREQ    (* >= ⩾ *)
+%token HYPOTHESIS   (* Hypothesis *)
 %token <Ast.ident> IDENT
 // %token IMPLIES      (* => ⇒ *)
 %token IN           (* in *)
@@ -105,13 +155,19 @@ let mk_pair_list il t = List.map (fun (i, loc) -> (i, { t with loc = merge_loc l
 %left DIV
 %nonassoc NEG SND FST
 
-%type <knel_file> file
+%type <(ident * expr) list * knel_file> file
 %type <(ident * expr) list * (ident * expr * expr) list * knel_file> primitives
 
 %%
 
 file:
-    | decl_list { $1 }
+    | variables_intro? decl_list
+      {
+        (match $1 with
+            | None -> []
+            | Some l -> l),
+        $2
+      }
 ;
 
 primitives:
@@ -169,7 +225,11 @@ decl_list:
 ;
 
 hypothesis_intro:
-    | VARIABLES EQ LBRACKET var_def_list { HypothesisSection $4 }
+    | HYPOTHESIS EQ LBRACKET var_def_list { HypothesisSection $4 }
+;
+
+variables_intro:
+    | VARIABLES EQ LBRACKET var_def_list { $4 }
 ;
 
 var_def_list:
@@ -210,7 +270,7 @@ tactic_decl:
 definition:
     | DEFINITION IDENT binding_list COLON expr DEF expr END {
         let typ, expr = List.fold_right
-            (fun (id, typ) (target_type, target_expr) ->
+            (fun (b, (id, typ)) (target_type, target_expr) ->
                 add_loc (EPi (("_", typ), target_type, None)), add_loc (ELam ((id, typ), target_expr , None)))
             $3 ($5, $7)
         in
@@ -279,11 +339,11 @@ proof_end:
 
 expr:
     | ALL nonempty_list(id_loc) COLON expr COMMA expr %prec ALL 
-        { ch_loc $loc (mk_pi (mk_pair_list $2 $4) $6) }
+        { ch_loc $loc (mk_pi (mk_pair_list $2 (true, $4)) $6) }
     | EXISTS nonempty_list(id_loc) COLON expr COMMA expr %prec EXISTS
-        { ch_loc $loc (mk_sigma (mk_pair_list $2 $4) $6) }
+        { ch_loc $loc (mk_sigma (mk_pair_list $2 (true, $4)) $6) }
     | LAMBDA nonempty_list(id_loc) COLON expr_no_arrow ARROW expr %prec LAMBDA
-        { ch_loc $loc (mk_lam (mk_pair_list $2 $4) $6) }
+        { ch_loc $loc (mk_lam (mk_pair_list $2 (true, $4)) $6) }
     | ALL binding_list_ne COMMA expr %prec ALL 
         { ch_loc $loc (mk_pi $2 $4) }
     | EXISTS binding_list_ne COMMA expr %prec EXISTS
@@ -301,11 +361,11 @@ expr:
 
 expr_no_arrow:
     | ALL nonempty_list(id_loc) COLON expr DOT expr_no_arrow %prec ALL 
-        { ch_loc $loc (mk_pi (mk_pair_list $2 $4) $6) }
+        { ch_loc $loc (mk_pi (mk_pair_list $2 (true, $4)) $6) }
     | EXISTS nonempty_list(id_loc) COLON expr DOT expr_no_arrow %prec EXISTS
-        { ch_loc $loc (mk_sigma (mk_pair_list $2 $4) $6) }
+        { ch_loc $loc (mk_sigma (mk_pair_list $2 (true, $4)) $6) }
     | LAMBDA nonempty_list(id_loc) COLON expr_no_arrow ARROW expr_no_arrow %prec LAMBDA
-        { ch_loc $loc (mk_lam (mk_pair_list $2 $4) $6) }
+        { ch_loc $loc (mk_lam (mk_pair_list $2 (true, $4)) $6) }
     | ALL binding_list_ne DOT expr_no_arrow %prec ALL 
         { ch_loc $loc (mk_pi $2 $4) }
     | EXISTS binding_list_ne DOT expr_no_arrow %prec EXISTS
@@ -348,12 +408,16 @@ expr_bot:
 
 binding_list_ne:
     | LPAREN nonempty_list(id_loc) COLON expr RPAREN binding_list
-        { mk_pair_list $2 $4 @ $6 }
+        { mk_pair_list $2 (true, $4) @ $6 }
+    | LBRACKET nonempty_list(id_loc) COLON expr RBRACKET binding_list
+        { mk_pair_list $2 (false, $4) @ $6 }
 ;
 
 binding_list:
     | LPAREN nonempty_list(id_loc) COLON expr RPAREN binding_list
-        { mk_pair_list $2 $4 @ $6 }
+        { mk_pair_list $2 (true, $4) @ $6 }
+    | LBRACKET nonempty_list(id_loc) COLON expr RBRACKET binding_list
+        { mk_pair_list $2 (false, $4) @ $6 }
     | (* EMPTY *) { [] }
 ;
 

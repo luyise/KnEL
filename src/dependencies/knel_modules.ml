@@ -8,7 +8,7 @@ exception WasAlreadyCompiledButShouldNot
 module SMap = Map.Make(String)
 module SSet = Set.Make(String)
 
-let build_module_map : knel_state SMap.t ref = ref SMap.empty
+let build_module_map : (context * knel_state) SMap.t ref = ref SMap.empty
 let opened_files : string list ref = ref []
 let file_handler = ref None 
 
@@ -16,13 +16,13 @@ let file_handler = ref None
 let main_file proceeding print_error_op fname =
   let s = !opened_files in
   let () = opened_files := fname :: s in
-  let ast = Parsing.get_file_ast fname in
+  let (variables, ast) = Parsing.get_file_ast fname in
   let knl_state = KnelState.new_knel_state [] [] [] Tactic.base_tactic_ctxt true in
   let () = file_handler := Some proceeding in
-  let out_state = proceeding knl_state ast in
+  let out_state = proceeding knl_state (HypothesisSection variables :: ast) in
   let () = opened_files := s in
   let () = print_error_op out_state in
-  build_module_map := SMap.add fname out_state !build_module_map
+  build_module_map := SMap.add fname (variables, out_state) !build_module_map
 
 let rec rename_in_expr ?(set=SSet.empty) rename expr =
   let desc = match expr.desc with
@@ -60,19 +60,20 @@ let get_content state fdir as_name args =
   end else begin
     let () = opened_files := fdir :: s in
     assert (args = []);
-    let out_state =
+    let (var, out_state) =
       if SMap.mem fdir !build_module_map
       then
         SMap.find fdir !build_module_map
       else
-        let ast = Parsing.get_file_ast fdir in
+        let (variables, ast) = Parsing.get_file_ast fdir in
         let knl_state = KnelState.new_knel_state [] [] [] Tactic.base_tactic_ctxt false in
-        match !file_handler with
-          | Some f -> f knl_state ast
-          | None -> assert false
+        let outState = match !file_handler with
+          | Some f -> f knl_state (HypothesisSection variables :: ast)
+          | None -> assert false in
+        let () = build_module_map := SMap.add fdir (variables, outState) !build_module_map
+        in (variables, outState)
     in
     let () = opened_files := s in
-    let () = build_module_map := SMap.add fdir out_state !build_module_map in
     let rename = if as_name = "" then (fun x -> x) else (fun x -> as_name ^ "." ^ x) in
     match out_state.status with
       | AllDone ->

@@ -9,6 +9,7 @@
         ("Definition", DEFINITION);
         ("End", END);
         ("fst", FST);
+        ("Hypothesis", HYPOTHESIS);
         ("in", IN);
         (* ("Inductive", INDUCTIVE); *)
         ("lam", LAMBDA);
