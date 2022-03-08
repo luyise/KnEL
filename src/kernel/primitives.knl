@@ -40,7 +40,7 @@ OrdLe_sup_sup :
 // Notamment il est bien fondé.
 
 Definition OrdLt : Ord → Ord → _ :=
-λ α : Ord → Ord_rec (λ _ : Ord → _)
+λ (α : Ord) → Ord_rec (λ (_ : Ord) → _)
   (λ (B : Type_∞) (g : A → Ord) → Σ (b : B), (OrdLe α (g b)))
 End;
 
@@ -55,5 +55,5 @@ Unit_rec : Π (P : Unit → _) (p : P point),
   Π (x : Unit), P x;
 
 Definition OrdSuc : Ord → Ord :=
-  λ α : Ord → OrdSup (Unit_rec (λ _ : Ord → Ord) α)
+  λ (α : Ord) → OrdSup (Unit_rec (λ (_ : Ord) → Ord) α)
 End;

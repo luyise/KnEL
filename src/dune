@@ -2,7 +2,7 @@
 
 (library
  (name parse)
- (modules tactic location ast parser lexer))
+ (modules tactic location ast parser lexer priorityManager))
 
 (rule (target constants.ml) (deps (file kernel/primitives.knl)) (action (run ./cstGenerator.exe)))
 
@@ -16,4 +16,4 @@
 	(preprocess (pps ppx_deriving.show))
 	(libraries parse)
 	(name main)
-	(modules :standard \ tactic location ast parser lexer cstGenerator))
+	(modules :standard \ tactic location ast parser lexer cstGenerator priorityManager))

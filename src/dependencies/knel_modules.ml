@@ -16,13 +16,13 @@ let file_handler = ref None
 let main_file proceeding print_error_op fname =
   let s = !opened_files in
   let () = opened_files := fname :: s in
-  let (variables, ast) = Parsing.get_file_ast fname in
+  let (demanded_ctxt, variables, ast) = Parsing.get_file_ast fname in
   let knl_state = KnelState.new_knel_state [] [] [] Tactic.base_tactic_ctxt true in
   let () = file_handler := Some proceeding in
   let out_state = proceeding knl_state (HypothesisSection variables :: ast) in
   let () = opened_files := s in
   let () = print_error_op out_state in
-  build_module_map := SMap.add fname (variables, out_state) !build_module_map
+  build_module_map := SMap.add fname (demanded_ctxt, out_state) !build_module_map
 
 let rec rename_in_expr ?(set=SSet.empty) rename expr =
   let desc = match expr.desc with
@@ -65,13 +65,13 @@ let get_content state fdir as_name args =
       then
         SMap.find fdir !build_module_map
       else
-        let (variables, ast) = Parsing.get_file_ast fdir in
+        let (demanded_ctxt, variables, ast) = Parsing.get_file_ast fdir in
         let knl_state = KnelState.new_knel_state [] [] [] Tactic.base_tactic_ctxt false in
         let outState = match !file_handler with
           | Some f -> f knl_state (HypothesisSection variables :: ast)
           | None -> assert false in
-        let () = build_module_map := SMap.add fdir (variables, outState) !build_module_map
-        in (variables, outState)
+        let () = build_module_map := SMap.add fdir (demanded_ctxt, outState) !build_module_map
+        in (demanded_ctxt, outState)
     in
     let () = opened_files := s in
     let rename = if as_name = "" then (fun x -> x) else (fun x -> as_name ^ "." ^ x) in

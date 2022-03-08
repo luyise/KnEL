@@ -13,10 +13,26 @@ type expr_loc =
 
 type expr_path = expr_loc list
 
-type expr =
-  { desc : expr_desc
-  ; loc : Location.t
+type 'a located =
+  { desc : 'a;
+    loc : Location.t
   }
+
+type type_of_arg =
+  | Explicit
+  | Implicit
+
+type parsed_expr = parsed_expr_desc located
+and parsed_expr_desc =
+  | PVar of ident
+  | PLam   of ((ident * parsed_expr) * parsed_expr * type_of_arg)
+  | PPi    of ((ident * parsed_expr) * parsed_expr * type_of_arg)
+  | PSigma of ((ident * parsed_expr) * parsed_expr * type_of_arg)
+  | PPair  of (parsed_expr * parsed_expr) * (parsed_expr option)
+  | PApp of parsed_expr list
+
+
+type expr = expr_desc located
 
 and expr_desc =
     (* Représente une constante, a priori déjà connue *)
@@ -40,6 +56,9 @@ and expr_desc =
   | ESigma of (ident * expr) * expr * (expr_path option)
 
 type context = (ident * expr) list
+type parsed_context = (ident * parsed_expr) list
+
+type tactic_expr = parsed_expr
 
 type base_tactic =
   | IntroTac of ident             (* Former un terme de type Π (a : A) (B a) *)
@@ -92,42 +111,42 @@ type beta_rule_type = ident list -> expr_desc -> expr_desc option
 
 type instruction =
     (* Définition d'un λ-terme *)
-  | IDefine of (ident * expr * expr)
+  | IDefine of (ident * parsed_expr * parsed_expr)
     (* Déclaration d'une nouvelle tactique *)
-  | ITacDecl of (string * expr)
+  | ITacDecl of (string * parsed_expr)
     (* Déclaration d'une liste de varaiables à ajouter au contexte courant *)
   | IHypothesis of context
     (* Demande d'ouverture d'un fichier .knl *)
-  | IOpen of string * string * (expr list)
+  | IOpen of string * string * (parsed_expr list)
     (* Demande de retour en arrière *)
   | IBackward
     (* Déclaration du début d'une nouvelle preuve *)
-  | IBeginProof of (ident option * expr)
+  | IBeginProof of (ident option * parsed_expr)
     (* Demande d'utilisation d'une tactique pour faire avancer l'état de la preuve *)
-  | ITactic of expr
+  | ITactic of parsed_expr
     (* Demande de jeter la preuve en cours *)
   | IDropProof
     (* Demande de vérifier une preuve entière, et de l'ajouter au contexte global *)
-  | IFullProof of (beggining_tag * (ident option) * expr * (expr list) * ending_tag)
+  | IFullProof of (beggining_tag * (ident option) * parsed_expr * (parsed_expr list) * ending_tag)
     (* Introduit une nouvelle règle de β-réduction *)
   | IBetaRuleDecl of beta_rule_type
 
 type knel_section =
-  | HypothesisSection of context
+  | HypothesisSection of parsed_context
   | ReasoningSection of 
       (beggining_tag *
         ident option *
-        expr *
-        expr list *
+        parsed_expr *
+        tactic_expr list *
       ending_tag)
   | DefinitionSection of
-      (ident * expr * expr)
+      (ident * parsed_expr * parsed_expr)
   | BetaRuleDeclSection of
       beta_rule_type
   | OpenSection of
-      (string * string * (expr list))
+      (string * string * (parsed_expr list))
   | TacDeclSection of
-      (string * expr)
+      (string * tactic_expr)
       (* nom de la définition, son type, son lambda term *)
   (* | InductiveSection of
       ident (* nom de la famille inductive à définir *)

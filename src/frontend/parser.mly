@@ -20,59 +20,11 @@ let mk_expr p e = { desc = e; loc = loc_of_pos p }
 let add_loc e = { desc = e; loc = Location.none }
 let ch_loc p e = {desc = e.desc; loc = loc_of_pos p}
 
-let rec find_loc_inner id e = match e.desc with
-    | EVar id2 when id = id2 -> Some []
-    | EPi ((id1, e1), { desc = EApp (e2, { desc = EVar id2; _ }); _ }, None) when id1 = id2 -> begin
-        match find_loc_inner id e1 with
-            | Some p -> Some (PFunSource::p)
-            | None ->
-            begin match find_loc_inner id e2 with
-                | Some p -> Some (PFunDepTarget::p)
-                | None -> None
-        end end
-    | ESigma ((id1, e1), { desc = EApp (e2, { desc = EVar id2; _ }); _ }, None) when id1 = id2 -> begin
-        match find_loc_inner id e1 with
-            | Some p -> Some (PSigFst::p)
-            | None ->
-            begin match find_loc_inner id e2 with
-                | Some p -> Some (PSigDepSnd::p)
-                | None -> None
-        end end 
-    | EPi ((_, e1), e2, None) -> begin
-        match find_loc_inner id e1 with
-            | Some p -> Some (PFunSource::p)
-            | None ->
-            begin match find_loc_inner id e2 with
-                | Some p -> Some (PFunNonDepTarget::p)
-                | None -> None
-        end end
-    | ESigma ((_, e1), e2, None) -> begin
-        match find_loc_inner id e1 with
-            | Some p -> Some (PSigFst::p)
-            | None ->
-            begin match find_loc_inner id e2 with
-                | Some p -> Some (PSigNonDepSnd::p)
-                | None -> None
-        end end 
-    | _ -> None
+let mk_sigma = List.fold_right (fun (b, p) e -> add_loc (PSigma (p, e , b)))
+let mk_lam   = List.fold_right (fun (b, p) e -> add_loc (PLam   (p, e , b)))
+let mk_pi    = List.fold_right (fun (b, p) e -> add_loc (PPi    (p, e , b)))
 
-let find_loc b id e2 =
-    let rec go_to_inner e = match e.desc with
-            | EPi    ((_, e1), _, None) | ELam   ((_, e1), _, None)
-            | ESigma ((_, e1), _, None) -> find_loc_inner id e1
-            | EPi    (_, e1, Some _) | ELam   (_, e1, Some _)
-            | ESigma (_, e1, Some _) -> find_loc_inner id e1
-    in if b
-    then None
-    else match go_to_inner e2 with
-        | Some p -> Some p
-        | None -> assert false
-
-let mk_sigma = List.fold_right (fun (b, p) e -> add_loc (ESigma (p, e , find_loc b (fst p) e)))
-let mk_lam   = List.fold_right (fun (b, p) e -> add_loc (ELam   (p, e , find_loc b (fst p) e)))
-let mk_pi    = List.fold_right (fun (b, p) e -> add_loc (EPi    (p, e , find_loc b (fst p) e)))
-
-let mk_pair_list : ('a * Location.t) list -> ('b * expr) -> ('b * ('a * expr)) list =
+let mk_pair_list : ('a * Location.t) list -> ('b * parsed_expr) -> ('b * ('a * parsed_expr)) list =
     fun il (b, t) ->
       List.map (fun (i, loc) -> (b, (i, { t with loc = merge_loc loc t.loc }))) il
 
@@ -96,7 +48,7 @@ let mk_pair_list : ('a * Location.t) list -> ('b * expr) -> ('b * ('a * expr)) l
 %token EQ           (* = *)
 // %token EQUIV        (* <=> ⇔ *)
 %token EXISTS       (* ∃ ? *)
-%token FST          (* fst *)
+// %token FST          (* fst *)
 %token GREATER      (* > *)
 %token GREATEREQ    (* >= ⩾ *)
 %token HYPOTHESIS   (* Hypothesis *)
@@ -128,7 +80,7 @@ let mk_pair_list : ('a * Location.t) list -> ('b * expr) -> ('b * ('a * expr)) l
 %token RSBRACKET    (* ] *)
 %token SEMICOLON    (* ; *)
 %token STAR         (* * *)
-%token SND          (* snd *)
+// %token SND          (* snd *)
 // %token SUMIN        (* sum_in *)
 %token TACTIC       (* Tactic *)
 %token THEOREM      (* Theorem *)
@@ -141,22 +93,9 @@ let mk_pair_list : ('a * Location.t) list -> ('b * expr) -> ('b * ('a * expr)) l
 %start file
 %start primitives
 
-%nonassoc EXISTS LAMBDA ALL
-%left AMPERAMPER
-%left VERTVERT
-%right ARROW
 
-%left COMMA
-%left AND
-%left OR
-%left EQ GREATER LOWER LOWEREQ GREATEREQ
-%left STAR PROD
-%left PLUS MINUS
-%left DIV
-%nonassoc NEG SND FST
-
-%type <(ident * expr) list * knel_file> file
-%type <(ident * expr) list * (ident * expr * expr) list * knel_file> primitives
+%type <(ident * parsed_expr) list * knel_file> file
+%type <(ident * parsed_expr) list * (ident * parsed_expr * parsed_expr) list * knel_file> primitives
 
 %%
 
@@ -271,7 +210,7 @@ definition:
     | DEFINITION IDENT binding_list COLON expr DEF expr END {
         let typ, expr = List.fold_right
             (fun (b, (id, typ)) (target_type, target_expr) ->
-                add_loc (EPi (("_", typ), target_type, None)), add_loc (ELam ((id, typ), target_expr , None)))
+                add_loc (PPi (("_", typ), target_type, b)), add_loc (PLam ((id, typ), target_expr, b)))
             $3 ($5, $7)
         in
         DefinitionSection ($2, typ, expr) }
@@ -338,86 +277,77 @@ proof_end:
 // ;
 
 expr:
-    | ALL nonempty_list(id_loc) COLON expr COMMA expr %prec ALL 
-        { ch_loc $loc (mk_pi (mk_pair_list $2 (true, $4)) $6) }
-    | EXISTS nonempty_list(id_loc) COLON expr COMMA expr %prec EXISTS
-        { ch_loc $loc (mk_sigma (mk_pair_list $2 (true, $4)) $6) }
-    | LAMBDA nonempty_list(id_loc) COLON expr_no_arrow ARROW expr %prec LAMBDA
-        { ch_loc $loc (mk_lam (mk_pair_list $2 (true, $4)) $6) }
-    | ALL binding_list_ne COMMA expr %prec ALL 
-        { ch_loc $loc (mk_pi $2 $4) }
-    | EXISTS binding_list_ne COMMA expr %prec EXISTS
-        { ch_loc $loc (mk_sigma $2 $4) }
-    | LAMBDA binding_list_ne ARROW expr %prec LAMBDA
-        { ch_loc $loc (mk_lam $2 $4) }
     | expr_in               { $1 }
-    | expr binop_expr expr  { mk_expr $loc (EApp (add_loc (EApp(add_loc (EConst $2), $1)), $3)) }
-    | expr PROD expr        { mk_expr $loc (ESigma (("_", $1), $3 , None)) }
-    | expr ARROW expr       { mk_expr $loc (EPi (("_", $1), $3 , None)) }
-    | NEG expr              { mk_expr $loc (EPi (("_", $2), add_loc (EConst "Void") , None)) }
-    | FST expr              { mk_expr $loc (EFst $2) }
-    | SND expr              { mk_expr $loc (ESnd $2) }
+    | expr_not_in           { $1 }
 ;
 
-expr_no_arrow:
-    | ALL nonempty_list(id_loc) COLON expr DOT expr_no_arrow %prec ALL 
-        { ch_loc $loc (mk_pi (mk_pair_list $2 (true, $4)) $6) }
-    | EXISTS nonempty_list(id_loc) COLON expr DOT expr_no_arrow %prec EXISTS
-        { ch_loc $loc (mk_sigma (mk_pair_list $2 (true, $4)) $6) }
-    | LAMBDA nonempty_list(id_loc) COLON expr_no_arrow ARROW expr_no_arrow %prec LAMBDA
-        { ch_loc $loc (mk_lam (mk_pair_list $2 (true, $4)) $6) }
-    | ALL binding_list_ne DOT expr_no_arrow %prec ALL 
+expr_not_in:
+    | ALL nonempty_list(id_loc) COLON expr COMMA expr
+        { ch_loc $loc (mk_pi (mk_pair_list $2 (Explicit, $4)) $6) }
+    | EXISTS nonempty_list(id_loc) COLON expr COMMA expr
+        { ch_loc $loc (mk_sigma (mk_pair_list $2 (Explicit, $4)) $6) }
+    | LAMBDA nonempty_list(id_loc) COLON expr_bot ARROW expr
+        { ch_loc $loc (mk_lam (mk_pair_list $2 (Explicit, $4)) $6) }
+    | ALL binding_list_ne COMMA expr
         { ch_loc $loc (mk_pi $2 $4) }
-    | EXISTS binding_list_ne DOT expr_no_arrow %prec EXISTS
+    | EXISTS binding_list_ne COMMA expr
         { ch_loc $loc (mk_sigma $2 $4) }
-    | LAMBDA binding_list_ne ARROW expr_no_arrow %prec LAMBDA
+    | LAMBDA binding_list_ne ARROW expr
         { ch_loc $loc (mk_lam $2 $4) }
-    | expr_in               { $1 }
-    | expr_no_arrow COMMA expr_no_arrow       { mk_expr $loc (EPair (($1, $3), None)) }
-    | expr_no_arrow binop_expr expr_no_arrow
-        { mk_expr $loc (EApp (add_loc (EApp (add_loc (EConst $2), $1)), $3)) }
-    | expr_no_arrow PROD expr_no_arrow        { mk_expr $loc (ESigma (("_", $1), $3 , None)) }
-    | NEG expr_no_arrow              { mk_expr $loc (EPi (("_", $2), add_loc (EConst "Void") , None)) }
-    | FST expr_no_arrow              { mk_expr $loc (EFst $2) }
-    | SND expr_no_arrow              { mk_expr $loc (ESnd $2) }
+    | NEG expr              { mk_expr $loc (PPi (("_", $2), add_loc (PVar "Void"), Explicit)) }
 ;
 
 expr_in:
-    | expr_in expr_bot  { mk_expr $loc (EApp ($1, $2)) }
-    | expr_bot          { $1 }
+    | nonempty_list(expr_bot) 
+        { match $1 with
+            | [x] -> x
+            | _ -> mk_expr $loc (PApp $1)
+        }
+    | nonempty_list(expr_bot) expr_not_in
+        { mk_expr $loc (PApp ($1@[$2]))
+        }
+;
 
 expr_bot:
-    | VOID                  { mk_expr $loc (EConst "Void") }
-    | UNIT                  { mk_expr $loc (EConst "Unit") }
-    | INT                   { mk_expr $loc (EConst $1) }
-    | IDENT                 { mk_expr $loc (EVar $1) }
+    | VOID                  { mk_expr $loc (PVar "Void") }
+    | UNIT                  { mk_expr $loc (PVar "Unit") }
+    | INT                   { mk_expr $loc (PVar $1) }
+    | IDENT                 { mk_expr $loc (PVar $1) }
+    | ope                   { mk_expr $loc (PVar $1) }
   (*  | LPAREN expr COLON expr RPAREN    { mk_expr $loc (ETaggedExpr ($2, $4)) } *)
     | LPAREN expr RPAREN    { $2 }
-    | LPAREN expr COMMA expr RPAREN     { mk_expr $loc (EPair (($2, $4), None)) }
+    | LPAREN expr COMMA expr RPAREN     { mk_expr $loc (PPair (($2, $4), None)) }
     | LPAREN expr COMMA expr COMMA separated_nonempty_list(COMMA, expr) RPAREN
             { let lopt = List.fold_right (fun e1 e_tl -> match e_tl with
                 | None -> Some e1
-                | Some e2 -> Some (add_loc (EPair ((e1, e2), None)))) ($2::$4::$6) None
+                | Some e2 -> Some (add_loc (PPair ((e1, e2), None)))) ($2::$4::$6) None
                 in match lopt with
                     | None -> assert false
                     | Some e -> e }
 
     | LPAREN expr COMMA expr RPAREN IN expr_bot
-        { mk_expr $loc (EPair (($2, $4), Some $7)) }
+        { mk_expr $loc (PPair (($2, $4), Some $7)) }
+;
+
+%inline ope:
+    | VERTVERT      { "||" }
+    | ARROW         { "→" }
+    | AMPERAMPER    { "&&" }
+    | PROD          { "×" }
 ;
 
 binding_list_ne:
     | LPAREN nonempty_list(id_loc) COLON expr RPAREN binding_list
-        { mk_pair_list $2 (true, $4) @ $6 }
+        { mk_pair_list $2 (Explicit, $4) @ $6 }
     | LBRACKET nonempty_list(id_loc) COLON expr RBRACKET binding_list
-        { mk_pair_list $2 (false, $4) @ $6 }
+        { mk_pair_list $2 (Implicit, $4) @ $6 }
 ;
 
 binding_list:
     | LPAREN nonempty_list(id_loc) COLON expr RPAREN binding_list
-        { mk_pair_list $2 (true, $4) @ $6 }
+        { mk_pair_list $2 (Explicit, $4) @ $6 }
     | LBRACKET nonempty_list(id_loc) COLON expr RBRACKET binding_list
-        { mk_pair_list $2 (false, $4) @ $6 }
+        { mk_pair_list $2 (Implicit, $4) @ $6 }
     | (* EMPTY *) { [] }
 ;
 
