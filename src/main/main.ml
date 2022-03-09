@@ -1,4 +1,3 @@
-open Parse
 open Lexing
 
 let report filename (b, e) =

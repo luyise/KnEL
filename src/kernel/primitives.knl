@@ -34,15 +34,19 @@ OrdLe_sup_sup :
   Π (A B : Type_∞) (f : A → Ord) (g : B → Ord),
     (Π (x : A), Σ (y : B), OrdLe (f x) (g y))
     → OrdLe (sup A f) (sup B g);
+OrdLe_rec :
+  Π (P : Π (α β : Ord), OrdLe α β → _),
+  (Π (A B : Type_∞) (f g : A → Ord) (Φ : Π (x : A), Σ (y : B), OrdLe (f x) (g y)),
+    (Π (x : A) (y : B), P (f x) (g y) (Φ x y)) 
+    → P (sup A f) (sup B g) (OrdLe_sup_sup A B f g Φ)) 
+  → Π (α β : Ord), Π (p : OrdLe α β), P α β p;
+[β_red]
+OrdLe_rec 'P 'H (sup 'A 'f) (sup 'B 'g) (OrdLe_sup_sup 'A1 'B1 'f1 'g1 'Phi) =
+  ('H 'A 'B 'f 'g 'Phi);
 
 // On définit à partir de OrdLe un ordre strict sur Ord,
 // on montrera plus tard qu'il se comporte comme attendu :
 // Notamment il est bien fondé.
-
-Definition OrdLt : Ord → Ord → _ :=
-λ (α : Ord) → Ord_rec (λ (_ : Ord) → _)
-  (λ (B : Type_∞) (g : A → Ord) → Σ (b : B), (OrdLe α (g b)))
-End;
 
 // On a besoin aussi de void, et de unit.
 
@@ -53,7 +57,7 @@ point : Unit;
 Void_rec : Π (P : Void → _) (x : Void), P x;
 Unit_rec : Π (P : Unit → _) (p : P point),
   Π (x : Unit), P x;
+[β_red]
+Unit_rec 'P 'p point = 'p;
 
-Definition OrdSuc : Ord → Ord :=
-  λ (α : Ord) → OrdSup (Unit_rec (λ (_ : Ord) → Ord) α)
-End;
+Type : Ord → Type_∞;

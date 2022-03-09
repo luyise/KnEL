@@ -1,0 +1,41 @@
+Definition empty_map : Void → Ord :=
+  Void_rec (λ (_ : Void) → Ord)
+End
+
+Definition Zero : Ord :=
+  OrdSup Void empty_map
+End
+
+Definition Type_0 : Type_∞ :=
+  Type Zero
+End
+
+// Definition OrdLt : Ord → Ord → _ :=
+//   λ (α : Ord) → Ord_rec (λ (_ : Ord) → _)
+//   (λ (B : Type_∞) (g : A → Ord) → Σ (b : B), (OrdLe α (g b)))
+// End
+
+Definition Point_map : Ord → (Unit → Ord) :=
+  λ (α : Ord) → (Unit_rec (λ (_ : Unit) → Ord) α)
+End
+
+Definition OrdSuc : Ord → Ord :=
+   λ (α : Ord) → OrdSup Unit (Point_map α)
+End
+
+Definition One : Ord :=
+  OrdSuc Zero
+End
+
+Definition Two : Ord :=
+  OrdSuc One
+End
+
+Definition Three : Ord :=
+  OrdSuc Two
+End
+
+Definition Four : Ord :=
+  OrdSuc Three
+End
+

@@ -88,7 +88,7 @@ let rec pp_expr_inner above fmt (exp : expr) =
             (fun fmt (_, (expr, _)) -> pp_expr_inner SArrow fmt expr)
             (fun fmt () -> pp_ident CLR_elm fmt " → ")) (List.rev (unfold_pi true [] exp))
           (pp_ident CLR_par) (if needs_par above SArrow then ")" else "")
-    | EPi (_, _ , t) ->
+    | EPi (_, _ , _) ->
         let (exp, tl) = match unfold_pi false [] exp with
           | (_,(exp, _))::tl -> exp, List.rev tl
           | _ -> raise PPrinter_internal_error
