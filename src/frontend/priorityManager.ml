@@ -8,6 +8,9 @@ let combine_locs l1 l2 =
     loc_end   = l2.loc_end;
   }
 
+let reserved =
+  let l = ["fst"; "snd"] in
+  List.fold_left (fun s i -> SSet.add i s) SSet.empty l
 
 let check_if_allowed ~loc cstSet id = if SSet.mem id cstSet then assert false else id
 
@@ -56,7 +59,7 @@ let find_loc id e2 =
           | ESigma (_, e1, Some _) -> find_loc_inner id e1
   in match go_to_inner e2 with
       | Some p -> Some p
-      | None -> Format.printf "%a \n\t %s not in-> %a\n" Location.print_loc e2.loc id Tactic.pp_expr e2; assert false
+      | None -> (*Format.printf "%a \n\t %s not in-> %a\n" Location.print_loc e2.loc id Tactic.pp_expr e2;*) assert false
 
 let rec find_highest priorityMaping = function
   | [] -> None
@@ -88,8 +91,8 @@ let rec rewrite_inner = function
   | hd::tl -> let e = rewrite_inner tl in {desc = EApp (hd, e); loc = combine_locs hd.loc e.loc }
 
 let rewrite = function
-  | {desc = EVar "fst"; loc}::e1::tl -> rewrite_inner ({desc = EFst e1; loc = combine_locs loc e1.loc}::tl)
-  | {desc = EVar "snd"; loc}::e1::tl -> rewrite_inner ({desc = ESnd e1; loc = combine_locs loc e1.loc}::tl)
+  | {desc = EConst "fst"; loc}::e1::tl -> rewrite_inner ({desc = EFst e1; loc = combine_locs loc e1.loc}::tl)
+  | {desc = EConst "snd"; loc}::e1::tl -> rewrite_inner ({desc = ESnd e1; loc = combine_locs loc e1.loc}::tl)
   | l -> rewrite_inner l
 
 let rec build_priority prioMap el =
@@ -112,7 +115,7 @@ let rec build_priority prioMap el =
 
 let rec expr_of_parsed_expr cstSet prioMap pe = 
   let desc = match pe.desc with
-    | PVar id when SSet.mem id cstSet -> EConst id
+    | PVar id when SSet.mem id cstSet-> EConst id
     | PVar id -> EVar id
     | PPair ((e1, e2), None) ->
       EPair ((expr_of_parsed_expr cstSet prioMap e1, expr_of_parsed_expr cstSet prioMap e2), None)
@@ -122,7 +125,7 @@ let rec expr_of_parsed_expr cstSet prioMap pe =
       let eL = List.map (expr_of_parsed_expr cstSet prioMap) peL in
       (build_priority prioMap eL).desc
     | PLam ((id, _), _, _) | PPi ((id, _), _, _)
-    | PSigma ((id, _), _, _) when SSet.mem id cstSet ->
+    | PSigma ((id, _), _, _) when (SSet.mem id cstSet || SSet.mem id reserved) ->
       assert false
     | PLam ((id, e1), e2, Explicit) ->
       let e1 = expr_of_parsed_expr cstSet prioMap e1 in

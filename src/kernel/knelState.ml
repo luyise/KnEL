@@ -68,8 +68,8 @@ let rec execute_tac_list : knel_state -> tactic list -> knel_state
               try (apply_tactic e tac) , state.status with
                 | Invalid_tactic ->
                     [ e ] , Error "Invalid tactic"
-                | Unknown_ident ->
-                    [ e ] , Error "Unknown ident"
+                | Unknown_ident id ->
+                    [ e ] , Error ("Unknown ident \""^id^"\"")
                 | Type_error ->
                     [ e ] , Error "Type error"
             in

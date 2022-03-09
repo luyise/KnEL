@@ -7,7 +7,7 @@ open Substitution
 open Alpha_renaming
 open Beta_red
 
-exception Unknown_ident
+exception Unknown_ident of ident
 exception Type_error
 exception Invalid_context
 exception Unable_to_infer_type
@@ -82,14 +82,14 @@ and compute_type_EConst : ident -> expr_desc
       ) constants
     ) with
       | Some (_ , typ) -> typ.desc
-      | None -> raise Unknown_ident
+      | None -> raise (Unknown_ident c)
 
 and compute_type_EVar : ident -> context -> expr_desc
 = fun x ctx ->
   match in_context_opt x ctx
     with
       | Some typ -> typ.desc
-      | _ -> raise Unknown_ident
+      | _ -> raise (Unknown_ident x)
 
 and infer_implicit_argument :
      ident

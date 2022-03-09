@@ -1,12 +1,12 @@
 Theorem split_thm:
     ∀(P1 P2 : Type_∞), P1 → P2 → P1 × P2
 Proof
-//    Intro P1;
-//    Intro P2;
-//    Intro p1;
-//    Intro p2;
-//    Exact (p1, p2) in (λ(x : P1) → P2);
-Ongoing
+    Intro P1;
+    Intro P2;
+    Intro p1;
+    Intro p2;
+    Exact (p1, p2) in (λ x : P1 → P2);
+QED
 
 Tactic Split (P1 P2 p1 : Expr) =
     Apply (split_thm P1 P2 p1)
@@ -27,7 +27,7 @@ Proof
     Intro imp;
     Intro exists;
     Exact ((fst exists, imp (fst exists) (snd exists)) in (λ x : X → Q x))
-QED
+Ongoing
 
 Tactic Apply_in (X P Q IMP : Expr) =
     Apply (apply_in_thm X P Q IMP)

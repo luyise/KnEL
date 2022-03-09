@@ -20,8 +20,8 @@ let append_context : knel_state -> (ident * expr) -> knel_state
       global_context = (id , exp) :: state.global_context
     ; used_ident = id :: state.used_ident }
   with
-    | Unknown_ident ->
-      { state with status = Error ("Unknown ident when type checking "^id^" declaration") }
+    | Unknown_ident id1 ->
+      { state with status = Error ("Unknown ident \""^id1^"\" when type checking "^id^" declaration") }
     | Type_error ->
       { state with status = Error ("Type error occured when type checking "^id) }
   end
@@ -77,8 +77,8 @@ let execute_IDefine : knel_state -> ident -> parsed_expr -> parsed_expr -> knel_
       }
     end else { state with status = Error ("Incompatible types when defining "^name) }
   with
-    | Unknown_ident ->
-      { state with status = Error ("Unknown ident when type checking "^name^" definition") }
+    | Unknown_ident id ->
+      { state with status = Error ("Unknown ident \""^id^"\" when type checking "^name^" definition") }
     | Type_error ->
       { state with status = Error ("Type error occured when type checking "^name) }
   end
@@ -143,8 +143,8 @@ let execute_IBeginProof :
   with
     | Ident_conflict id ->
       { state with status = Error (id^" is already used!") }
-    | Unknown_ident ->
-      { state with status = Error ("Unknown ident when type checking goal") }
+    | Unknown_ident id ->
+      { state with status = Error ("Unknown ident \""^id^"\" when type checking goal") }
     | Type_error ->
       { state with status = Error ("Type error occured when type checking goal") }
   end
@@ -160,8 +160,8 @@ let execute_ITactic : knel_state -> tactic_expr -> knel_state
       with
         | Invalid_tactic -> 
             { state with status = Error ("Invalid tactic") }
-        | Unknown_ident ->
-            { state with status = Error ("Unknown ident when executing tactic") }
+        | Unknown_ident id ->
+            { state with status = Error ("Unknown ident \""^id^"\" when executing tactic") }
         | Type_error ->
             { state with status = Error ("Type error when executing tacting") }
       end
@@ -219,7 +219,7 @@ let execute_IFullProof :
         in 
         begin match final_state.status , final_state.environments , end_tag with
           | AllDone , _ , _ -> failwith "KnEL internal error: wasn't supposed to get a AllDone status after processed a tactic list"
-          | Error _ , _ , _ ->
+          | Error err_msg , _ , _ ->
               begin if !Config.html_view then
                 Format.printf "an error occured while checking the proof of %s!<br>"
                   goal_id
@@ -227,7 +227,7 @@ let execute_IFullProof :
                 Format.printf "an error occured while checking the proof of %s!\n"
                   goal_id
               end;
-              state
+              { state with status = Error err_msg }
           | InProof , _ , Ongoing ->
               if state.prompt_enabled then begin
                 if !Config.html_view then
