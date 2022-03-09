@@ -9,6 +9,16 @@ module SSet = Set.Make(String)
 let seq_op = "&&"
 let  or_op = "||"
 
+let rec pp_expr fmt e = match e.desc with
+  | EApp (e1, e2) -> Format.fprintf fmt "(%a %a)" pp_expr e1 pp_expr e2
+  | EVar id -> Format.fprintf fmt "%s" id
+  | EConst id -> Format.fprintf fmt "c:%s" id
+  | EPair _ -> assert false
+  | ELam ((id, e1), e2, None) -> Format.fprintf fmt "L (%s : %a), %a" id pp_expr e1 pp_expr e2
+  | EPi ((id, e1), e2, None) -> Format.fprintf fmt "P (%s : %a), %a" id pp_expr e1 pp_expr e2
+  | ESigma ((id, e1), e2, None) -> Format.fprintf fmt "S (%s : %a), %a" id pp_expr e1 pp_expr e2
+  | _ -> assert false
+
 let pp_ident fmt id = Format.fprintf fmt "%s" id
 
 type tactic_ident =
@@ -103,7 +113,7 @@ let rec checktype_of_tactic (env: tactic_type SMap.t) expected term : (tactic_ty
     begin match term.desc with
       | EVar ident when SMap.find_opt ident env = Some TIdent -> TIdent, PTacReplace ident
       | EVar ident when SMap.find_opt ident env = None -> TIdent, PTacVar ident
-      | _ -> raise TacticTypeError
+      | _ -> Format.printf "Tactic type error at %a\n" Location.print_loc term.loc; raise TacticTypeError
     end
   | TExpr ->
     begin match term.desc with
@@ -116,13 +126,13 @@ let rec checktype_of_tactic (env: tactic_type SMap.t) expected term : (tactic_ty
   | TTac ->
     begin match term.desc with
       | EVar ident when SMap.find_opt ident env = Some TTac -> (TTac, PTacReplace ident)
-      | EApp ({desc = EApp ({desc = EConst op; _ }, pt1); _ }, pt2) when op = seq_op ->
+      | EApp ({desc = EApp ({desc = EVar op; _ }, pt1); _ }, pt2) when op = seq_op ->
         let t1, pt1 = checktype_of_tactic env TTac pt1 in
         let t2, pt2 = checktype_of_tactic env TTac pt2 in
         if TTac = t1 && TTac = t2
         then TTac, PTacSeq (pt1, pt2)
         else raise TacticTypeError
-      | EApp ({desc = EApp ({desc = EConst op; _ }, pt1); _ }, pt2) when op = or_op ->
+      | EApp ({desc = EApp ({desc = EVar op; _ }, pt1); _ }, pt2) when op = or_op ->
         let t1, pt1 = checktype_of_tactic env TTac pt1 in
         let t2, pt2 = checktype_of_tactic env TTac pt2 in
         if TTac = t1 && TTac = t2
@@ -146,7 +156,7 @@ let rec checktype_of_tactic (env: tactic_type SMap.t) expected term : (tactic_ty
       | EVar ident ->
         begin match SMap.find_opt ident env with
           | Some (TArrow (t3, t4)) -> TArrow (compatible t1 t3, compatible t2 t4), PTacReplace ident
-          | _ -> raise TacticTypeError
+          | _ -> Format.printf "Unkown ident \"%s\" in tactic at %a\n" ident Location.print_loc term.loc;  raise TacticTypeError
         end
       | EApp (pt1, pt2) ->
         begin match checktype_of_tactic env (TArrow (TUnknown, TArrow (t1, t2))) pt1 with
@@ -192,6 +202,7 @@ let defaultTacticsList = [
 let base_tactic_ctxt = List.fold_left (fun smap (id, tt, tname) -> SMap.add id (tt, Tactic (PTacBase tname), TacEnv SMap.empty) smap) SMap.empty defaultTacticsList
 
 let tactic_creator env id tb =
+  Format.printf "%s -> %a\n" id pp_expr tb;
   if SMap.mem id env
   then assert false
   else

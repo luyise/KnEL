@@ -7,7 +7,9 @@ let report filename (b, e) =
   let ce = e.pos_cnum - b.pos_bol + 1 in
   Format.eprintf "File \"%s\", line %d, characters %d-%d:\n" filename l cb ce
 
-let set_file f = Parsing.files_to_parse := f :: !Parsing.files_to_parse
+let files_to_compile = ref []
+
+let set_file f = files_to_compile := f :: !files_to_compile
 
 let () = Config.parse_arguments set_file
 
@@ -24,8 +26,8 @@ let check_file_name filename =
     then raise (Arg.Bad ("file \""^filename^"\" is not a .knl file"))
 
 let main () =
-  List.iter check_file_name !Parsing.files_to_parse;
-  List.iter (Knel_modules.main_file FileProceeding.execute_section_list FileProceeding.print_error_op) !Parsing.files_to_parse
+  List.iter check_file_name !files_to_compile;
+  List.iter (Knel_modules.main_file FileProceeding.execute_section_list FileProceeding.print_error_op) !files_to_compile
  
 let () = main ()
 

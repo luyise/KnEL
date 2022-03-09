@@ -36,7 +36,7 @@ Proof
 QED
 
 Theorem my_α_is_notΩ:
-    ∀ η ω Θρα: Type, η = ω → Θρα = Θρα
+    ∀ (η ω Θρα: Type), η rel ω → Θρα rel Θρα
 Proof
 Admitted
 

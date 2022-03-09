@@ -2,6 +2,7 @@ open Parse
 open Ast
 open PriorityManager
 open Tactic
+open Lexing
 (*
 let files_to_parse : string list ref = ref []
 *)
@@ -55,6 +56,11 @@ let changeVarToCstFileSection fdir = function
 
 let changeVarToCstFile fdir = List.map (changeVarToCstFileSection fdir)
 *)
+let report filename (b, e) =
+  let l = b.pos_lnum in
+  let cb = b.pos_cnum - b.pos_bol + 1 in
+  let ce = e.pos_cnum - b.pos_bol + 1 in
+  Format.eprintf "File \"%s\", line %d, characters %d-%d:\n" filename l cb ce
 
 let edit_open fdir = function
   | OpenSection (fname, as_name, el) ->
@@ -68,8 +74,14 @@ let get_file_ast fdir_name =
   if !Config.html_view
   then Printf.printf "<font style=\"color:#3498DB\">parsing %s ...\n</font><br>" fdir_name
   else Printf.printf "\x1B[38;5;39mparsing %s ...\n\x1B[39m" fdir_name;
-  let (pc, file) = Parser.file Lexer.next_token lexbuf in
-  close_in fdesc;
-  List.map (fun (id, e) -> (id, expr_of_parsed_expr cstSet prioDefault e)) pc,
-  pc,
-  (List.map (edit_open fdir_name) file)
+  try
+    let (pc, file) = Parser.file Lexer.next_token lexbuf in
+    close_in fdesc;
+    List.map (fun (id, e) -> (id, expr_of_parsed_expr cstSet prioDefault e)) pc,
+    pc,
+    (List.map (edit_open fdir_name) file)
+  with
+    Parser.Error ->
+      report fdir_name (Lexing.lexeme_start_p lexbuf, Lexing.lexeme_end_p lexbuf);
+      print_endline "syntax error.";
+      exit 1 

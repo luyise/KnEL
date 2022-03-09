@@ -1,12 +1,12 @@
 Theorem split_thm:
     ∀(P1 P2 : Type_∞), P1 → P2 → P1 × P2
 Proof
-    Intro P1;
-    Intro P2;
-    Intro p1;
-    Intro p2;
-    Exact (p1, p2) in (λ(x : P1) → P2);
-QED
+//    Intro P1;
+//    Intro P2;
+//    Intro p1;
+//    Intro p2;
+//    Exact (p1, p2) in (λ(x : P1) → P2);
+Ongoing
 
 Tactic Split (P1 P2 p1 : Expr) =
     Apply (split_thm P1 P2 p1)
@@ -17,7 +17,7 @@ Tactic fast_tac (id : Ident) =
 End
 
 Theorem apply_in_thm:
-    ∀ (X : Type_∞) (P Q : X → Type_∞),
+    ∀ {X : Type_∞} (P Q : X → Type_∞),
         (∀ x : X, P x → Q x)
         → (∃ x : X , P x) → ∃ x : X, Q x
 Proof
@@ -49,8 +49,8 @@ Proof
     Intro B;
     Intro a;
     Intro f;
-    Exact (f a);
-QED
+//    Exact (f a);
+Ongoing
 
 Tactic Generalize (A B a : Expr) =
     Apply (generalize_thm A B a)

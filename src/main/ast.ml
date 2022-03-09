@@ -3,6 +3,10 @@ type ident = string
 exception Ident_conflict of ident
 exception Unable_to_infer_implicit_argument
 
+module SMap = Map.Make(String)
+module SSet = Set.Make(String)
+module IMap = Map.Make(Int)
+
 type expr_loc =
   | PFunSource
   | PFunNonDepTarget
@@ -115,7 +119,7 @@ type instruction =
     (* Déclaration d'une nouvelle tactique *)
   | ITacDecl of (string * parsed_expr)
     (* Déclaration d'une liste de varaiables à ajouter au contexte courant *)
-  | IHypothesis of context
+  | IHypothesis of parsed_context
     (* Demande d'ouverture d'un fichier .knl *)
   | IOpen of string * string * (parsed_expr list)
     (* Demande de retour en arrière *)
@@ -154,3 +158,10 @@ type knel_section =
       * context famille de constructeurs définis avec la famille de type inductif *)
 
 type knel_file = knel_section list
+
+
+type assoc =
+  | Left
+  | Right
+
+type priority_ctxt = (int * assoc) SMap.t

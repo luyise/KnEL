@@ -30,6 +30,8 @@ type knel_state =
     (* description synthétique de l'état du noyau :
       correspond à l'action en cours d'éxecution, ou à une erreur *)
   ; status : status
+    (* indique les différents opérateurs infixe et leur priorité afin de les parser *)
+  ; infix_ope : priority_ctxt
   }
 
 (* La fontion new_knel_state : unit -> knel_state 
@@ -47,7 +49,8 @@ let new_knel_state : context -> (ident * expr) list -> beta_rule_type list -> Ta
   ; definitions = defs
   ; environments = []
   ; prompt_enabled = prompting
-  ; status = AllDone }
+  ; status = AllDone
+  ; infix_ope = PriorityManager.prioDefault }
 
 (* La fonction execute_tac_list applique, sous reserve qu'il n'y ait
   pas d'erreur déclanchée, toutes les tactiques de la liste fournie 

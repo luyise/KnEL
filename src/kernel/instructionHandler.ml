@@ -43,11 +43,17 @@ let check_valid_instruction : knel_state -> instruction -> knel_state
     | IBetaRuleDecl _ , InProof -> { state with status = Error "Cannot accept a beta-rule declaration while beeing in proof" }
     | _ , _ -> state
 
+(* conversion de parsed_expr en expr *)
+let expr_of_pe : knel_state -> parsed_expr -> expr
+= fun state pe -> PriorityManager.expr_of_parsed_expr Constants.cstSet state.infix_ope pe
+
 (* Gestion de chaque commande par le noyau *)
 
 (* Définit un nouveau terme et l'ajoute à l'environnement global *)
-let execute_IDefine : knel_state -> ident -> expr -> expr -> knel_state 
-= fun state name term typ ->
+let execute_IDefine : knel_state -> ident -> parsed_expr -> parsed_expr -> knel_state 
+= fun state name term_raw typ_raw ->
+  let term = expr_of_pe state term_raw in
+  let typ  = expr_of_pe state typ_raw in
   if List.mem name state.used_ident then
     { state with status = Error (name^" is already used!") }
   else begin try
@@ -78,26 +84,27 @@ let execute_IDefine : knel_state -> ident -> expr -> expr -> knel_state
   end
 
 (* Défini une nouvelle tactique *)
-let execute_ITacDecl : knel_state -> ident -> expr -> knel_state
-= fun state id expr -> 
+let execute_ITacDecl : knel_state -> ident -> parsed_expr -> knel_state
+= fun state id raw_expr -> 
+  let expr = expr_of_pe state raw_expr in
   { state with
     tactic_ctxt = Tactic.tactic_creator state.tactic_ctxt id expr
   }
 
-let rec execute_IHypothesis : knel_state -> context -> knel_state
+let rec execute_IHypothesis : knel_state -> parsed_context -> knel_state
 = fun state ctx ->
   match ctx with
     | [] -> state
-    | id_and_expr :: ctx_tail ->
-        let state' = append_context state id_and_expr in 
+    | (id, raw_expr) :: ctx_tail ->
+        let state' = append_context state (id, expr_of_pe state raw_expr) in 
         begin match state'.status with
           | Error _ -> state'
           | _ -> execute_IHypothesis state' ctx_tail
         end
 
-let execute_IOpen : knel_state -> ident -> ident -> expr list -> knel_state
-= fun state fdir as_name args -> 
-  Knel_modules.get_content state fdir as_name args
+let execute_IOpen : knel_state -> ident -> ident -> parsed_expr list -> knel_state
+= fun state fdir as_name raw_args -> 
+  Knel_modules.get_content state fdir as_name (List.map (expr_of_pe state) raw_args)
 
 let execute_IBackward : knel_state -> knel_state
 = fun state -> state (* TODO *)
@@ -105,9 +112,10 @@ let execute_IBackward : knel_state -> knel_state
 let execute_IBeginProof : 
      knel_state
   -> ident option
-  -> expr
+  -> parsed_expr
   -> knel_state
-= fun state id_op goal_typ ->
+= fun state id_op raw_goal_typ ->
+  let goal_typ = expr_of_pe state raw_goal_typ in
   begin try
     let _ = match id_op with
       | Some id when List.mem id state.used_ident ->
@@ -141,11 +149,12 @@ let execute_IBeginProof :
       { state with status = Error ("Type error occured when type checking goal") }
   end
 
-let execute_ITactic : knel_state -> expr -> knel_state
-= fun state tac ->
+let execute_ITactic : knel_state -> tactic_expr -> knel_state
+= fun state raw_tac ->
   match state.environments with
     | e :: e_tail ->
       begin try
+        let tac = expr_of_pe state raw_tac in
         let generated_envs = apply_tactic e (Tactic.tac_of_expr state.tactic_ctxt tac) in
         { state with environments = generated_envs @ e_tail }
       with
@@ -174,12 +183,12 @@ let execute_IFullProof :
      knel_state
   -> beggining_tag
   -> ident option
-  -> expr
-  -> expr list
+  -> parsed_expr
+  -> tactic_expr list
   -> ending_tag
   -> knel_state
-= fun state _ id_op goal_typ tacl end_tag ->
-  let ready_to_reason_state = execute_IBeginProof state id_op goal_typ in
+= fun state _ id_op raw_goal_typ raw_tacl end_tag ->
+  let ready_to_reason_state = execute_IBeginProof state id_op raw_goal_typ in
   begin try
     let (goal_id : string) = match id_op with
       | None -> "unamed_goal"
@@ -206,7 +215,7 @@ let execute_IFullProof :
           List.fold_left
             execute_ITactic
             ready_to_reason_state
-            tacl
+            raw_tacl
         in 
         begin match final_state.status , final_state.environments , end_tag with
           | AllDone , _ , _ -> failwith "KnEL internal error: wasn't supposed to get a AllDone status after processed a tactic list"
@@ -240,7 +249,7 @@ let execute_IFullProof :
               begin match id_op with
                 | Some _ ->
                   { state with
-                    global_context = (goal_id , goal_typ) :: state.global_context
+                    global_context = (goal_id , expr_of_pe state raw_goal_typ) :: state.global_context
                   ; used_ident = goal_id :: state.used_ident
                   ; definitions = state.definitions
                   ; status = AllDone
@@ -266,7 +275,7 @@ let execute_IFullProof :
               begin match id_op with
                 | Some _ ->
                   { state with
-                    global_context = (goal_id , goal_typ) :: state.global_context
+                    global_context = (goal_id , expr_of_pe state raw_goal_typ) :: state.global_context
                   ; used_ident = goal_id :: state.used_ident
                   ; definitions = state.definitions
                   ; status = AllDone

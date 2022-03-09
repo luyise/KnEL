@@ -134,6 +134,8 @@ let constants: context =
 [
 %a]
 
+let cstSet = List.fold_left (fun m (id, _) -> SSet.add id m) SSet.empty constants
+
 let beta_red: (Ast.ident list -> Ast.expr_desc -> Ast.expr_desc option) list =
 [
 %a]

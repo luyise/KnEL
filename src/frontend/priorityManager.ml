@@ -1,19 +1,9 @@
 open Ast
 open Location
 
-module SMap = Map.Make(String)
-module SSet = Set.Make(String)
-module IMap = Map.Make(Int)
-
-type assoc =
-  | Left
-  | Right
-
-type priority_ctxt = (int * assoc) SMap.t
-
 let combine_locs l1 l2 =
   {
-    loc_ghost = l1.loc_ghost & l2.loc_ghost;
+    loc_ghost = l1.loc_ghost && l2.loc_ghost;
     loc_start = l1.loc_start;
     loc_end   = l2.loc_end;
   }
@@ -58,17 +48,15 @@ let rec find_loc_inner id e = match e.desc with
       end end 
   | _ -> None
 
-let find_loc b id e2 =
+let find_loc id e2 =
   let rec go_to_inner e = match e.desc with
           | EPi    ((_, e1), _, None) | ELam   ((_, e1), _, None)
           | ESigma ((_, e1), _, None) -> find_loc_inner id e1
           | EPi    (_, e1, Some _) | ELam   (_, e1, Some _)
           | ESigma (_, e1, Some _) -> find_loc_inner id e1
-  in if b
-  then None
-  else match go_to_inner e2 with
+  in match go_to_inner e2 with
       | Some p -> Some p
-      | None -> assert false
+      | None -> Format.printf "%a \n\t %s not in-> %a\n" Location.print_loc e2.loc id Tactic.pp_expr e2; assert false
 
 let rec find_highest priorityMaping = function
   | [] -> None
@@ -77,13 +65,15 @@ let rec find_highest priorityMaping = function
       | None, None -> None
       | None, Some (prio, assoc, e, (h1, h2)) -> Some (prio, assoc, e, (evar::h1, h2))
       | Some (prio1, assoc1), Some (prio2, assoc2, e, (h1, h2)) when prio1 < prio2 ->
-        Some (prio1, assoc1, e, (evar::h1, h2))
+        Some (prio2, assoc2, e, (evar::h1, h2))
       | Some (prio1, assoc1), Some (prio2, assoc2, e, (h1, h2)) when prio1 > prio2 ->
-        Some (prio2, assoc2, evar, ([], tl))
+        Some (prio1, assoc1, evar, ([], tl))
       | Some (prio, Left), Some (_, Left, e, (h1, h2)) ->
         Some (prio, Left, e, (evar::h1, h2))
       | Some (prio, Right), Some (_, Right, e, (h1, h2)) ->
         Some (prio, Right, evar, ([], tl))
+      | Some (prio, assoc), None ->
+          Some (prio, assoc, evar, ([], tl))
       | _, _ -> assert false
     end
   | hd::tl -> begin
@@ -92,18 +82,27 @@ let rec find_highest priorityMaping = function
       | None -> None
   end
 
-let rec rewrite = function
+let rec rewrite_inner = function
   | [] -> assert false
   | [hd] -> hd
-  | hd::tl -> let e = rewrite tl in {desc = EApp (hd, e); loc = combine_locs hd.loc e.loc }
+  | hd::tl -> let e = rewrite_inner tl in {desc = EApp (hd, e); loc = combine_locs hd.loc e.loc }
+
+let rewrite = function
+  | {desc = EVar "fst"; loc}::e1::tl -> rewrite_inner ({desc = EFst e1; loc = combine_locs loc e1.loc}::tl)
+  | {desc = EVar "snd"; loc}::e1::tl -> rewrite_inner ({desc = ESnd e1; loc = combine_locs loc e1.loc}::tl)
+  | l -> rewrite_inner l
 
 let rec build_priority prioMap el =
   match find_highest prioMap el with
     | None -> rewrite el
-    | Some (_, _, {desc = EVar " arrow"; _}, (l1, l2)) ->
+    | Some (_, _, {desc = EVar "→"; _}, (l1, l2)) ->
       let e1 = build_priority prioMap l1 in
       let e2 = build_priority prioMap l2 in
       { desc = EPi (("_", e1), e2, None); loc = combine_locs e1.loc e2.loc }
+    | Some (_, _, {desc = EVar "×"; _}, (l1, l2)) ->
+      let e1 = build_priority prioMap l1 in
+      let e2 = build_priority prioMap l2 in
+      { desc = ESigma (("_", e1), e2, None); loc = combine_locs e1.loc e2.loc }
     | Some (_, _, eop, (l1, l2)) ->
         let e1 = build_priority prioMap l1 in
         let e2 = build_priority prioMap l2 in
@@ -137,11 +136,31 @@ let rec expr_of_parsed_expr cstSet prioMap pe =
       let e1 = expr_of_parsed_expr cstSet prioMap e1 in
       let e2 = expr_of_parsed_expr cstSet prioMap e2 in
       ESigma ((id, e1), e2, None)
+    | PLam ((id, e1), e2, Implicit) ->
+      let e1 = expr_of_parsed_expr cstSet prioMap e1 in 
+      let e2 = expr_of_parsed_expr cstSet prioMap e2 in
+      begin match find_loc id e2 with
+        | None -> assert false
+        | Some p -> ELam ((id, e1), e2, Some p)
+      end
+    | PSigma ((id, e1), e2, Implicit) -> assert false
+    | PPi ((id, e1), e2, Implicit) ->
+      let e1 = expr_of_parsed_expr cstSet prioMap e1 in 
+      let e2 = expr_of_parsed_expr cstSet prioMap e2 in
+      begin match find_loc id e2 with
+        | None -> assert false
+        | Some p -> EPi ((id, e1), e2, Some p)
+      end
     | _ -> assert false
   in { desc; loc = pe.loc }
 
 let prioDefault =
-  let l = []
+  let l = [
+    ("→",   (100, Right));
+    ("&&",  (75, Right));
+    ("||",  (74, Right));
+    ("×",   (75, Right));
+    ]
   in List.fold_left (fun m (id, p) -> SMap.add id p m) SMap.empty l
 let cstDefault =
   let l = [] in
