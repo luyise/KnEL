@@ -114,7 +114,7 @@ let rec pp_out_expr fmt e = match e.desc with
 
 
 let pp_bred fmt (_, a, b) =
-  Format.fprintf fmt "fun _ e -> match mk_loc e with | %a -> Some (%a).desc | _ -> None" pp_in_expr (expr_of_parsed_expr_default a) pp_out_expr (expr_of_parsed_expr_default b);;
+  Format.fprintf fmt "(fun _ e -> match mk_loc e with | %a -> Some (%a).desc | _ -> None)" pp_in_expr (expr_of_parsed_expr_default a) pp_out_expr (expr_of_parsed_expr_default b);;
 
 
 let fdesc = open_in "kernel/primitives.knl" in
