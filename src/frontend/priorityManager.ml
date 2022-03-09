@@ -88,11 +88,11 @@ let rec find_highest priorityMaping = function
 let rec rewrite_inner = function
   | [] -> assert false
   | [hd] -> hd
-  | hd::tl -> let e = rewrite_inner tl in {desc = EApp (hd, e); loc = combine_locs hd.loc e.loc }
+  | e1::e2::tl -> rewrite_inner ({desc = EApp (e1, e2); loc = combine_locs e1.loc e2.loc}::tl)
 
 let rewrite = function
-  | {desc = EConst "fst"; loc}::e1::tl -> rewrite_inner ({desc = EFst e1; loc = combine_locs loc e1.loc}::tl)
-  | {desc = EConst "snd"; loc}::e1::tl -> rewrite_inner ({desc = ESnd e1; loc = combine_locs loc e1.loc}::tl)
+  | {desc = EVar "fst"; loc}::e1::tl -> rewrite_inner ({desc = EFst e1; loc = combine_locs loc e1.loc}::tl)
+  | {desc = EVar "snd"; loc}::e1::tl -> rewrite_inner ({desc = ESnd e1; loc = combine_locs loc e1.loc}::tl)
   | l -> rewrite_inner l
 
 let rec build_priority prioMap el =
