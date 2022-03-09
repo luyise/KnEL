@@ -2,7 +2,14 @@ open Parse
 open Ast
 open PriorityManager
 
+let fdesc = open_in "kernel/primitives.knl"
+let lex = Lexing.from_channel fdesc
+let (cst, beta_red, _defs) = Parser.primitives Lexer.next_token lex
+let () = close_in fdesc
+let cstSet = List.fold_left (fun s (i, _) -> SSet.add i s) SSet.empty cst
+
 let rec pp_expr fmt e = match e.desc with
+  | EVar n when SSet.mem n cstSet -> Format.fprintf fmt "mk_loc (EConst \"%s\")" n
   | EVar n -> Format.fprintf fmt "mk_loc (EVar \"%s\")" n
   | EPi ((id, p1), p2 , _) ->
     Format.fprintf fmt "mk_loc (EPi ((\"%s\", %a), %a, None))"
@@ -47,6 +54,7 @@ let rec pp_list pp_item fmt = function
 let rec pp_in_expr fmt e = match e.desc with
   | EVar n when String.starts_with ~prefix:"'" n ->
     Format.fprintf fmt "_%s" (String.sub n 1 (String.length n - 1))
+  | EVar n when SSet.mem n cstSet -> Format.fprintf fmt "{desc = EConst \"%s\"; _ }" n
   | EVar n -> Format.fprintf fmt "{desc = EVar \"%s\"; _ }" n
   | EPi ((id, p1), p2 , _) ->
     Format.fprintf fmt "{ desc = EPi ((\"%s\", %a), %a, None); _ }"
@@ -81,6 +89,7 @@ let rec pp_in_expr fmt e = match e.desc with
 let rec pp_out_expr fmt e = match e.desc with
   | EVar n when String.starts_with ~prefix:"'" n ->
     Format.fprintf fmt "_%s" (String.sub n 1 (String.length n - 1))
+  | EVar n when SSet.mem n cstSet -> Format.fprintf fmt "mk_loc (EConst \"%s\")" n
   | EVar n -> Format.fprintf fmt "mk_loc (EVar \"%s\")" n
   | EPi ((id, p1), p2 , _) ->
     Format.fprintf fmt "mk_loc (EPi ((\"%s\", %a), %a, None))"
@@ -117,10 +126,6 @@ let pp_bred fmt (_, a, b) =
   Format.fprintf fmt "(fun _ e -> match mk_loc e with | %a -> Some (%a).desc | _ -> None)" pp_in_expr (expr_of_parsed_expr_default a) pp_out_expr (expr_of_parsed_expr_default b);;
 
 
-let fdesc = open_in "kernel/primitives.knl" in
-let lex = Lexing.from_channel fdesc in
-let (cst, beta_red, _defs) = Parser.primitives Lexer.next_token lex in
-let () = close_in fdesc in
 (*let () = assert (beta_red = []) in *)
 let fdesc = open_out "constants.ml" in
 let () = Format.fprintf (Format.formatter_of_out_channel fdesc) "
